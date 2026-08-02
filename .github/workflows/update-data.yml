@@ -1,0 +1,77 @@
+name: Update Google Ads data
+
+on:
+  schedule:
+    - cron: '5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch data from Windsor.ai
+        env:
+          KEY: ${{ secrets.WINDSOR_API_KEY }}
+        run: |
+          set -euo pipefail
+          export TZ=Asia/Jakarta
+          mkdir -p data
+
+          API="https://connectors.windsor.ai/google_ads"
+
+          TODAY=$(date +%F)
+          YEST=$(date -d '1 day ago' +%F)
+          D7=$(date -d '6 days ago' +%F)
+          D14=$(date -d '13 days ago' +%F)
+          D30=$(date -d '29 days ago' +%F)
+          D60=$(date -d '59 days ago' +%F)
+
+          fetch () {
+            out="$1"; fields="$2"; from="$3"; to="$4"
+            echo "-> $out  ($from .. $to)"
+            curl -sS --fail --get "$API" \
+              --data-urlencode "api_key=$KEY" \
+              --data-urlencode "fields=$fields" \
+              --data-urlencode "date_from=$from" \
+              --data-urlencode "date_to=$to" \
+              -o "data/$out"
+            head -c 120 "data/$out"; echo
+          }
+
+          BASE="account_id,campaign,date,spend,clicks,impressions,conversions"
+          HOURLY="account_id,campaign,date,hour,spend,clicks,impressions,conversions"
+          AUCTION="account_id,campaign,date,search_impression_share,search_rank_lost_impression_share,search_budget_lost_impression_share,absolute_top_impression_percentage,top_impression_percentage,impressions"
+          NETWORK="account_id,campaign,date,ad_network_type,device,spend,clicks,impressions,conversions"
+          TERMS="account_id,campaign,search_term,spend,clicks,impressions,conversions"
+
+          fetch daily.json    "$BASE"    "$D60"   "$TODAY"
+          fetch hourly.json   "$HOURLY"  "$D30"   "$TODAY"
+          fetch auction.json  "$AUCTION" "$D30"   "$TODAY"
+          fetch network.json  "$NETWORK" "$D30"   "$TODAY"
+
+          fetch terms_today.json     "$TERMS" "$TODAY" "$TODAY"
+          fetch terms_yesterday.json "$TERMS" "$YEST"  "$YEST"
+          fetch terms_7.json         "$TERMS" "$D7"    "$TODAY"
+          fetch terms_14.json        "$TERMS" "$D14"   "$TODAY"
+          fetch terms_30.json        "$TERMS" "$D30"   "$TODAY"
+
+          printf '{"updated_at":"%s","timezone":"Asia/Jakarta"}\n' "$(date '+%Y-%m-%d %H:%M')" > data/meta.json
+          cat data/meta.json
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "Tidak ada perubahan data."
+          else
+            git commit -m "Perbarui data Google Ads"
+            git push
+          fi
