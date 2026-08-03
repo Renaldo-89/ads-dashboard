@@ -335,9 +335,9 @@
   }
 
   // --- ambil langsung lewat perantara Cloudflare (data segar saat dibuka) ---
-  async function live(fields, from, to, fresh) {
+  async function live(fields, from, to) {
     const q = new URLSearchParams({ connector:'google_ads', fields:fields.join(','), date_from:from, date_to:to });
-    if (fresh) { q.set('refresh_since','3d'); q.set('refresh_interval','15m'); }
+    q.set('_', String(Date.now()));
     const res = await fetch(PROXY + '?' + q.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error('proxy '+res.status);
     const j = await res.json();
@@ -361,9 +361,9 @@
 
     try {
       const [daily, prevDaily, hourly, auction, network, terms] = await Promise.all([
-        live(['account_id','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to, true),
+        live(['account_id','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to),
         live(['account_id','date','spend','clicks','impressions','conversions'], pr.from, pr.to).catch(()=>[]),
-        live(['account_id','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to, true).catch(()=>[]),
+        live(['account_id','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share','search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','date','ad_network_type','device','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[])
