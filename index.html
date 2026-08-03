@@ -277,6 +277,7 @@
 
 <script>
 (function () {
+  const PROXY = 'https://ads-proxy.renaldo1600016091.workers.dev/';
   const PALETTE = ['#1A73E8','#1E8E3E','#F9AB00','#EA4335','#9334E6','#12B5CB','#E52592','#E8710A'];
   const SOFT = { '#1A73E8':'#E8F0FE','#1E8E3E':'#E6F4EA','#F9AB00':'#FEF7E0','#EA4335':'#FCE8E6',
     '#9334E6':'#F3E8FD','#12B5CB':'#E0F7FA','#E52592':'#FCE4F0','#E8710A':'#FDEEE0' };
@@ -307,7 +308,7 @@
   let period='30', filter='all', tab='overview', sub='lelang', termSort='spend';
   let gran='day', selected=['spend','conversions'];
   let accounts = {}, meta = null;
-  let RAW = { daily:[], hourly:[], auction:[], network:[], terms:{} };
+  let RAW = { daily:[], prevDaily:[], hourly:[], auction:[], network:[], terms:[], statis:false };
   let data = { daily:[], prevDaily:[], hourly:[], auction:[], terms:[], network:[] };
   let charts = {}, insights = [];
 
@@ -333,21 +334,63 @@
     return Array.isArray(j) ? j : (j.data || j.result || j);
   }
 
+  // --- ambil langsung lewat perantara Cloudflare (data segar saat dibuka) ---
+  async function live(fields, from, to, fresh) {
+    const q = new URLSearchParams({ connector:'google_ads', fields:fields.join(','), date_from:from, date_to:to });
+    if (fresh) { q.set('refresh_since','3d'); q.set('refresh_interval','15m'); }
+    const res = await fetch(PROXY + '?' + q.toString(), { cache:'no-store' });
+    if (!res.ok) throw new Error('proxy '+res.status);
+    const j = await res.json();
+    if (j && j.error) throw new Error(j.error);
+    return j.data || j.result || [];
+  }
+
+  function jam() {
+    return new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+  }
+
   async function loadAll() {
     document.getElementById('loading-state').style.display='block';
     document.getElementById('error-state').style.display='none';
     document.getElementById('content').style.display='none';
     document.getElementById('reload-btn').classList.add('spinning');
+
+    const r = periodRange(period), pr = prevRange(r);
+    document.getElementById('range-label').textContent = r.label + ' · memuat…';
+    gran = r.days===1 ? 'hour' : 'day';
+
+    try {
+      const [daily, prevDaily, hourly, auction, network, terms] = await Promise.all([
+        live(['account_id','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to, true),
+        live(['account_id','date','spend','clicks','impressions','conversions'], pr.from, pr.to).catch(()=>[]),
+        live(['account_id','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to, true).catch(()=>[]),
+        live(['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share','search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'], r.from, r.to).catch(()=>[]),
+        live(['account_id','campaign','date','ad_network_type','device','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
+        live(['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[])
+      ]);
+      RAW = { daily, prevDaily, hourly, auction, network, terms };
+      meta = { updated_at: jam(), live:true };
+      buildAccounts();
+      document.getElementById('loading-state').style.display='none';
+      document.getElementById('content').style.display='block';
+      applyPeriod();
+      document.getElementById('reload-btn').classList.remove('spinning');
+      return;
+    } catch(e) {
+      // perantara gagal -> pakai cadangan dari GitHub Actions
+    }
+
     try {
       const [daily, hourly, auction, network] = await Promise.all([
         getJSON('daily.json'), getJSON('hourly.json').catch(()=>[]),
         getJSON('auction.json').catch(()=>[]), getJSON('network.json').catch(()=>[])
       ]);
-      const termFiles = ['today','yesterday','7','14','30'];
       const termData = {};
-      await Promise.all(termFiles.map(async k=>{ termData[k] = await getJSON('terms_'+k+'.json').catch(()=>[]); }));
-      meta = await getJSON('meta.json').catch(()=>null);
-      RAW = { daily, hourly, auction, network, terms:termData };
+      await Promise.all(['today','yesterday','7','14','30'].map(async k=>{
+        termData[k] = await getJSON('terms_'+k+'.json').catch(()=>[]); }));
+      const m = await getJSON('meta.json').catch(()=>null);
+      RAW = { daily, prevDaily:daily, hourly, auction, network, terms:termData, statis:true };
+      meta = m ? { updated_at:m.updated_at, live:false } : null;
       buildAccounts();
       document.getElementById('loading-state').style.display='none';
       document.getElementById('content').style.display='block';
@@ -356,7 +399,7 @@
       document.getElementById('loading-state').style.display='none';
       const err = document.getElementById('error-state');
       err.style.display='block';
-      err.innerHTML='Data belum tersedia.<br>Jalankan dulu workflow "Update Google Ads data" di GitHub, lalu muat ulang halaman ini.';
+      err.innerHTML='Gagal memuat data.<br>Periksa koneksi internet, lalu tekan tombol muat ulang.';
     }
     document.getElementById('reload-btn').classList.remove('spinning');
   }
@@ -364,17 +407,23 @@
   function applyPeriod() {
     const r = periodRange(period), pr = prevRange(r);
     let label = r.label;
-    if (meta && meta.updated_at) label += ' · data ' + meta.updated_at;
+    if (meta && meta.updated_at) label += meta.live ? ' · segar ' + meta.updated_at : ' · data ' + meta.updated_at;
     document.getElementById('range-label').textContent = label;
     gran = r.days===1 ? 'hour' : 'day';
-    data = {
-      daily:    RAW.daily.filter(x=>inRange(x.date, r.from, r.to)),
-      prevDaily:RAW.daily.filter(x=>inRange(x.date, pr.from, pr.to)),
-      hourly:   RAW.hourly.filter(x=>inRange(x.date, r.from, r.to)),
-      auction:  RAW.auction.filter(x=>inRange(x.date, r.from, r.to)),
-      network:  RAW.network.filter(x=>inRange(x.date, r.from, r.to)),
-      terms:    RAW.terms[period] || []
-    };
+
+    if (RAW.statis) {
+      data = {
+        daily:    RAW.daily.filter(x=>inRange(x.date, r.from, r.to)),
+        prevDaily:RAW.daily.filter(x=>inRange(x.date, pr.from, pr.to)),
+        hourly:   RAW.hourly.filter(x=>inRange(x.date, r.from, r.to)),
+        auction:  RAW.auction.filter(x=>inRange(x.date, r.from, r.to)),
+        network:  RAW.network.filter(x=>inRange(x.date, r.from, r.to)),
+        terms:    RAW.terms[period] || []
+      };
+    } else {
+      data = { daily:RAW.daily, prevDaily:RAW.prevDaily, hourly:RAW.hourly,
+        auction:RAW.auction, network:RAW.network, terms:RAW.terms };
+    }
     syncGran(); renderAll();
   }
 
@@ -843,7 +892,7 @@
     const b=e.target.closest('button[data-period]'); if(!b) return;
     period=b.dataset.period;
     document.querySelectorAll('#period-switch button').forEach(x=>x.classList.toggle('active',x===b));
-    applyPeriod();
+    if (RAW.statis) applyPeriod(); else loadAll();
   });
   document.getElementById('term-sort').addEventListener('click', e=>{
     const b=e.target.closest('button[data-sort]'); if(!b) return;
