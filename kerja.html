@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>Dashboard Kerja</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kerja">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+  :root { color-scheme: light;
+    --ink:#1C1C1E; --ink-2:#3C3C43; --muted:#8A8A8E; --line:#EBEBEF;
+    --blue:#1A73E8; --green:#1E8E3E; --amber:#F9AB00; --red:#EA4335; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; }
+  html { background:#fff; }
+  body { padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:transparent; }
+  body::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(900px 520px at 8% -6%,  rgba(26,115,232,.13), transparent 62%),
+      radial-gradient(760px 460px at 98% 6%,  rgba(30,142,62,.10),  transparent 60%),
+      radial-gradient(820px 520px at 50% 104%,rgba(249,171,0,.10),  transparent 62%),
+      linear-gradient(180deg,#FFF 0%,#FCFDFF 45%,#F8FAFD 100%); }
+  ::-webkit-scrollbar { height:0; width:0; }
+
+  header { position:sticky; top:0; z-index:30; background:rgba(255,255,255,.72);
+    backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px);
+    padding:calc(14px + env(safe-area-inset-top)) 20px 0; }
+  .hdr-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:8px; }
+  h1 { font-size:26px; font-weight:700; letter-spacing:-.6px; margin:0; }
+  .hdr-sub { font-size:12.5px; color:var(--muted); margin:2px 0 0; font-weight:500; }
+  .icon-btn { width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.9);
+    background:rgba(255,255,255,.75); backdrop-filter:blur(8px); box-shadow:0 1px 4px rgba(16,24,40,.06);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-2); flex-shrink:0; }
+  .icon-btn svg { width:18px; height:18px; }
+  .icon-btn.spin svg { animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .chips { display:flex; gap:9px; overflow-x:auto; padding:0 0 14px; }
+  .chips button { flex-shrink:0; border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.7);
+    backdrop-filter:blur(8px); color:var(--ink-2); padding:7px 15px; border-radius:999px; font-size:12.5px;
+    font-weight:600; font-family:inherit; cursor:pointer; transition:all .16s; }
+  .chips button.active { background:#E8F0FE; border-color:#E8F0FE; color:var(--blue); }
+
+  main { padding:4px 20px 0; max-width:680px; margin:0 auto; }
+  .view { display:none; } .view.active { display:block; }
+  .sec { display:flex; align-items:baseline; justify-content:space-between; margin:22px 0 12px; gap:10px; }
+  .sec:first-child { margin-top:6px; }
+  h2 { font-size:19px; font-weight:700; margin:0; letter-spacing:-.4px; }
+  .note { font-size:12px; color:var(--muted); font-weight:500; }
+  .lead { font-size:12.5px; color:var(--muted); line-height:1.5; margin:-6px 0 12px; }
+
+  .hero { border-radius:20px; padding:18px; margin-top:6px;
+    background:linear-gradient(150deg, rgba(26,115,232,.10), rgba(30,142,62,.08));
+    border:1px solid rgba(255,255,255,.9); }
+  .hero .k { font-size:12px; color:var(--muted); font-weight:600; margin:0 0 4px; }
+  .hero .v { font-size:34px; font-weight:700; letter-spacing:-1px; margin:0; }
+  .hero .sub { font-size:12.5px; color:var(--muted); font-weight:500; margin:6px 0 0; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:9px; margin-top:10px; }
+  .tile { background:rgba(255,255,255,.66); border:1px solid rgba(255,255,255,.9); border-radius:16px;
+    padding:13px 12px; backdrop-filter:blur(8px); }
+  .tile .k { font-size:11.5px; color:var(--muted); margin:0 0 4px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .tile .k i { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .tile .v { font-size:19px; font-weight:700; margin:0; letter-spacing:-.5px; }
+  .tile .d { font-size:11px; font-weight:600; margin-top:4px; }
+  .d.up { color:var(--green); } .d.down { color:var(--red); } .d.flat { color:var(--muted); }
+
+  .card { border-radius:20px; padding:16px 12px 8px; margin-top:12px;
+    background:linear-gradient(160deg, rgba(255,255,255,.92), rgba(248,250,253,.78));
+    border:1px solid rgba(255,255,255,.9); box-shadow:0 2px 10px rgba(16,24,40,.05); }
+  .wrap { position:relative; height:215px; }
+  .legend { display:flex; gap:14px; padding:10px 6px 4px; flex-wrap:wrap; }
+  .legend span { font-size:11.5px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:5px; }
+  .legend i { width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .li { display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .li:last-child { border-bottom:none; }
+  .ic { width:40px; height:40px; border-radius:12px; flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; font-size:14px; font-weight:700; }
+  .li-b { flex:1; min-width:0; }
+  .li-t { font-size:14.5px; font-weight:600; margin:0 0 3px; letter-spacing:-.2px; }
+  .li-s { font-size:12px; color:var(--muted); margin:0; font-weight:500; line-height:1.45; }
+  .li-r { text-align:right; flex-shrink:0; }
+  .li-v { font-size:14.5px; font-weight:700; letter-spacing:-.3px; }
+  .li-vs { font-size:11px; color:var(--muted); font-weight:500; margin-top:1px; }
+  .track { height:6px; border-radius:3px; background:var(--line); overflow:hidden; display:flex; margin-top:7px; }
+  .track i { display:block; height:100%; }
+  .badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:999px; }
+
+  table.dt { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.dt th { text-align:right; font-weight:600; color:var(--muted); padding:0 4px 9px; font-size:11.5px;
+    border-bottom:1px solid var(--line); white-space:nowrap; position:sticky; top:0; background:rgba(255,255,255,.9); }
+  table.dt th:first-child, table.dt td:first-child { text-align:left; }
+  table.dt td { text-align:right; padding:11px 4px; border-bottom:1px solid var(--line); white-space:nowrap;
+    font-weight:500; font-variant-numeric:tabular-nums; }
+  table.dt td:first-child { font-weight:600; }
+  .scroll-y { max-height:330px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+  .ins { display:flex; gap:12px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line); }
+  .ins:last-child { border-bottom:none; }
+  .ins-k { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin:0 0 3px; }
+  .ins-t { font-size:14px; line-height:1.55; margin:0; font-weight:500; }
+
+  .empty { text-align:center; padding:34px 18px; color:var(--muted); font-size:13.5px; font-weight:500; line-height:1.6; }
+  .spinner { width:24px; height:24px; border:2.5px solid var(--line); border-top-color:var(--blue);
+    border-radius:50%; margin:0 auto 12px; animation:spin .8s linear infinite; }
+
+  nav { position:fixed; bottom:0; left:0; right:0; z-index:40; display:flex;
+    background:rgba(255,255,255,.78); backdrop-filter:saturate(180%) blur(22px);
+    border-top:1px solid rgba(255,255,255,.9); padding:8px 0 max(8px, env(safe-area-inset-bottom)); }
+  nav button { flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center;
+    gap:3px; padding:2px 0; cursor:pointer; color:#B0B0B5; font-family:inherit; }
+  nav button.active { color:var(--blue); }
+  nav svg { width:22px; height:22px; }
+  nav span { font-size:10px; font-weight:600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-row">
+    <div>
+      <h1>Dashboard Kerja</h1>
+      <p class="hdr-sub" id="sub">&mdash;</p>
+    </div>
+    <button class="icon-btn" id="reload" aria-label="Muat ulang">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+    </button>
+  </div>
+  <div class="chips" id="periods">
+    <button data-p="today">Hari ini</button>
+    <button data-p="yesterday">Kemarin</button>
+    <button data-p="7">7 hari</button>
+    <button data-p="14">14 hari</button>
+    <button data-p="30" class="active">30 hari</button>
+  </div>
+</header>
+
+<main>
+  <div id="loading" class="empty"><div class="spinner"></div>Memuat data&hellip;</div>
+
+  <div id="content" style="display:none;">
+    <section class="view active" id="v-ringkasan">
+      <div class="hero">
+        <p class="k">ROAS gabungan</p>
+        <p class="v" id="roas">&mdash;</p>
+        <p class="sub" id="roas-sub">Omzet dibagi total biaya iklan semua platform</p>
+      </div>
+      <div class="tiles" id="tiles"></div>
+
+      <div class="sec"><h2>Tren harian</h2><span class="note" id="chart-note"></span></div>
+      <div class="card">
+        <div class="wrap"><canvas id="chart"></canvas></div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="sec"><h2>Rincian harian</h2></div>
+      <div class="scroll-y scroll-x">
+        <table class="dt"><thead><tr><th>Tanggal</th><th>Biaya iklan</th><th>Omzet</th><th>ROAS</th><th>Klik</th><th>Konv</th></tr></thead>
+        <tbody id="daily"></tbody></table>
+      </div>
+    </section>
+
+    <section class="view" id="v-platform">
+      <div class="sec"><h2>Per platform</h2><span class="note">urut biaya</span></div>
+      <div id="platforms"></div>
+      <div class="sec"><h2>Kampanye teratas</h2></div>
+      <div id="campaigns"></div>
+    </section>
+
+    <section class="view" id="v-insight">
+      <div class="sec"><h2>Analisis otomatis</h2></div>
+      <p class="lead">Dihitung langsung dari angka periode terpilih.</p>
+      <div id="insights"></div>
+    </section>
+  </div>
+</main>
+
+<nav id="tabs">
+  <button data-t="ringkasan" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg><span>Ringkasan</span>
+  </button>
+  <button data-t="platform">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg><span>Platform</span>
+  </button>
+  <button data-t="insight">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z"/></svg><span>Insight</span>
+  </button>
+</nav>
+
+<script>
+(function () {
+  const PROXY = 'https://ads-proxy.renaldo1600016091.workers.dev/';
+
+  // Tambah platform baru cukup di sini. Yang belum tersambung otomatis
+  // ditandai "belum terhubung" dan langsung ikut terhitung begitu diotorisasi.
+  const IKLAN = [
+    { id:'google_ads', nama:'Google Ads',  warna:'#1A73E8', soft:'#E8F0FE', ini:'G'  },
+    { id:'facebook',   nama:'Meta Ads',    warna:'#1877F2', soft:'#E7F0FE', ini:'M'  },
+    { id:'tiktok',     nama:'TikTok Ads',  warna:'#111827', soft:'#EEF0F3', ini:'TT' },
+  ];
+  // Sumber omzet. Beberapa kemungkinan nama field dicoba berurutan,
+  // karena skema TikTok Shop baru pasti setelah akun tersambung.
+  const OMZET = {
+    id:'tiktok_shop', nama:'TikTok Shop', warna:'#1E8E3E', soft:'#E6F4EA', ini:'TS',
+    kandidat: [
+      ['date','revenue','orders'],
+      ['date','total_amount','order_id'],
+      ['date','gmv','orders'],
+      ['date','revenue'],
+    ]
+  };
+
+  const fIDR = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(n||0));
+  const fC = n => { const v=Math.round(n||0); if(v>=1e9) return 'Rp'+(v/1e9).toFixed(1).replace('.',',')+'M';
+    if(v>=1e6) return 'Rp'+(v/1e6).toFixed(1).replace('.',',')+'jt'; if(v>=1000) return 'Rp'+Math.round(v/1000)+'rb'; return 'Rp'+v; };
+  const fN = n => { const v=Number(n)||0; return (Math.abs(v%1)>0.001?v.toFixed(1):String(Math.round(v))).replace('.',','); };
+  const fP = n => (Number.isFinite(n)?n:0).toFixed(1).replace('.',',')+'%';
+  const esc = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const sum = (r,k) => r.reduce((a,x)=>a+(Number(x[k])||0),0);
+  const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const sd = d => { const p=String(d).split('-'); return p.length===3?p[2]+'/'+p[1]:d; };
+
+  let period='30', tab='ringkasan', chart=null;
+  let DATA = { iklan:{}, omzet:{ status:'kosong', rows:[], field:null }, prev:{} };
+
+  function rentang(p) {
+    const now = new Date();
+    if (p==='today') return { from:iso(now), to:iso(now), label:'Hari ini', days:1 };
+    if (p==='yesterday') { const y=new Date(now); y.setDate(y.getDate()-1); return { from:iso(y), to:iso(y), label:'Kemarin', days:1 }; }
+    const n=Number(p), f=new Date(now); f.setDate(f.getDate()-(n-1));
+    return { from:iso(f), to:iso(now), label:n+' hari terakhir', days:n };
+  }
+  function sebelum(r) {
+    const f=new Date(r.from+'T00:00:00');
+    const t=new Date(f); t.setDate(t.getDate()-1);
+    const s=new Date(t); s.setDate(s.getDate()-(r.days-1));
+    return { from:iso(s), to:iso(t) };
+  }
+
+  async function tarik(connector, fields, from, to) {
+    const q = new URLSearchParams({ connector, fields:fields.join(','), date_from:from, date_to:to, _:String(Date.now()) });
+    const res = await fetch(PROXY+'?'+q.toString(), { cache:'no-store' });
+    if (!res.ok) throw new Error(String(res.status));
+    const j = await res.json();
+    if (j && j.error) throw new Error(j.error);
+    const rows = j.data || j.result;
+    if (!Array.isArray(rows)) throw new Error('format');
+    return rows;
+  }
+
+  const FIELDS_IKLAN = ['campaign','date','spend','clicks','impressions','conversions'];
+
+  async function muat() {
+    document.getElementById('loading').style.display='block';
+    document.getElementById('content').style.display='none';
+    document.getElementById('reload').classList.add('spin');
+    const r = rentang(period), pr = sebelum(r);
+    document.getElementById('sub').textContent = r.label + ' · memuat…';
+
+    const iklan = {}, prev = {};
+    await Promise.all(IKLAN.map(async p => {
+      try { iklan[p.id] = { status:'ok', rows: await tarik(p.id, FIELDS_IKLAN, r.from, r.to) }; }
+      catch(e) { iklan[p.id] = { status:'off', rows:[] }; }
+      try { prev[p.id] = await tarik(p.id, ['date','spend','clicks','conversions'], pr.from, pr.to); }
+      catch(e) { prev[p.id] = []; }
+    }));
+
+    let omzet = { status:'off', rows:[], field:null, hitung:null };
+    for (const kand of OMZET.kandidat) {
+      try {
+        const rows = await tarik(OMZET.id, kand, r.from, r.to);
+        const nilai = kand.find(f => ['revenue','total_amount','gmv'].includes(f));
+        omzet = { status:'ok', rows, field:nilai, hitung:kand.find(f=>['orders','order_id'].includes(f)) || null };
+        break;
+      } catch(e) { /* coba kandidat berikutnya */ }
+    }
+
+    DATA = { iklan, omzet, prev };
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    document.getElementById('reload').classList.remove('spin');
+    render(r);
+  }
+
+  const totalIklan = () => {
+    let spend=0, clicks=0, impr=0, conv=0;
+    for (const p of IKLAN) { const d=DATA.iklan[p.id]; if(!d) continue;
+      spend+=sum(d.rows,'spend'); clicks+=sum(d.rows,'clicks');
+      impr+=sum(d.rows,'impressions'); conv+=sum(d.rows,'conversions'); }
+    return { spend, clicks, impr, conv };
+  };
+  const totalPrev = () => {
+    let spend=0, clicks=0, conv=0;
+    for (const p of IKLAN) { const rows=DATA.prev[p.id]||[];
+      spend+=sum(rows,'spend'); clicks+=sum(rows,'clicks'); conv+=sum(rows,'conversions'); }
+    return { spend, clicks, conv };
+  };
+  const totalOmzet = () => DATA.omzet.status==='ok' && DATA.omzet.field
+    ? sum(DATA.omzet.rows, DATA.omzet.field) : 0;
+
+  function delta(cur, prev, kecilLebihBaik) {
+    if (!prev) return '<div class="d flat">&mdash;</div>';
+    const pct=(cur-prev)/prev*100;
+    if (Math.abs(pct)<1) return '<div class="d flat">stabil</div>';
+    const baik = kecilLebihBaik ? pct<0 : pct>0;
+    return '<div class="d '+(baik?'up':'down')+'">'+(pct>0?'&#9650;':'&#9660;')+' '+Math.abs(pct).toFixed(0)+'%</div>';
+  }
+
+  function render(r) {
+    const t = totalIklan(), p = totalPrev(), omzet = totalOmzet();
+    const terhubung = IKLAN.filter(x=>DATA.iklan[x.id] && DATA.iklan[x.id].status==='ok').length;
+    document.getElementById('sub').textContent =
+      r.label + ' · ' + terhubung + '/' + IKLAN.length + ' platform iklan aktif';
+
+    const roas = t.spend>0 && omzet>0 ? omzet/t.spend : null;
+    document.getElementById('roas').textContent = roas ? roas.toFixed(2).replace('.',',')+'×' : '—';
+    document.getElementById('roas-sub').textContent = roas
+      ? fIDR(omzet)+' omzet dari '+fIDR(t.spend)+' biaya iklan'
+      : (DATA.omzet.status==='ok' ? 'Belum ada omzet tercatat di periode ini'
+         : 'Sumber omzet (TikTok Shop) belum terhubung — ROAS muncul otomatis setelah disambungkan');
+
+    const cpa = t.conv>0 ? t.spend/t.conv : 0;
+    const ctr = t.impr>0 ? t.clicks/t.impr*100 : 0;
+    document.getElementById('tiles').innerHTML =
+      tile('Biaya iklan', fC(t.spend), '#1A73E8', delta(t.spend,p.spend,false))
+    + tile('Omzet', DATA.omzet.status==='ok'?fC(omzet):'—', '#1E8E3E', '')
+    + tile('Konversi', fN(t.conv), '#F9AB00', delta(t.conv,p.conv,false))
+    + tile('Biaya/konv.', cpa?fC(cpa):'—', '#12B5CB', '')
+    + tile('Klik', fN(t.clicks), '#E52592', delta(t.clicks,p.clicks,false))
+    + tile('CTR', fP(ctr), '#EA4335', '');
+
+    renderChart(); renderDaily(); renderPlatforms(); renderCampaigns(); renderInsights();
+  }
+  const tile = (k,v,c,d) =>
+    '<div class="tile"><p class="k"><i style="background:'+c+'"></i>'+k+'</p><p class="v">'+v+'</p>'+d+'</div>';
+
+  function perTanggal() {
+    const m = new Map();
+    const set = (d,key,val) => { if(!m.has(d)) m.set(d,{spend:0,clicks:0,conv:0,omzet:0}); m.get(d)[key]+=val; };
+    for (const p of IKLAN) { const d=DATA.iklan[p.id]; if(!d) continue;
+      for (const row of d.rows) { const dt=row.date; if(!dt) continue;
+        set(dt,'spend',Number(row.spend)||0); set(dt,'clicks',Number(row.clicks)||0);
+        set(dt,'conv',Number(row.conversions)||0); } }
+    if (DATA.omzet.status==='ok' && DATA.omzet.field)
+      for (const row of DATA.omzet.rows) { const dt=row.date; if(!dt) continue;
+        set(dt,'omzet',Number(row[DATA.omzet.field])||0); }
+    return m;
+  }
+
+  function renderChart() {
+    const m = perTanggal();
+    const keys = Array.from(m.keys()).sort();
+    document.getElementById('chart-note').textContent = keys.length+' hari';
+    const ds = [
+      { type:'bar', label:'Biaya iklan', data:keys.map(k=>Math.round(m.get(k).spend)),
+        backgroundColor:'#1A73E8', yAxisID:'y', borderRadius:4, barPercentage:.7, order:2 }
+    ];
+    if (DATA.omzet.status==='ok')
+      ds.push({ type:'line', label:'Omzet', data:keys.map(k=>Math.round(m.get(k).omzet)),
+        borderColor:'#1E8E3E', backgroundColor:'#1E8E3E', yAxisID:'y', tension:.4,
+        pointRadius:0, pointHoverRadius:5, borderWidth:2.5, order:1 });
+
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('chart').getContext('2d'), {
+      data:{ labels:keys.map(sd), datasets:ds },
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{display:false},
+          tooltip:{ backgroundColor:'#1C1C1E', padding:10, cornerRadius:10, displayColors:true, boxWidth:8, boxHeight:8, usePointStyle:true,
+            callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
+        scales:{ x:{ ticks:{font:{size:10.5,weight:'600'},color:'#8A8A8E',maxRotation:0,autoSkip:true,maxTicksLimit:6}, grid:{display:false}, border:{display:false} },
+          y:{ ticks:{font:{size:10},color:'#8A8A8E',maxTicksLimit:4,
+              callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'},
+            grid:{color:'#EBEBEF',drawTicks:false}, border:{display:false} } } }
+    });
+    document.getElementById('legend').innerHTML =
+      '<span><i style="background:#1A73E8"></i>Biaya iklan</span>'
+      + (DATA.omzet.status==='ok' ? '<span><i style="background:#1E8E3E"></i>Omzet</span>' : '');
+  }
+
+  function renderDaily() {
+    const m = perTanggal();
+    const keys = Array.from(m.keys()).sort().reverse();
+    const tb = document.getElementById('daily');
+    if (!keys.length) { tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#8A8A8E;padding:20px 0;">Tidak ada data</td></tr>'; return; }
+    tb.innerHTML = keys.map(k=>{ const a=m.get(k);
+      const roas = a.spend>0 && a.omzet>0 ? (a.omzet/a.spend).toFixed(2).replace('.',',')+'×' : '—';
+      return '<tr><td>'+sd(k)+'</td><td>'+fC(a.spend)+'</td><td>'+(a.omzet?fC(a.omzet):'—')+'</td><td>'+roas
+        +'</td><td>'+fN(a.clicks)+'</td><td>'+fN(a.conv)+'</td></tr>'; }).join('');
+  }
+
+  function renderPlatforms() {
+    const el = document.getElementById('platforms');
+    const semua = IKLAN.map(p=>{
+      const d = DATA.iklan[p.id] || { status:'off', rows:[] };
+      return { ...p, status:d.status, spend:sum(d.rows,'spend'), clicks:sum(d.rows,'clicks'),
+        impr:sum(d.rows,'impressions'), conv:sum(d.rows,'conversions') };
+    });
+    const o = DATA.omzet;
+    const maxS = Math.max.apply(null, semua.map(x=>x.spend).concat([1]));
+    let html = semua.sort((a,b)=>b.spend-a.spend).map(p=>{
+      if (p.status!=='ok') return baris(p, '<span class="badge" style="background:#F2F2F5;color:#8A8A8E">belum terhubung</span>',
+        'Otorisasi dulu di Windsor — datanya muncul otomatis setelah itu', '', '');
+      const cpa = p.conv>0?p.spend/p.conv:0, ctr = p.impr>0?p.clicks/p.impr*100:0;
+      return baris(p, esc(p.nama),
+        fN(p.clicks)+' klik · CTR '+fP(ctr)+' · '+fN(p.conv)+' konv',
+        fC(p.spend), 'Biaya/konv. '+(cpa?fC(cpa):'—'),
+        (p.spend/maxS*100).toFixed(1));
+    }).join('');
+
+    const omzetOk = o.status==='ok' && o.field;
+    html += baris(OMZET, omzetOk ? OMZET.nama : OMZET.nama,
+      omzetOk ? 'Sumber omzet' : 'Belum terhubung — ROAS belum bisa dihitung',
+      omzetOk ? fC(sum(o.rows,o.field)) : '',
+      omzetOk ? 'omzet periode ini' : '', omzetOk ? '100' : '');
+    el.innerHTML = html;
+  }
+
+  function baris(p, judul, sub, nilai, nilaiSub, bar) {
+    return '<div class="li"><div class="ic" style="background:'+p.soft+';color:'+p.warna+'">'+p.ini+'</div>'
+      + '<div class="li-b"><p class="li-t">'+judul+'</p><p class="li-s">'+sub+'</p>'
+      + (bar ? '<div class="track"><i style="width:'+bar+'%;background:'+p.warna+'"></i></div>' : '')
+      + '</div><div class="li-r"><div class="li-v">'+(nilai||'')+'</div><div class="li-vs">'+(nilaiSub||'')+'</div></div></div>';
+  }
+
+  function renderCampaigns() {
+    const list = [];
+    for (const p of IKLAN) { const d=DATA.iklan[p.id]; if(!d || d.status!=='ok') continue;
+      const m = new Map();
+      for (const row of d.rows) { const k=row.campaign||'(tanpa nama)';
+        if(!m.has(k)) m.set(k,{spend:0,clicks:0,conv:0});
+        const a=m.get(k); a.spend+=Number(row.spend)||0; a.clicks+=Number(row.clicks)||0; a.conv+=Number(row.conversions)||0; }
+      for (const [nama,a] of m) list.push({ platform:p, nama, ...a });
+    }
+    const el = document.getElementById('campaigns');
+    if (!list.length) { el.innerHTML='<p class="empty">Belum ada kampanye di periode ini.</p>'; return; }
+    list.sort((a,b)=>b.spend-a.spend);
+    const top = list.slice(0,15), maxS = Math.max.apply(null, top.map(x=>x.spend).concat([1]));
+    el.innerHTML = top.map(c=>{
+      const cpa = c.conv>0?c.spend/c.conv:0;
+      return baris(c.platform, esc(c.nama),
+        c.platform.nama+' · '+fN(c.clicks)+' klik · '+fN(c.conv)+' konv',
+        fC(c.spend), 'Biaya/konv. '+(cpa?fC(cpa):'—'), (c.spend/maxS*100).toFixed(1));
+    }).join('');
+  }
+
+  function renderInsights() {
+    const out = [];
+    const t = totalIklan(), p = totalPrev(), omzet = totalOmzet();
+
+    const belum = IKLAN.filter(x=>!DATA.iklan[x.id] || DATA.iklan[x.id].status!=='ok');
+    if (belum.length) out.push({ k:'setup', c:'#8A8A8E', s:'#F2F2F5',
+      t: belum.map(x=>x.nama).join(' dan ')+' belum terhubung, jadi angka di atas belum mencakup semua biaya iklanmu.' });
+    if (DATA.omzet.status!=='ok') out.push({ k:'setup', c:'#8A8A8E', s:'#F2F2F5',
+      t:'TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet akan terisi sendiri.' });
+
+    if (p.spend>0) { const ds=(t.spend-p.spend)/p.spend*100;
+      if (Math.abs(ds)>=10) out.push({ k: ds>0?'perhatian':'catatan', c: ds>0?'#F9AB00':'#1A73E8', s: ds>0?'#FEF7E0':'#E8F0FE',
+        t:'Biaya iklan '+(ds>0?'naik':'turun')+' '+Math.abs(ds).toFixed(0)+'% jadi '+fIDR(t.spend)+' dibanding periode sebelumnya.' }); }
+
+    if (omzet>0 && t.spend>0) { const roas = omzet/t.spend;
+      out.push({ k: roas>=2?'bagus':'perhatian', c: roas>=2?'#1E8E3E':'#EA4335', s: roas>=2?'#E6F4EA':'#FCE8E6',
+        t:'ROAS gabungan '+roas.toFixed(2).replace('.',',')+'× — setiap Rp1.000 biaya iklan menghasilkan '+fIDR(roas*1000)+' omzet.' }); }
+
+    const aktif = IKLAN.map(x=>({ ...x, d:DATA.iklan[x.id] })).filter(x=>x.d && x.d.status==='ok')
+      .map(x=>({ nama:x.nama, spend:sum(x.d.rows,'spend'), conv:sum(x.d.rows,'conversions') }))
+      .filter(x=>x.spend>0);
+    if (aktif.length>1) {
+      const dgn = aktif.filter(x=>x.conv>0).map(x=>({ ...x, cpa:x.spend/x.conv })).sort((a,b)=>a.cpa-b.cpa);
+      if (dgn.length>1 && dgn[dgn.length-1].cpa > dgn[0].cpa*1.4)
+        out.push({ k:'peluang', c:'#1E8E3E', s:'#E6F4EA',
+          t:dgn[0].nama+' menghasilkan konversi seharga '+fIDR(dgn[0].cpa)+', sementara '+dgn[dgn.length-1].nama+' '+fIDR(dgn[dgn.length-1].cpa)+'. Pertimbangkan geser sebagian budget.' });
+    }
+    aktif.filter(x=>x.conv===0).forEach(x=>out.push({ k:'anomali', c:'#EA4335', s:'#FCE8E6',
+      t:x.nama+' menghabiskan '+fIDR(x.spend)+' tanpa konversi di periode ini. Cek pelacakan konversinya.' }));
+
+    const el = document.getElementById('insights');
+    el.innerHTML = out.length ? out.map(i=>
+      '<div class="ins"><div class="ic" style="background:'+i.s+';color:'+i.c+';border-radius:50%">•</div>'
+      + '<div style="flex:1;min-width:0"><p class="ins-k" style="color:'+i.c+'">'+i.k+'</p><p class="ins-t">'+esc(i.t)+'</p></div></div>'
+    ).join('') : '<p class="empty">Belum ada temuan menonjol.</p>';
+  }
+
+  document.getElementById('periods').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-p]'); if(!b) return;
+    period=b.dataset.p;
+    document.querySelectorAll('#periods button').forEach(x=>x.classList.toggle('active',x===b));
+    muat();
+  });
+  document.getElementById('reload').addEventListener('click', muat);
+  document.getElementById('tabs').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-t]'); if(!b) return;
+    tab=b.dataset.t;
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('v-'+tab).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if (chart) chart.resize();
+  });
+
+  muat();
+})();
+</script>
+</body>
+</html>
