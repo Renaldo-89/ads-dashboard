@@ -300,7 +300,7 @@
 
   // sumber penjualan (disambungkan lewat Worker: ?sales=<id>)
   const SALES = [
-    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet', c:'#7C3AED', s:'#F1EBFE', ini:'GM' },
+    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet · data bulanan', c:'#7C3AED', s:'#F1EBFE', ini:'GM' },
     { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'#0891B2', s:'#E5F6FA', ini:'EP' },
   ];
 
@@ -661,10 +661,12 @@
     const s = aggSales(salesRows());
     const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
     const laba = s.gross - t.spend;
+    const bulanan = salesRows().some(r=>r.granularity==='monthly');
     const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
     const totalPel = s.baru + s.repeat;
     const pctRepeat = totalPel>0 ? s.repeat/totalPel*100 : 0;
-    return `<div class="sec"><h4>Penjualan</h4><span class="note">gabungan semua sumber</span></div>
+    return `<div class="sec"><h4>Penjualan</h4><span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
+      ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
       <div class="kpis">
         ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
         ${kpi(I.money,'#1E8E3E','#E7F5EC','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
