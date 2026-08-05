@@ -84,16 +84,14 @@
     padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; }
   .chips button.on { background:var(--blue-soft); border-color:#CFE0FC; color:var(--blue); }
 
-  .filters { display:flex; gap:9px; flex-wrap:wrap; padding:0 0 14px; align-items:center; }
-  .fl { display:flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--line);
-    border-radius:9px; padding:5px 10px 5px 11px; }
-  .fl label { font-size:11px; font-weight:700; color:var(--faint); letter-spacing:.3px; white-space:nowrap; }
-  .fl select { border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:600;
-    color:var(--ink); padding:3px 2px; cursor:pointer; outline:none; max-width:230px; }
-  .fl.act { border-color:#CFE0FC; background:var(--blue-soft); }
-  .fl.act label, .fl.act select { color:var(--blue); }
-  .reset { border:none; background:none; font-family:inherit; font-size:12px; font-weight:600;
-    color:var(--muted); cursor:pointer; padding:6px 4px; text-decoration:underline; }
+  .chips button.bulan { color:var(--muted); }
+  .chips button.bulan.on { background:var(--green-soft); border-color:#CDE9D6; color:var(--green); }
+  .chips.sub { padding:0 0 12px; align-items:center; }
+  .chips.sub::before { content:attr(data-lbl); flex-shrink:0; align-self:center; font-size:10.5px;
+    font-weight:700; color:var(--faint); letter-spacing:.6px; padding-right:4px; }
+  .chips.sub button { font-size:12px; padding:6px 13px; font-weight:500; max-width:240px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
 
   .body { padding:22px 28px 60px; max-width:1180px; }
   .page { display:none; } .page.on { display:block; }
@@ -243,19 +241,9 @@
         <div><h2 id="ptitle">Overview</h2><p class="crumb" id="pcrumb">&mdash;</p></div>
       </div>
     </div>
-    <div class="chips" id="periods">
-      <button data-p="today">Hari ini</button>
-      <button data-p="yesterday">Kemarin</button>
-      <button data-p="7">7 hari</button>
-      <button data-p="14">14 hari</button>
-      <button data-p="30" class="on">30 hari</button>
-    </div>
-    <div class="filters">
-      <div class="fl" id="fl-bulan"><label>BULAN</label><select id="s-bulan"></select></div>
-      <div class="fl" id="fl-akun"><label>AKUN</label><select id="s-akun"><option value="all">Semua akun</option></select></div>
-      <div class="fl" id="fl-kmp"><label>KAMPANYE</label><select id="s-kmp"><option value="all">Semua kampanye</option></select></div>
-      <button class="reset" id="reset" style="display:none">Reset filter</button>
-    </div>
+    <div class="chips" id="periods"></div>
+    <div class="chips sub" id="akun-chips" style="display:none"></div>
+    <div class="chips sub" id="kmp-chips" style="display:none"></div>
   </div>
 
   <div class="body">
@@ -435,53 +423,53 @@
     return '<span class="d '+(baik?'up':'down')+'">'+(p>0?'&#9650;':'&#9660;')+' '+Math.abs(p).toFixed(0)+'%</span>';
   }
 
-  // ---------- filter ----------
-  function buildFilters() {
-    // daftar bulan: 12 bulan terakhir
-    const sb = document.getElementById('s-bulan');
-    if (!sb.options.length) {
+  // ---------- filter (semuanya chip) ----------
+  function buildPeriods() {
+    const el = document.getElementById('periods');
+    if (!el.dataset.built) {
       const n0 = new Date();
-      let html = '<option value="">Pilih bulan…</option>';
-      for (let i=0; i<12; i++) {
+      let html = [['today','Hari ini'],['yesterday','Kemarin'],['7','7 hari'],['14','14 hari'],['30','30 hari']]
+        .map(([v,l])=>'<button data-p="'+v+'">'+l+'</button>').join('');
+      for (let i=0; i<8; i++) {
         const d = new Date(n0.getFullYear(), n0.getMonth()-i, 1);
         const v = 'm:'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-        html += '<option value="'+v+'">'+BLNP[d.getMonth()]+' '+d.getFullYear()+'</option>';
+        html += '<button class="bulan" data-p="'+v+'">'+BLN[d.getMonth()]+' '+String(d.getFullYear()).slice(2)+'</button>';
       }
-      sb.innerHTML = html;
+      el.innerHTML = html; el.dataset.built = '1';
     }
-    sb.value = String(period).startsWith('m:') ? period : '';
+    el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.p===period));
+  }
 
-    // akun
+  function buildFilters() {
+    buildPeriods();
+
     const akun = new Map();
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const r of d.rows) if (r.account_id) akun.set(String(r.account_id), id); }
-    const sa = document.getElementById('s-akun');
     const daftarAkun = Array.from(akun.keys()).sort();
     if (!daftarAkun.includes(fAkun)) fAkun = 'all';
-    sa.innerHTML = '<option value="all">Semua akun'+(daftarAkun.length?' ('+daftarAkun.length+')':'')+'</option>'
-      + daftarAkun.map(a=>'<option value="'+esc(a)+'">'+PLAT[akun.get(a)].nama+' · '+esc(a)+'</option>').join('');
-    sa.value = fAkun;
+    const ea = document.getElementById('akun-chips');
+    ea.dataset.lbl = 'AKUN';
+    if (daftarAkun.length < 2) { ea.style.display='none'; fAkun='all'; }
+    else { ea.style.display='flex';
+      ea.innerHTML = '<button data-akun="all" class="'+(fAkun==='all'?'on':'')+'">Semua</button>'
+        + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(a)+'</button>').join(''); }
 
-    // kampanye, mengikuti akun terpilih
-    const kmp = new Map();
+    const kmp = new Set();
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const r of d.rows) {
         if (!r.campaign) continue;
         if (fAkun!=='all' && String(r.account_id)!==fAkun) continue;
-        kmp.set(r.campaign, id);
+        kmp.add(r.campaign);
       } }
-    const sk = document.getElementById('s-kmp');
-    const daftarKmp = Array.from(kmp.keys()).sort();
+    const daftarKmp = Array.from(kmp).sort();
     if (!daftarKmp.includes(fKmp)) fKmp = 'all';
-    sk.innerHTML = '<option value="all">Semua kampanye'+(daftarKmp.length?' ('+daftarKmp.length+')':'')+'</option>'
-      + daftarKmp.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
-    sk.value = fKmp;
-
-    document.getElementById('fl-bulan').classList.toggle('act', String(period).startsWith('m:'));
-    document.getElementById('fl-akun').classList.toggle('act', fAkun!=='all');
-    document.getElementById('fl-kmp').classList.toggle('act', fKmp!=='all');
-    document.getElementById('reset').style.display =
-      (fAkun!=='all' || fKmp!=='all' || String(period).startsWith('m:')) ? 'block' : 'none';
+    const ek = document.getElementById('kmp-chips');
+    ek.dataset.lbl = 'KAMPANYE';
+    if (daftarKmp.length < 2) { ek.style.display='none'; fKmp='all'; }
+    else { ek.style.display='flex';
+      ek.innerHTML = '<button data-kmp="all" class="'+(fKmp==='all'?'on':'')+'">Semua</button>'
+        + daftarKmp.map(k=>'<button data-kmp="'+esc(k)+'" class="'+(fKmp===k?'on':'')+'">'+esc(k)+'</button>').join(''); }
   }
 
   // ---------- navigasi ----------
@@ -837,16 +825,25 @@
   const mk = (id,cfg) => { const el=document.getElementById(id); if(!el) return;
     if (charts[id]) charts[id].destroy(); charts[id]=new Chart(el.getContext('2d'), cfg); };
 
+  // gradasi lembut di bawah garis
+  function grad(ctx, area, hex) {
+    if (!area) return hex+'22';
+    const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, hex+'40'); g.addColorStop(1, hex+'00');
+    return g;
+  }
+  const garis = (label, data, warna, axis, isi) => ({
+    label, data, borderColor:warna, borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
+    yAxisID:axis, fill:!!isi,
+    backgroundColor: isi ? (c=>grad(c.chart.ctx, c.chart.chartArea, warna)) : warna });
+
   function afterRender() {
     if (page==='overview') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
-      const ds = [{ type:'bar', label:'Biaya iklan', data:keys.map(k=>Math.round(m.get(k).spend)),
-        backgroundColor:'#1A73E8', yAxisID:'y', borderRadius:5, barPercentage:.62, order:3 }];
-      if (D.shop.status==='ok') ds.push({ type:'line', label:'Omzet', data:keys.map(k=>Math.round(m.get(k).omzet)),
-        borderColor:'#1E8E3E', backgroundColor:'#1E8E3E', yAxisID:'y', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2.5, order:1 });
-      ds.push({ type:'line', label:'Konversi', data:keys.map(k=>m.get(k).conv), borderColor:'#F59E0B',
-        backgroundColor:'#F59E0B', yAxisID:'y1', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2, borderDash:[5,4], order:2 });
-      mk('c-tren', { data:{ labels:keys.map(sd), datasets:ds },
+      const ds = [ garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).spend)), '#1A73E8', 'y', true) ];
+      if (D.shop.status==='ok') ds.push(garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#1E8E3E', 'y'));
+      ds.push(garis('Konversi', keys.map(k=>m.get(k).conv), '#F59E0B', 'y1'));
+      mk('c-tren', { type:'line', data:{ labels:keys.map(sd), datasets:ds },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '
             + (c.dataset.yAxisID==='y1' ? fN(c.parsed.y) : fIDR(c.parsed.y)) } } },
@@ -856,8 +853,8 @@
 
     if (page==='tiktok_shop' && D.shop.status==='ok') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
-      mk('c-shop', { type:'bar', data:{ labels:keys.map(sd), datasets:[{ label:'Omzet',
-          data:keys.map(k=>Math.round(m.get(k).omzet)), backgroundColor:'#1E8E3E', borderRadius:5, barPercentage:.62 }] },
+      mk('c-shop', { type:'line', data:{ labels:keys.map(sd), datasets:[
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#1E8E3E', 'y', true)] },
         options:{ responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' Omzet: '+fIDR(c.parsed.y) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
@@ -867,9 +864,9 @@
     if (cp) {
       const id = cp.dataset.plat, P = PLAT[id];
       const m = grup(rowsOf(id), r=>r.date), keys = Array.from(m.keys()).sort();
-      mk('c-plat', { data:{ labels:keys.map(sd), datasets:[
-          { type:'bar', label:'Biaya', data:keys.map(k=>Math.round(m.get(k).spend)), backgroundColor:P.c, yAxisID:'y', borderRadius:5, barPercentage:.62, order:2 },
-          { type:'line', label:'Konversi', data:keys.map(k=>m.get(k).conversions), borderColor:'#F59E0B', backgroundColor:'#F59E0B', yAxisID:'y1', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2, order:1 } ] },
+      mk('c-plat', { type:'line', data:{ labels:keys.map(sd), datasets:[
+          garis('Biaya', keys.map(k=>Math.round(m.get(k).spend)), P.c, 'y', true),
+          garis('Konversi', keys.map(k=>m.get(k).conversions), '#F59E0B', 'y1') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
@@ -893,9 +890,9 @@
     if (page==='jam') {
       const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
       const hrs = Array.from({length:24},(_,i)=>String(i));
-      mk('c-jam', { data:{ labels:hrs.map(h=>h.padStart(2,'0')), datasets:[
-          { type:'bar', label:'Biaya', data:hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), backgroundColor:'#1A73E8', yAxisID:'y', borderRadius:4, barPercentage:.7, order:2 },
-          { type:'line', label:'Konversi', data:hrs.map(h=>m.has(h)?m.get(h).conversions:0), borderColor:'#1E8E3E', backgroundColor:'#1E8E3E', yAxisID:'y1', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2.5, order:1 } ] },
+      mk('c-jam', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:[
+          garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), '#1A73E8', 'y', true),
+          garis('Konversi', hrs.map(h=>m.has(h)?m.get(h).conversions:0), '#1E8E3E', 'y1') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:{ ...AX, ticks:{...AX.ticks, maxTicksLimit:12} }, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
@@ -916,34 +913,17 @@
   });
   document.getElementById('periods').addEventListener('click', e=>{
     const b = e.target.closest('button[data-p]'); if(!b) return;
-    period = b.dataset.p;
-    document.querySelectorAll('#periods button').forEach(x=>x.classList.toggle('on',x===b));
-    document.getElementById('s-bulan').value = '';
-    muat();
+    period = b.dataset.p; buildPeriods(); muat();
   });
-
-  document.getElementById('s-bulan').addEventListener('change', e=>{
-    if (!e.target.value) return;
-    period = e.target.value;
-    document.querySelectorAll('#periods button').forEach(x=>x.classList.remove('on'));
-    muat();
-  });
-  document.getElementById('s-akun').addEventListener('change', e=>{
-    fAkun = e.target.value; fKmp = 'all';
+  document.getElementById('akun-chips').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-akun]'); if(!b) return;
+    fAkun = b.dataset.akun; fKmp = 'all';
     buildFilters(); render();
   });
-  document.getElementById('s-kmp').addEventListener('change', e=>{
-    fKmp = e.target.value;
+  document.getElementById('kmp-chips').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-kmp]'); if(!b) return;
+    fKmp = b.dataset.kmp;
     buildFilters(); render();
-  });
-  document.getElementById('reset').addEventListener('click', ()=>{
-    const ganti = String(period).startsWith('m:');
-    fAkun='all'; fKmp='all';
-    if (ganti) {
-      period = '30';
-      document.querySelectorAll('#periods button').forEach(x=>x.classList.toggle('on', x.dataset.p==='30'));
-      muat();
-    } else { buildFilters(); render(); }
   });
   document.getElementById('reload').addEventListener('click', muat);
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
