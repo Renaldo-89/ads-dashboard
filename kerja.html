@@ -119,6 +119,19 @@
   .note { font-size:12px; color:var(--faint); font-weight:500; }
   .lead { font-size:12.5px; color:var(--muted); line-height:1.55; margin:-6px 0 14px; max-width:70ch; }
 
+  .mgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .mt { background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:12px 13px;
+    text-align:left; font-family:inherit; cursor:pointer; transition:all .14s; }
+  .mt:hover { border-color:#DDE1E6; }
+  .mt:active { transform:scale(.985); }
+  .mt.on { border-color:var(--mc); box-shadow:0 2px 10px rgba(17,24,39,.06); }
+  .mt .k { font-size:11.5px; color:var(--muted); margin:0 0 5px; font-weight:600; display:flex;
+    align-items:center; gap:7px; }
+  .mt.on .k { color:var(--mc); }
+  .mt .k i { width:8px; height:8px; border-radius:50%; background:#D6D9DE; display:inline-block; flex-shrink:0; }
+  .mt.on .k i { background:var(--mc); }
+  .mt .v { font-size:19px; font-weight:700; margin:0; letter-spacing:-.5px; color:var(--ink); }
+
   .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:11px; }
   .kpi { background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:15px; }
   .kpi .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; }
@@ -311,8 +324,23 @@
   const BLNP = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
+  // metrik yang bisa diklik, tiap metrik warnanya sendiri
+  const METRIK = {
+    spend:       { lbl:'Biaya',       c:'#1A73E8', unit:'idr',   get:a=>a.spend },
+    conversions: { lbl:'Konversi',    c:'#1E8E3E', unit:'count', get:a=>a.conversions },
+    clicks:      { lbl:'Klik',        c:'#F59E0B', unit:'count', get:a=>a.clicks },
+    impressions: { lbl:'Tayangan',    c:'#7C3AED', unit:'count', get:a=>a.impressions },
+    ctr:         { lbl:'CTR',         c:'#DC2626', unit:'pct',   get:a=>a.impressions>0?a.clicks/a.impressions*100:0 },
+    cpa:         { lbl:'Biaya/konv.', c:'#0891B2', unit:'idr',   get:a=>a.conversions>0?a.spend/a.conversions:0 },
+    cpc:         { lbl:'Biaya/klik',  c:'#DB2777', unit:'idr',   get:a=>a.clicks>0?a.spend/a.clicks:0 },
+    cvr:         { lbl:'Rasio konv.', c:'#EA580C', unit:'pct',   get:a=>a.clicks>0?a.conversions/a.clicks*100:0 },
+  };
+  const MK = Object.keys(METRIK);
+  const fMetrik = (k,v) => METRIK[k].unit==='idr'?fC(v):METRIK[k].unit==='pct'?fP(v):fN(v);
+  const fMetrikP = (k,v) => METRIK[k].unit==='idr'?fIDR(v):METRIK[k].unit==='pct'?fP(v):fN(v);
+
   let period='30', page='overview', charts={};
-  let fAkun='all', fKmp='all';
+  let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{} };
 
   function rentang(p) {
@@ -648,11 +676,31 @@
         akun.map(x=>{ const c=x.conversions>0?x.spend/x.conversions:0;
           return li(P, x.key, fN(x.clicks)+' klik · '+fN(x.conversions)+' konv', fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), 0); }).join('')
       }</div>`:''}
+      ${jamPanel(id)}
       <div class="sec"><h4>Kampanye</h4><span class="note">${kmp.length} kampanye</span></div>
       <div class="panel tight">${kmp.map(x=>{ const c=x.conversions>0?x.spend/x.conversions:0;
         const ct=x.impressions>0?x.clicks/x.impressions*100:0;
         return li(P, x.key, fN(x.clicks)+' klik · CTR '+fP(ct)+' · '+fN(x.conversions)+' konv',
           fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), x.spend/maxK*100); }).join('')}</div>`;
+  }
+
+  // panel per jam dengan metrik yang bisa diklik (khusus platform yang punya data jam)
+  function jamPanel(id) {
+    if (id!=='google_ads') return '';
+    const baris = flt(D.extra.hour||[]);
+    if (!baris.length) return '';
+    const total = agg(baris);
+    const kartu = MK.map(k=>{
+      const M = METRIK[k], on = pilih.includes(k);
+      return '<button class="mt '+(on?'on':'')+'" data-metrik="'+k+'" style="--mc:'+M.c+'">'
+        + '<p class="k"><i></i>'+M.lbl+'</p><p class="v">'+fMetrik(k, M.get(total))+'</p></button>';
+    }).join('');
+    return `<div class="sec"><h4>Performa per jam</h4><span class="note">ketuk metrik untuk menampilkan</span></div>
+      <div class="mgrid">${kartu}</div>
+      <div class="panel" style="margin-top:12px">
+        <div class="wrap sm"><canvas id="c-jamplat"></canvas></div>
+        <div class="lg">${pilih.map(k=>'<span><i style="background:'+METRIK[k].c+'"></i>'+METRIK[k].lbl+'</span>').join('')}</div>
+      </div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
@@ -873,6 +921,34 @@
             y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
 
+    if (document.getElementById('c-jamplat')) {
+      const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
+      const hrs = Array.from({length:24},(_,i)=>String(i));
+      const kosongAgg = { spend:0, clicks:0, impressions:0, conversions:0 };
+      const unit = u => u==='idr'?'yIDR':u==='pct'?'yPct':'yCount';
+      const dipakai = Array.from(new Set(pilih.map(k=>METRIK[k].unit)));
+      const ds = pilih.map((k,i)=>{
+        const M = METRIK[k];
+        const data = hrs.map(h=>{ const v=M.get(m.get(h)||kosongAgg); return Number.isFinite(v)?Number(v.toFixed(2)):0; });
+        return garis(M.lbl, data, M.c, unit(M.unit), i===0);
+      });
+      const scales = { x:{ ...AX, ticks:{ ...AX.ticks, maxTicksLimit:8 } } };
+      let kiri=false;
+      dipakai.forEach(u=>{
+        const idAx = unit(u), pos = kiri?'right':'left'; kiri=true;
+        scales[idAx] = { position:pos, grid:{ color: pos==='left'?'#F3F4F6':'transparent', drawTicks:false }, border:{display:false},
+          ticks:{ font:{size:10}, color:'#9CA3AF', maxTicksLimit:4,
+            callback:v=> u==='idr' ? (Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb')
+                      : u==='pct' ? v+'%' : fN(v) } };
+      });
+      if (dipakai.length>2) scales[unit(dipakai[2])].display = false;
+      mk('c-jamplat', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:ds },
+        options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{
+            label:c=>' '+c.dataset.label+': '+fMetrikP(pilih[c.datasetIndex], c.parsed.y) } } },
+          scales } });
+    }
+
     if (page==='lelang') {
       const l = auctionAgg();
       mk('c-is', { type:'bar', data:{ labels:l.map(a=>a.key), datasets:[
@@ -924,6 +1000,13 @@
     const b = e.target.closest('button[data-kmp]'); if(!b) return;
     fKmp = b.dataset.kmp;
     buildFilters(); render();
+  });
+  document.getElementById('content').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-metrik]'); if(!b) return;
+    const k = b.dataset.metrik;
+    if (pilih.includes(k)) { if (pilih.length>1) pilih = pilih.filter(x=>x!==k); }
+    else { pilih = pilih.concat(k); if (pilih.length>4) pilih = pilih.slice(-4); }
+    render();
   });
   document.getElementById('reload').addEventListener('click', muat);
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
