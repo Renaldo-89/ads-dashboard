@@ -168,6 +168,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
     </button>
   </div>
+  <div class="chips" id="platform-switch" style="display:none"></div>
   <div class="chips" id="account-switch"></div>
   <div class="chips periods" id="period-switch"></div>
   <div class="chips campaigns" id="campaign-switch"></div>
@@ -307,7 +308,7 @@
   const fmtMetric = (k,v) => METRICS[k].unit==='idr'?fmtC(v):METRICS[k].unit==='pct'?fmtP(v):fmtN(v);
   const fmtMetricFull = (k,v) => METRICS[k].unit==='idr'?fmtIDR(v):METRICS[k].unit==='pct'?fmtP(v):fmtN(v);
 
-  let period='30', filter='all', fKmp='all', tab='overview', sub='lelang', termSort='spend';
+  let period='30', filter='all', fKmp='all', fPlat='all', tab='overview', sub='lelang', termSort='spend';
   let gran='day', selected=['spend','conversions'];
   let accounts = {}, meta = null;
   let RAW = { daily:[], prevDaily:[], hourly:[], auction:[], network:[], terms:[], statis:false };
@@ -369,14 +370,39 @@
   }
 
   // --- ambil langsung lewat perantara Cloudflare (data segar saat dibuka) ---
-  async function live(fields, from, to) {
-    const q = new URLSearchParams({ connector:'google_ads', fields:fields.join(','), date_from:from, date_to:to });
+  async function live(fields, from, to, connector) {
+    const q = new URLSearchParams({ connector: connector||'google_ads', fields:fields.join(','), date_from:from, date_to:to });
     q.set('_', String(Date.now()));
     const res = await fetch(PROXY + '?' + q.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error('proxy '+res.status);
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
-    return j.data || j.result || [];
+    const rows = j.data || j.result;
+    if (!Array.isArray(rows)) throw new Error('kosong');
+    return rows;
+  }
+
+  // platform lain: dicoba tiap kali muat, otomatis ikut begitu diotorisasi
+  const LAIN = [
+    { id:'facebook', nama:'Meta Ads' },
+    { id:'tiktok',   nama:'TikTok Ads' },
+  ];
+  const KAND_SHOP = [['date','revenue','orders'],['date','total_amount','order_id'],['date','gmv','orders'],['date','revenue']];
+
+  async function muatLain(r, pr) {
+    const hasil = { plat:{}, prev:{}, shop:{ status:'off', rows:[], field:null } };
+    await Promise.all(LAIN.map(async p => {
+      try { hasil.plat[p.id] = await live(['account_id','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to, p.id); }
+      catch(e) { hasil.plat[p.id] = null; }
+      try { hasil.prev[p.id] = await live(['account_id','campaign','date','spend','clicks','impressions','conversions'], pr.from, pr.to, p.id); }
+      catch(e) { hasil.prev[p.id] = []; }
+    }));
+    for (const k of KAND_SHOP) {
+      try { const rows = await live(k, r.from, r.to, 'tiktok_shop');
+        hasil.shop = { status:'ok', rows, field:k.find(f=>['revenue','total_amount','gmv'].includes(f)) }; break; }
+      catch(e) {}
+    }
+    return hasil;
   }
 
   function jam() {
@@ -402,9 +428,19 @@
         live(['account_id','campaign','date','ad_network_type','device','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[])
       ]);
-      RAW = { daily, prevDaily, hourly, auction, network, terms };
+      const lain = await muatLain(r, pr);
+      let dailyAll = daily.map(x=>({ ...x, _p:'google_ads' }));
+      let prevAll  = prevDaily.map(x=>({ ...x, _p:'google_ads' }));
+      const aktif = ['google_ads'];
+      for (const p of LAIN) {
+        if (lain.plat[p.id]) { aktif.push(p.id);
+          dailyAll = dailyAll.concat(lain.plat[p.id].map(x=>({ ...x, _p:p.id })));
+          prevAll  = prevAll.concat((lain.prev[p.id]||[]).map(x=>({ ...x, _p:p.id }))); }
+      }
+      RAW = { daily:dailyAll, prevDaily:prevAll, hourly, auction, network, terms,
+        shop:lain.shop, aktif };
       meta = { updated_at: jam(), live:true };
-      buildAccounts();
+      buildPlatforms(); buildAccounts();
       document.getElementById('loading-state').style.display='none';
       document.getElementById('content').style.display='block';
       applyPeriod();
@@ -423,9 +459,11 @@
       await Promise.all(['today','yesterday','7','14','30'].map(async k=>{
         termData[k] = await getJSON('terms_'+k+'.json').catch(()=>[]); }));
       const m = await getJSON('meta.json').catch(()=>null);
-      RAW = { daily, prevDaily:daily, hourly, auction, network, terms:termData, statis:true };
+      RAW = { daily:daily.map(x=>({ ...x, _p:'google_ads' })), prevDaily:daily.map(x=>({ ...x, _p:'google_ads' })),
+        hourly, auction, network, terms:termData, statis:true,
+        shop:{status:'off',rows:[],field:null}, aktif:['google_ads'] };
       meta = m ? { updated_at:m.updated_at, live:false } : null;
-      buildAccounts();
+      buildPlatforms(); buildAccounts();
       document.getElementById('loading-state').style.display='none';
       document.getElementById('content').style.display='block';
       applyPeriod();
@@ -462,7 +500,9 @@
   }
 
   function buildAccounts() {
-    const ids = Array.from(new Set(RAW.daily.map(r=>r.account_id).filter(Boolean))).sort();
+    const ids = Array.from(new Set(RAW.daily
+      .filter(r=>fPlat==='all' || r._p===fPlat)
+      .map(r=>r.account_id).filter(Boolean))).sort();
     accounts = {};
     ids.forEach((id,i)=>{ const col = PALETTE[i%PALETTE.length]; accounts[id] = { name:id, color:col, soft:SOFT[col]||'#F2F2F5' }; });
     const el = document.getElementById('account-switch');
@@ -472,10 +512,23 @@
       + ids.map(id=>'<button data-account="'+id+'" class="'+(filter===id?'active':'')+'">'+esc(id)+'</button>').join('');
   }
 
+  const PNAMA = { google_ads:'Google Ads', facebook:'Meta Ads', tiktok:'TikTok Ads' };
+
+  function buildPlatforms() {
+    const aktif = RAW.aktif || ['google_ads'];
+    const el = document.getElementById('platform-switch');
+    if (!aktif.includes(fPlat)) fPlat = 'all';
+    if (aktif.length < 2) { el.style.display='none'; fPlat='all'; return; }
+    el.style.display='flex';
+    el.innerHTML = '<button data-plat="all" class="'+(fPlat==='all'?'active':'')+'">Semua platform</button>'
+      + aktif.map(id=>'<button data-plat="'+id+'" class="'+(fPlat===id?'active':'')+'">'+PNAMA[id]+'</button>').join('');
+  }
+
   function buildCampaigns() {
     const set = new Set();
     for (const r of RAW.daily) {
       if (!r.campaign) continue;
+      if (fPlat!=='all' && r._p!==fPlat) continue;
       if (filter!=='all' && r.account_id!==filter) continue;
       set.add(r.campaign);
     }
@@ -489,6 +542,7 @@
   }
 
   const byAcc = rows => rows.filter(r =>
+    (fPlat==='all' || r._p===undefined || r._p===fPlat) &&
     (filter==='all' || r.account_id===filter) &&
     (fKmp==='all' || r.campaign===undefined || r.campaign===fKmp));
   const agg = rows => ({ spend:sum(rows,'spend'), clicks:sum(rows,'clicks'),
@@ -564,9 +618,20 @@
     buildInsights(); renderInsights();
   }
 
+  const omzet = () => (RAW.shop && RAW.shop.status==='ok' && RAW.shop.field)
+    ? sum(RAW.shop.rows, RAW.shop.field) : 0;
+
   function renderMetricGrid() {
     const cur = agg(byAcc(data.daily)), prev = agg(byAcc(data.prevDaily));
-    document.getElementById('metric-grid').innerHTML = MKEYS.map(k=>{
+    const om = omzet();
+    let ekstra = '';
+    if (om > 0) {
+      const roas = cur.spend>0 ? om/cur.spend : 0;
+      ekstra = '<div class="mt on" style="--mc:#1E8E3E"><p class="k"><i></i>Omzet</p><p class="v">'+fmtC(om)+'</p></div>'
+             + '<div class="mt on" style="--mc:#9334E6"><p class="k"><i></i>ROAS</p><p class="v">'
+             + (roas?roas.toFixed(2).replace('.',',')+'×':'—')+'</p></div>';
+    }
+    document.getElementById('metric-grid').innerHTML = ekstra + MKEYS.map(k=>{
       const M = METRICS[k], v = M.get(cur), pv = M.get(prev), on = selected.includes(k);
       return '<button class="mt '+(on?'on':'')+'" data-metric="'+k+'" style="--mc:'+M.color+'">'
         +'<p class="k"><i></i>'+M.label+'</p><p class="v">'+fmtMetric(k,v)+'</p>'+delta(v,pv,M.lowerBetter)+'</button>';
@@ -596,12 +661,13 @@
     const units = Array.from(new Set(selected.map(k=>METRICS[k].unit)));
     const axisOf = u => u==='idr'?'yIDR':u==='pct'?'yPct':'yCount';
     const single = selected.length===1;
-    const datasets = selected.map(k=>{
+    const datasets = selected.map((k,i)=>{
       const M = METRICS[k];
+      const isi = single || i===0;   // garis pertama selalu diberi gradasi lembut
       return { label:M.label, data:S.keys.map(key=>{ const v=M.get(S.get(key)); return Number.isFinite(v)?Number(v.toFixed(2)):0; }),
         borderColor:M.color, borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
-        yAxisID:axisOf(M.unit), fill:single,
-        backgroundColor: single ? (c=>grad(c.chart.ctx, c.chart.chartArea, M.color)) : M.color, metricKey:k };
+        yAxisID:axisOf(M.unit), fill:isi,
+        backgroundColor: isi ? (c=>grad(c.chart.ctx, c.chart.chartArea, M.color)) : M.color, metricKey:k };
     });
     const scales = { x:{ ticks:{ font:{size:10.5,weight:'600'}, color:C.muted, maxRotation:0, autoSkip:true, maxTicksLimit: gran==='hour'?8:6 }, grid:{display:false}, border:{display:false} } };
     let leftTaken=false;
@@ -651,8 +717,8 @@
 
   function renderHighlights() {
     const el = document.getElementById('highlights');
-    const camps = Array.from(groupBy(byAcc(data.daily), r=>r.account_id+'||'+r.campaign).values())
-      .filter(c=>c.conversions>0).map(c=>({ name:c.key.split('||')[1], cpa:c.spend/c.conversions, spend:c.spend, conv:c.conversions }));
+    const camps = Array.from(groupBy(byAcc(data.daily), r=>(r._p||'google_ads')+'‖'+r.account_id+'||'+r.campaign).values())
+      .filter(c=>c.conversions>0).map(c=>({ name:c.key.split('‖').pop().split('||')[1], cpa:c.spend/c.conversions, spend:c.spend, conv:c.conversions }));
     const auc = auctionAgg(); const items=[];
     if (camps.length) {
       const best = camps.slice().sort((a,b)=>a.cpa-b.cpa)[0];
@@ -679,17 +745,19 @@
   }
 
   function renderCampaigns() {
-    const list = Array.from(groupBy(byAcc(data.daily), r=>r.account_id+'||'+r.campaign).values()).sort((a,b)=>b.spend-a.spend);
+    const list = Array.from(groupBy(byAcc(data.daily), r=>(r._p||'google_ads')+'‖'+r.account_id+'||'+r.campaign).values()).sort((a,b)=>b.spend-a.spend);
     const el = document.getElementById('campaign-list');
     if (!list.length) { el.innerHTML='<p class="empty">Tidak ada data kampanye.</p>'; return; }
     const max = Math.max.apply(null, list.map(c=>c.spend).concat([1]));
     el.innerHTML = list.map(c=>{
-      const parts=c.key.split('||'), accId=parts[0], name=parts[1];
+      const kepala=c.key.split('‖'), plat=kepala.length>1?kepala[0]:'google_ads';
+      const parts=kepala[kepala.length-1].split('||'), accId=parts[0], name=parts[1];
       const a = accounts[accId]||{color:C.blue,soft:'#E8F0FE'};
       const cpa=c.conversions>0?c.spend/c.conversions:0, ctr=c.impressions>0?c.clicks/c.impressions*100:0, cvr=c.clicks>0?c.conversions/c.clicks*100:0;
       return '<div class="li"><div class="ic" style="background:'+a.soft+';color:'+a.color+'">'+initials(name)+'</div>'
         +'<div class="li-body"><p class="li-t">'+accPill(accId)+esc(name)+'</p>'
-        +'<p class="li-s">'+fmtN(c.clicks)+' klik · CTR '+fmtP(ctr)+' · Rasio konv. '+fmtP(cvr)+' · '+fmtN(c.conversions)+' konv</p>'
+        +'<p class="li-s">'+((RAW.aktif||[]).length>1 && fPlat==='all' ? PNAMA[plat]+' · ' : '')
+        +fmtN(c.clicks)+' klik · CTR '+fmtP(ctr)+' · Rasio konv. '+fmtP(cvr)+' · '+fmtN(c.conversions)+' konv</p>'
         +'<div class="track"><i style="width:'+(c.spend/max*100).toFixed(1)+'%;background:'+a.color+'"></i></div></div>'
         +'<div class="li-r"><div class="li-v">'+fmtC(c.spend)+'</div><div class="li-vs">Biaya/konv. '+(cpa?fmtC(cpa):'&mdash;')+'</div></div></div>';
     }).join('');
@@ -773,17 +841,19 @@
     const m = groupBy(byAcc(data.hourly), r=>String(Number(r.hour)));
     const hours = Array.from({length:24},(_,i)=>String(i));
     makeChart('hour-chart', {
-      data:{ labels:hours.map(h=>h.padStart(2,'0')), datasets:[
-        { type:'bar', label:'Biaya', data:hours.map(h=>m.has(h)?Math.round(m.get(h).spend):0),
-          backgroundColor:C.blue, yAxisID:'y', borderRadius:4, barPercentage:.72, categoryPercentage:.9, order:2 },
-        { type:'line', label:'Konversi', data:hours.map(h=>m.has(h)?m.get(h).conversions:0),
-          borderColor:C.green, backgroundColor:C.green, yAxisID:'y1', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2, order:1 }
+      type:'line',
+      data:{ labels:hours.map(h=>h.padStart(2,'0')+':00'), datasets:[
+        { label:'Biaya', data:hours.map(h=>m.has(h)?Math.round(m.get(h).spend):0),
+          borderColor:C.blue, borderWidth:2.5, yAxisID:'y', tension:.4, pointRadius:0, pointHoverRadius:5,
+          fill:true, backgroundColor: c=>grad(c.chart.ctx, c.chart.chartArea, C.blue), order:2 },
+        { label:'Konversi', data:hours.map(h=>m.has(h)?m.get(h).conversions:0),
+          borderColor:C.green, backgroundColor:C.green, yAxisID:'y1', tension:.4, pointRadius:0, pointHoverRadius:5, borderWidth:2.5, order:1 }
       ]},
       options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-        layout:{ padding:{ top:26 } },
-        plugins:{ legend:{display:false}, maxBadge:{ enabled:true, datasetIndex:0, color:C.blue, format:v=>fmtC(v) },
-          tooltip:{ backgroundColor:'#1C1C1E', padding:10, cornerRadius:10, displayColors:false,
-            callbacks:{ label:c=>c.datasetIndex===0?'Biaya '+fmtC(c.parsed.y):'Konversi '+fmtN(c.parsed.y) } } },
+        layout:{ padding:{ top:10 } },
+        plugins:{ legend:{display:false}, maxBadge:{ enabled:false },
+          tooltip:{ backgroundColor:'#1C1C1E', padding:10, cornerRadius:10, usePointStyle:true, boxWidth:8, boxHeight:8,
+            callbacks:{ label:c=>' '+c.dataset.label+': '+(c.datasetIndex===0?fmtIDR(c.parsed.y):fmtN(c.parsed.y)) } } },
         scales:{ x:{ ticks:{ font:{size:9.5,weight:'600'}, color:C.muted, maxRotation:0, autoSkip:true, maxTicksLimit:8 }, grid:{display:false}, border:{display:false} },
           y:{ ticks:{ font:{size:10}, color:C.muted, callback:v=>Math.round(v/1000)+'rb', maxTicksLimit:4 }, grid:{color:C.grid,drawTicks:false}, border:{display:false} },
           y1:{ position:'right', ticks:{ font:{size:10}, color:C.muted, precision:0, maxTicksLimit:4 }, grid:{display:false}, border:{display:false} } } } });
@@ -862,8 +932,8 @@
       }
     }
 
-    const camps = Array.from(groupBy(byAcc(data.daily), r=>r.account_id+'||'+r.campaign).values())
-      .map(c=>({ name:c.key.split('||')[1], spend:c.spend, conv:c.conversions, cpa:c.conversions>0?c.spend/c.conversions:null }));
+    const camps = Array.from(groupBy(byAcc(data.daily), r=>(r._p||'google_ads')+'‖'+r.account_id+'||'+r.campaign).values())
+      .map(c=>({ name:c.key.split('‖').pop().split('||')[1], spend:c.spend, conv:c.conversions, cpa:c.conversions>0?c.spend/c.conversions:null }));
     const withConv = camps.filter(c=>c.cpa!==null).sort((a,b)=>a.cpa-b.cpa);
     if (withConv.length>1) {
       const b=withConv[0], w=withConv[withConv.length-1];
@@ -933,6 +1003,12 @@
   document.getElementById('gran-switch').addEventListener('click', e=>{
     const b=e.target.closest('button[data-gran]'); if(!b) return;
     gran=b.dataset.gran; syncGran(); renderTrend(); renderDetail();
+  });
+  document.getElementById('platform-switch').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-plat]'); if(!b) return;
+    fPlat=b.dataset.plat; filter='all'; fKmp='all';
+    document.querySelectorAll('#platform-switch button').forEach(x=>x.classList.toggle('active',x===b));
+    buildAccounts(); buildCampaigns(); renderAll();
   });
   document.getElementById('account-switch').addEventListener('click', e=>{
     const b=e.target.closest('button[data-account]'); if(!b) return;
