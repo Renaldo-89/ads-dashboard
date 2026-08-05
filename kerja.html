@@ -298,8 +298,17 @@
     click:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v4M4 9h4M6.5 6.5l2.5 2.5"/><path d="M11 11l9 3.5-4 1.5-1.5 4z"/></svg>',
   };
 
+  // sumber penjualan (disambungkan lewat Worker: ?sales=<id>)
+  const SALES = [
+    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet', c:'#7C3AED', s:'#F1EBFE', ini:'GM' },
+    { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'#0891B2', s:'#E5F6FA', ini:'EP' },
+  ];
+
   const MENU = [
     { g:1, id:'overview', lbl:'Overview',    ic:I.home,   t:'Overview' },
+    { g:1, id:'sales',    lbl:'Sales',       ic:I.cart,   t:'Penjualan' },
+    { g:1, id:'globemerce', lbl:'Globemerce',ic:I.money,  t:'Globemerce', sales:'globemerce' },
+    { g:1, id:'everpro',  lbl:'Everpro',     ic:I.plug,   t:'Everpro',    sales:'everpro' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -341,7 +350,7 @@
 
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
-  let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{} };
+  let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{}, sales:{}, prevSales:{} };
 
   function rentang(p) {
     const n0 = new Date();
@@ -375,6 +384,32 @@
   const flt = rows => rows.filter(r =>
     (fAkun==='all' || String(r.account_id)===fAkun) &&
     (fKmp==='all'  || r.campaign===fKmp));
+
+  // ---------- penjualan ----------
+  // Kontrak data yang diharapkan dari Worker, per baris:
+  // { date, orders, units, revenue, gross_profit, customers_new, customers_repeat }
+  async function tarikSales(src, from, to) {
+    const q = new URLSearchParams({ sales:src, date_from:from, date_to:to, _:String(Date.now()) });
+    const res = await fetch(PROXY+'?'+q.toString(), { cache:'no-store' });
+    if (!res.ok) throw new Error(String(res.status));
+    const j = await res.json();
+    if (j && j.error) throw new Error(j.error);
+    const rows = j.data || j.result;
+    if (!Array.isArray(rows)) throw new Error('kosong');
+    return rows;
+  }
+  const aggSales = rows => {
+    const n = k => rows.reduce((a,r)=>a+(Number(r[k])||0),0);
+    const gp = rows.reduce((a,r)=>{
+      const g = Number(r.gross_profit);
+      if (Number.isFinite(g) && r.gross_profit!==null && r.gross_profit!==undefined) return a+g;
+      return a + ((Number(r.revenue)||0) - (Number(r.cogs)||0));
+    }, 0);
+    return { orders:n('orders'), units:n('units'), revenue:n('revenue'), gross:gp,
+      baru:n('customers_new'), repeat:n('customers_repeat') };
+  };
+  const salesRows = () => SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
+  const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
   async function tarik(connector, fields, from, to) {
     const q = new URLSearchParams({ connector, fields:fields.join(','), date_from:from, date_to:to, _:String(Date.now()) });
@@ -415,7 +450,14 @@
       extra.terms = await tarik('google_ads',['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
     } else { extra.hour=[]; extra.auction=[]; extra.terms=[]; }
 
-    D = { iklan, prev, shop, extra };
+    const sales = {}, prevSales = {};
+    await Promise.all(SALES.map(async s => {
+      try { sales[s.id] = { status:'ok', rows: await tarikSales(s.id, r.from, r.to) }; }
+      catch(e) { sales[s.id] = { status:'off', rows:[] }; }
+      try { prevSales[s.id] = await tarikSales(s.id, pr.from, pr.to); } catch(e) { prevSales[s.id]=[]; }
+    }));
+
+    D = { iklan, prev, shop, extra, sales, prevSales };
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
     document.getElementById('live-txt').textContent = 'Segar ' + jam;
@@ -509,6 +551,10 @@
           const st = m.plat==='tiktok_shop' ? D.shop.status : (D.iklan[m.plat]||{}).status;
           tag = st==='ok' ? '<span class="tag ok">aktif</span>' : '<span class="tag off">belum</span>';
         }
+        if (m.sales) {
+          const st = (D.sales[m.sales]||{}).status;
+          tag = st==='ok' ? '<span class="tag ok">aktif</span>' : '<span class="tag off">belum</span>';
+        }
         return '<button data-page="'+m.id+'" class="'+(page===m.id?'on':'')+'">'+m.ic
           +'<span class="lbl">'+m.lbl+'</span>'+tag+'</button>';
       }).join('');
@@ -526,6 +572,8 @@
     Object.values(charts).forEach(c=>c.destroy()); charts={};
     const el = document.getElementById('content');
     if (page==='overview') el.innerHTML = pgOverview();
+    else if (page==='sales') el.innerHTML = pgSales();
+    else if (m.sales) el.innerHTML = pgSumber(m.sales);
     else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
     else if (page==='kampanye') el.innerHTML = pgKampanye();
     else if (page==='lelang') el.innerHTML = pgLelang();
@@ -555,12 +603,14 @@
 
     <div class="strip">
       ${sc(I.money,'#1A73E8','#EAF1FE','Biaya iklan',fC(t.spend))}
-      ${sc(I.cart,'#1E8E3E','#E7F5EC','Omzet', D.shop.status==='ok'?fC(om):'belum terhubung')}
+      ${sc(I.cart,'#1E8E3E','#E7F5EC','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
       ${sc(I.target,'#F59E0B','#FEF4E2','Konversi',fN(t.conversions))}
-      ${sc(I.up,'#7C3AED','#F1EBFE','ROAS', roas?roas.toFixed(2).replace('.',',')+'×':'—')}
+      ${sc(I.up,'#7C3AED','#F1EBFE','ROAS', roasGabungan()||'—')}
     </div>
 
-    <div class="sec"><h4>Metrik utama</h4><span class="note">dibanding periode sebelumnya</span></div>
+    ${blokPenjualan(t)}
+
+    <div class="sec"><h4>Metrik iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
     <div class="kpis">
       ${kpi(I.money,'#1A73E8','#EAF1FE','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
       ${kpi(I.target,'#1E8E3E','#E7F5EC','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
@@ -589,6 +639,47 @@
 
   const sc = (ic,c,s,k,v) => `<div class="sc"><div class="ic" style="background:${s};color:${c}">${ic}</div>
     <div style="min-width:0"><p class="k">${k}</p><p class="v">${v}</p></div></div>`;
+
+  function roasGabungan() {
+    const t = agg(allRows());
+    if (!t.spend) return null;
+    const rev = adaSales() ? aggSales(salesRows()).revenue : omzet();
+    if (!rev) return null;
+    return (rev/t.spend).toFixed(2).replace('.',',')+'×';
+  }
+
+  // ringkasan gabungan penjualan + iklan, inti dari Overview
+  function blokPenjualan(t) {
+    if (!adaSales()) {
+      return `<div class="sec"><h4>Penjualan</h4><span class="note">belum terhubung</span></div>
+        <div class="panel"><div class="empty">
+          <div class="big">${I.cart}</div>
+          <b>Globemerce dan Everpro belum terhubung</b><br>
+          Setelah tersambung, di sini muncul total produk terjual, gross profit, pelanggan baru,
+          pelanggan repeat, dan laba setelah biaya iklan.</div></div>`;
+    }
+    const s = aggSales(salesRows());
+    const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
+    const laba = s.gross - t.spend;
+    const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
+    const totalPel = s.baru + s.repeat;
+    const pctRepeat = totalPel>0 ? s.repeat/totalPel*100 : 0;
+    return `<div class="sec"><h4>Penjualan</h4><span class="note">gabungan semua sumber</span></div>
+      <div class="kpis">
+        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
+        ${kpi(I.money,'#1E8E3E','#E7F5EC','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
+        ${kpi(I.money,'#1A73E8','#EAF1FE','Biaya iklan',fC(t.spend),'')}
+        ${kpi(I.up, laba>=0?'#1E8E3E':'#DC2626', laba>=0?'#E7F5EC':'#FDECEC','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
+        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
+      </div>
+      <div class="panel tight" style="margin-top:11px">
+        ${li({c:'#1E8E3E',s:'#E7F5EC',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
+        ${li({c:'#1A73E8',s:'#EAF1FE',ini:'A'},'Biaya iklan per produk terjual',
+          (s.units||s.orders)>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
+          (s.units||s.orders)>0?fC(t.spend/(s.units||s.orders)):'—','',0)}
+      </div>`;
+  }
   const kpi = (ic,c,s,k,v,d) => `<div class="kpi"><div class="top">
       <div class="ic" style="background:${s};color:${c}">${ic}</div>${d}</div>
     <p class="k">${k}</p><p class="v">${v}</p></div>`;
@@ -701,6 +792,77 @@
         <div class="wrap sm"><canvas id="c-jamplat"></canvas></div>
         <div class="lg">${pilih.map(k=>'<span><i style="background:'+METRIK[k].c+'"></i>'+METRIK[k].lbl+'</span>').join('')}</div>
       </div>`;
+  }
+
+  function pgSales() {
+    const t = agg(allRows());
+    const kartuSumber = SALES.map(s=>{
+      const d = D.sales[s.id] || { status:'off', rows:[] };
+      if (d.status!=='ok') return li(s, s.nama, s.peran+' — belum terhubung', '', '', 0);
+      const a = aggSales(d.rows);
+      return li(s, s.nama, fN(a.orders)+' pesanan · '+fN(a.units||a.orders)+' produk · '+fN(a.baru)+' pelanggan baru',
+        fC(a.revenue), 'Gross profit '+fC(a.gross), 100);
+    }).join('');
+
+    if (!adaSales()) {
+      return `<p class="lead">Bagian ini menggabungkan data penjualan dari Globemerce (sumber pesanan dan omzet)
+        dan Everpro (pengiriman serta status paket), lalu menyandingkannya dengan biaya iklan
+        supaya terlihat laba sebenarnya.</p>
+        <div class="panel tight">${kartuSumber}</div>
+        <div class="sec"><h4>Yang akan muncul setelah tersambung</h4></div>
+        <div class="panel tight">
+          ${li({c:'#7C3AED',s:'#F1EBFE',ini:'1'},'Produk terjual','Jumlah unit dan pesanan per hari','','',0)}
+          ${li({c:'#1E8E3E',s:'#E7F5EC',ini:'2'},'Gross profit','Laba kotor langsung dari sistem penjualan','','',0)}
+          ${li({c:'#1A73E8',s:'#EAF1FE',ini:'3'},'Laba setelah iklan','Gross profit dikurangi total biaya iklan','','',0)}
+          ${li({c:'#F59E0B',s:'#FEF4E2',ini:'4'},'Pelanggan baru vs repeat','Perbandingan pembeli pertama kali dan pembeli ulang','','',0)}
+          ${li({c:'#0891B2',s:'#E5F6FA',ini:'5'},'Status pengiriman','Data dari Everpro: terkirim, dalam perjalanan, retur','','',0)}
+        </div>`;
+    }
+
+    const s = aggSales(salesRows());
+    const laba = s.gross - t.spend;
+    return `<div class="kpis">
+        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(s.units||s.orders),'')}
+        ${kpi(I.money,'#1E8E3E','#E7F5EC','Omzet',fC(s.revenue),'')}
+        ${kpi(I.money,'#1A73E8','#EAF1FE','Gross profit',fC(s.gross),'')}
+        ${kpi(I.up, laba>=0?'#1E8E3E':'#DC2626', laba>=0?'#E7F5EC':'#FDECEC','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(s.baru),'')}
+        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(s.repeat),'')}
+      </div>
+      <div class="sec"><h4>Tren harian</h4><span class="note">omzet, gross profit, biaya iklan</span></div>
+      <div class="panel"><div class="wrap sm"><canvas id="c-sales"></canvas></div>
+        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span>
+          <span><i style="background:#1E8E3E"></i>Gross profit</span>
+          <span><i style="background:#1A73E8"></i>Biaya iklan</span></div></div>
+      <div class="sec"><h4>Per sumber</h4></div>
+      <div class="panel tight">${kartuSumber}</div>`;
+  }
+
+  function pgSumber(id) {
+    const S = SALES.find(x=>x.id===id);
+    const d = D.sales[id] || { status:'off', rows:[] };
+    if (d.status!=='ok') return `<div class="panel"><div class="empty">
+      <div class="big" style="background:${S.s};color:${S.c}">${I.plug}</div>
+      <b>${S.nama} belum terhubung</b><br>${S.peran}.<br><br>
+      Sambungkan lewat Worker Cloudflare dengan alamat <code>?sales=${id}</code>,
+      lalu datanya otomatis muncul di sini dan ikut terhitung di Overview.</div></div>`;
+    const a = aggSales(d.rows);
+    return `<div class="kpis">
+        ${kpi(I.cart,S.c,S.s,'Pesanan',fN(a.orders),'')}
+        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(a.units||a.orders),'')}
+        ${kpi(I.money,'#1E8E3E','#E7F5EC','Omzet',fC(a.revenue),'')}
+        ${kpi(I.money,'#1A73E8','#EAF1FE','Gross profit',fC(a.gross),'')}
+        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(a.baru),'')}
+        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(a.repeat),'')}
+      </div>
+      <div class="sec"><h4>Rincian harian</h4></div>
+      <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt">
+        <thead><tr><th>Tanggal</th><th>Pesanan</th><th>Produk</th><th>Omzet</th><th>Gross profit</th><th>Baru</th><th>Repeat</th></tr></thead>
+        <tbody>${d.rows.slice().sort((x,y)=>String(y.date).localeCompare(String(x.date))).map(r=>{
+          const g = Number.isFinite(Number(r.gross_profit)) ? Number(r.gross_profit) : (Number(r.revenue)||0)-(Number(r.cogs)||0);
+          return '<tr><td>'+sd(r.date)+'</td><td>'+fN(r.orders)+'</td><td>'+fN(r.units||r.orders)
+            +'</td><td>'+fC(r.revenue)+'</td><td>'+fC(g)+'</td><td>'+fN(r.customers_new)+'</td><td>'+fN(r.customers_repeat)+'</td></tr>';
+        }).join('')}</tbody></table></div></div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
@@ -919,6 +1081,23 @@
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
             y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+    }
+
+    if (document.getElementById('c-sales')) {
+      const m = new Map();
+      const put=(d,k,v)=>{ if(!m.has(d)) m.set(d,{rev:0,gp:0,ads:0}); m.get(d)[k]+=v; };
+      for (const r of salesRows()) { if(!r.date) continue;
+        const g = Number.isFinite(Number(r.gross_profit)) ? Number(r.gross_profit) : (Number(r.revenue)||0)-(Number(r.cogs)||0);
+        put(r.date,'rev',Number(r.revenue)||0); put(r.date,'gp',g); }
+      for (const r of allRows()) { if(!r.date) continue; put(r.date,'ads',Number(r.spend)||0); }
+      const keys = Array.from(m.keys()).sort();
+      mk('c-sales', { type:'line', data:{ labels:keys.map(sd), datasets:[
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#1E8E3E', 'y'),
+          garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).ads)), '#1A73E8', 'y') ] },
+        options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
+          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
     }
 
     if (document.getElementById('c-jamplat')) {
