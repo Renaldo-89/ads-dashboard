@@ -57,6 +57,13 @@
   .chips button.active { background:var(--ink); border-color:var(--ink); color:#fff; }
   .chips.periods button { font-size:12.5px; padding:7px 14px; font-weight:500; }
   .chips.periods button.active { background:var(--blue-soft); border-color:var(--blue-soft); color:var(--blue); font-weight:600; }
+  .chips.periods button.bulan { color:var(--muted); }
+  .chips.periods button.bulan.active { background:#E7F5EC; border-color:#E7F5EC; color:var(--green); }
+  .chips.campaigns button { font-size:12px; padding:6px 13px; font-weight:500; max-width:230px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chips.campaigns button.active { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  .chips.campaigns::before { content:'Kampanye'; flex-shrink:0; align-self:center; font-size:10.5px;
+    font-weight:700; color:#B0B0B5; letter-spacing:.5px; padding-right:3px; }
 
   .subtabs { display:flex; gap:22px; border-bottom:1px solid var(--line); padding:0 20px; margin-bottom:18px; overflow-x:auto; }
   .subtabs button { border:none; background:none; padding:0 0 11px; font-size:14px; font-weight:600;
@@ -162,13 +169,8 @@
     </button>
   </div>
   <div class="chips" id="account-switch"></div>
-  <div class="chips periods" id="period-switch">
-    <button data-period="today">Hari ini</button>
-    <button data-period="yesterday">Kemarin</button>
-    <button data-period="7">7 hari</button>
-    <button data-period="14">14 hari</button>
-    <button data-period="30" class="active">30 hari</button>
-  </div>
+  <div class="chips periods" id="period-switch"></div>
+  <div class="chips campaigns" id="campaign-switch"></div>
 </header>
 
 <div class="subtabs" id="subtabs" style="display:none;">
@@ -305,26 +307,58 @@
   const fmtMetric = (k,v) => METRICS[k].unit==='idr'?fmtC(v):METRICS[k].unit==='pct'?fmtP(v):fmtN(v);
   const fmtMetricFull = (k,v) => METRICS[k].unit==='idr'?fmtIDR(v):METRICS[k].unit==='pct'?fmtP(v):fmtN(v);
 
-  let period='30', filter='all', tab='overview', sub='lelang', termSort='spend';
+  let period='30', filter='all', fKmp='all', tab='overview', sub='lelang', termSort='spend';
   let gran='day', selected=['spend','conversions'];
   let accounts = {}, meta = null;
   let RAW = { daily:[], prevDaily:[], hourly:[], auction:[], network:[], terms:[], statis:false };
   let data = { daily:[], prevDaily:[], hourly:[], auction:[], terms:[], network:[] };
   let charts = {}, insights = [];
 
+  const BLN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const BLNP = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
   function periodRange(p) {
     const now = new Date();
     if (p==='today') return { from:iso(now), to:iso(now), label:'Hari ini', days:1 };
     if (p==='yesterday') { const y=new Date(now); y.setDate(y.getDate()-1); return { from:iso(y), to:iso(y), label:'Kemarin', days:1 }; }
+    if (String(p).startsWith('m:')) {
+      const [y,mo] = p.slice(2).split('-').map(Number);
+      const f = new Date(y, mo-1, 1), akhir = new Date(y, mo, 0);
+      const t = (y===now.getFullYear() && mo===now.getMonth()+1) ? now : akhir;
+      const days = Math.round((new Date(iso(t)) - new Date(iso(f)))/86400000) + 1;
+      return { from:iso(f), to:iso(t), label:BLNP[mo-1]+' '+y, days, bulan:{y,mo} };
+    }
     const n=Number(p), f=new Date(now); f.setDate(f.getDate()-(n-1));
     return { from:iso(f), to:iso(now), label:n+' hari terakhir', days:n };
   }
   function prevRange(r) {
+    if (r.bulan) {
+      const { y, mo } = r.bulan;
+      return { from:iso(new Date(y, mo-2, 1)), to:iso(new Date(y, mo-1, 0)) };
+    }
     const f=new Date(r.from+'T00:00:00');
     const pTo=new Date(f); pTo.setDate(pTo.getDate()-1);
     const pFrom=new Date(pTo); pFrom.setDate(pFrom.getDate()-(r.days-1));
     return { from:iso(pFrom), to:iso(pTo) };
   }
+
+  function buildPeriods() {
+    const el = document.getElementById('period-switch');
+    if (el.dataset.built) { syncPeriodChips(); return; }
+    const now = new Date();
+    let html = ['today|Hari ini','yesterday|Kemarin','7|7 hari','14|14 hari','30|30 hari']
+      .map(x=>{ const [v,l]=x.split('|');
+        return '<button data-period="'+v+'">'+l+'</button>'; }).join('');
+    for (let i=0; i<8; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const v = 'm:'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      html += '<button class="bulan" data-period="'+v+'">'+BLN[d.getMonth()]+' '+String(d.getFullYear()).slice(2)+'</button>';
+    }
+    el.innerHTML = html; el.dataset.built = '1';
+    syncPeriodChips();
+  }
+  const syncPeriodChips = () => document.querySelectorAll('#period-switch button')
+    .forEach(b=>b.classList.toggle('active', b.dataset.period===period));
   const inRange = (d, from, to) => d && d>=from && d<=to;
 
   async function getJSON(name) {
@@ -418,13 +452,13 @@
         hourly:   RAW.hourly.filter(x=>inRange(x.date, r.from, r.to)),
         auction:  RAW.auction.filter(x=>inRange(x.date, r.from, r.to)),
         network:  RAW.network.filter(x=>inRange(x.date, r.from, r.to)),
-        terms:    RAW.terms[period] || []
+        terms:    RAW.terms[period] || RAW.terms['30'] || []
       };
     } else {
       data = { daily:RAW.daily, prevDaily:RAW.prevDaily, hourly:RAW.hourly,
         auction:RAW.auction, network:RAW.network, terms:RAW.terms };
     }
-    syncGran(); renderAll();
+    buildCampaigns(); syncGran(); renderAll();
   }
 
   function buildAccounts() {
@@ -438,7 +472,25 @@
       + ids.map(id=>'<button data-account="'+id+'" class="'+(filter===id?'active':'')+'">'+esc(id)+'</button>').join('');
   }
 
-  const byAcc = rows => filter==='all' ? rows : rows.filter(r=>r.account_id===filter);
+  function buildCampaigns() {
+    const set = new Set();
+    for (const r of RAW.daily) {
+      if (!r.campaign) continue;
+      if (filter!=='all' && r.account_id!==filter) continue;
+      set.add(r.campaign);
+    }
+    const list = Array.from(set).sort();
+    if (!list.includes(fKmp)) fKmp = 'all';
+    const el = document.getElementById('campaign-switch');
+    if (list.length<2) { el.style.display='none'; fKmp='all'; return; }
+    el.style.display='flex';
+    el.innerHTML = '<button data-kmp="all" class="'+(fKmp==='all'?'active':'')+'">Semua</button>'
+      + list.map(k=>'<button data-kmp="'+esc(k)+'" class="'+(fKmp===k?'active':'')+'">'+esc(k)+'</button>').join('');
+  }
+
+  const byAcc = rows => rows.filter(r =>
+    (filter==='all' || r.account_id===filter) &&
+    (fKmp==='all' || r.campaign===undefined || r.campaign===fKmp));
   const agg = rows => ({ spend:sum(rows,'spend'), clicks:sum(rows,'clicks'),
     impressions:sum(rows,'impressions'), conversions:sum(rows,'conversions') });
 
@@ -884,14 +936,19 @@
   });
   document.getElementById('account-switch').addEventListener('click', e=>{
     const b=e.target.closest('button[data-account]'); if(!b) return;
-    filter=b.dataset.account;
+    filter=b.dataset.account; fKmp='all';
     document.querySelectorAll('#account-switch button').forEach(x=>x.classList.toggle('active',x===b));
+    buildCampaigns(); renderAll();
+  });
+  document.getElementById('campaign-switch').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-kmp]'); if(!b) return;
+    fKmp=b.dataset.kmp;
+    document.querySelectorAll('#campaign-switch button').forEach(x=>x.classList.toggle('active',x===b));
     renderAll();
   });
   document.getElementById('period-switch').addEventListener('click', e=>{
     const b=e.target.closest('button[data-period]'); if(!b) return;
-    period=b.dataset.period;
-    document.querySelectorAll('#period-switch button').forEach(x=>x.classList.toggle('active',x===b));
+    period=b.dataset.period; syncPeriodChips();
     if (RAW.statis) applyPeriod(); else loadAll();
   });
   document.getElementById('term-sort').addEventListener('click', e=>{
@@ -920,6 +977,7 @@
     Object.values(charts).forEach(c=>c.resize());
   });
 
+  buildPeriods();
   loadAll();
 })();
 </script>
