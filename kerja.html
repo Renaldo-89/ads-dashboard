@@ -414,6 +414,7 @@
 
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
+  let everproInfo = null;
   let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{}, sales:{}, prevSales:{} };
 
   function rentang(p) {
@@ -453,6 +454,18 @@
   // Kontrak data yang diharapkan dari Worker, per baris:
   // { date, orders, units, revenue, gross_profit, customers_new, customers_repeat }
   async function tarikSales(src, from, to) {
+    // Everpro dibaca dari berkas hasil sinkronisasi lokal (Cloudflare Worker
+    // ditolak oleh perlindungan bot Everpro, jadi penarikannya dari komputer sendiri)
+    if (src === 'everpro') {
+      const res = await fetch('data/everpro.json?t='+Date.now(), { cache:'no-store' });
+      if (!res.ok) throw new Error('everpro.json belum ada');
+      const j = await res.json();
+      const semua = j.data || [];
+      everproInfo = { updated_at: j.updated_at || null };
+      const dalam = semua.filter(x => x.date >= from && x.date <= to);
+      if (!dalam.length) throw new Error('kosong');
+      return dalam;
+    }
     const q = new URLSearchParams({ date_from:from, date_to:to, _:String(Date.now()) });
     const res = await fetch(PROXY+'?sales='+src+'&'+q.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error(String(res.status));
@@ -926,6 +939,85 @@
   function pgSumber(id) {
     const S = SALES.find(x=>x.id===id);
     const d = D.sales[id] || { status:'off', rows:[] };
+
+    // ---- halaman Everpro: pengiriman dan status paket ----
+    if (id==='everpro') {
+      if (d.status!=='ok') return `<div class="panel"><div class="empty">
+        <div class="big" style="background:${S.s};color:${S.c}">${I.plug}</div>
+        <b>Data Everpro belum tersedia</b><br>
+        Everpro menolak permintaan dari server, jadi datanya ditarik dari komputermu.<br><br>
+        Jalankan <code>python3 everpro-sync.py</code> di folder proyek, lalu commit dan push
+        berkas <code>data/everpro.json</code> yang dihasilkan.</div></div>`;
+
+      const R = d.rows;
+      const j = k => R.reduce((a,x)=>a+(Number(x[k])||0),0);
+      const kirim = j('delivered'), proses = j('in_process'), retur = j('returned');
+      const gagal = j('failed_delivery'), hilang = j('lost_broken');
+      const tunggu = j('waiting_for_pickup'), gagalPickup = j('pickup_failed');
+      const total = j('total_order');
+      const ongkir = j('shipment_price');
+      const selesai = kirim + proses + retur + gagal + hilang + tunggu + gagalPickup;
+      const rasio = selesai>0 ? kirim/selesai*100 : 0;
+
+      const bagian = [
+        ['Terkirim', kirim, '#10B981', '#E6FBF4'],
+        ['Dalam proses', proses, '#4F46E5', '#EEF0FF'],
+        ['Menunggu pickup', tunggu, '#F59E0B', '#FEF6E7'],
+        ['Retur', retur, '#D946EF', '#FCEBFE'],
+        ['Gagal kirim', gagal, '#EF4444', '#FEECEC'],
+        ['Gagal pickup', gagalPickup, '#EF4444', '#FEECEC'],
+        ['Hilang atau rusak', hilang, '#6E6A8F', '#F5F3FD'],
+      ].filter(x=>x[1]>0);
+      const maxB = bagian.length ? Math.max(...bagian.map(x=>x[1])) : 1;
+
+      return `<div class="gmv">
+          <div class="gcard terang">
+            <p class="k">PAKET TERKIRIM</p>
+            <p class="v">${fN(kirim)}<span class="u">paket</span></p>
+            <p class="s">${fP(rasio)} dari seluruh pengiriman di periode ini</p>
+          </div>
+          <div class="gcard gelap">
+            <p class="k">MASIH DI JALAN</p>
+            <p class="v">${fN(proses+tunggu)}<span class="u">paket</span></p>
+            <p class="s">${fN(proses)} dalam perjalanan · ${fN(tunggu)} menunggu dijemput</p>
+          </div></div>
+
+        <div class="sec"><h4>Ringkasan pengiriman</h4>
+          <span class="note">${everproInfo&&everproInfo.updated_at?('disegarkan '+everproInfo.updated_at):''}</span></div>
+        <div class="kpis tiga">
+          ${kpi(I.cart,S.c,S.s,'Total pengiriman',fN(total),'')}
+          ${kpi(I.money,'#4F46E5','#EEF0FF','Ongkos kirim',fC(ongkir),'')}
+          ${kpi(I.up,'#10B981','#E6FBF4','Rasio terkirim',fP(rasio),'')}
+          ${kpi(I.cart,'#06B6D4','#E6F9FD','Terkirim COD',fN(j('delivered_cod')),'')}
+          ${kpi(I.cart,'#7C3AED','#F3EEFE','Terkirim non-COD',fN(j('delivered_non_cod')),'')}
+          ${kpi(I.alert, (retur+gagal+hilang)>0?'#EF4444':'#6E6A8F', (retur+gagal+hilang)>0?'#FEECEC':'#F5F3FD',
+            'Bermasalah',fN(retur+gagal+hilang),'')}
+        </div>
+
+        <div class="sec"><h4>Sebaran status</h4></div>
+        <div class="panel tight">${bagian.map(([nama,n,c,s])=>`<div class="li">
+          <div class="ic" style="background:${s};color:${c}">${fN(n)}</div>
+          <div class="li-b"><p class="li-t">${nama}</p>
+          <p class="li-s">${selesai>0?fP(n/selesai*100):'0%'} dari total</p>
+          <div class="track"><i style="width:${(n/maxB*100).toFixed(1)}%;background:${c}"></i></div></div>
+          <div class="li-r"><div class="li-v">${fN(n)}</div><div class="li-vs">paket</div></div></div>`).join('')}</div>
+
+        <div class="sec"><h4>Tren harian</h4><span class="note">terkirim vs dalam proses</span></div>
+        <div class="panel"><div class="wrap sm"><canvas id="c-ep"></canvas></div>
+          <div class="lg"><span><i style="background:#10B981"></i>Terkirim</span>
+            <span><i style="background:#4F46E5"></i>Dalam proses</span>
+            <span><i style="background:#EF4444"></i>Bermasalah</span></div></div>
+
+        <div class="sec"><h4>Rincian harian</h4></div>
+        <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt">
+          <thead><tr><th>Tanggal</th><th>Kiriman</th><th>Terkirim</th><th>Proses</th><th>Retur</th><th>Gagal</th><th>Ongkir</th></tr></thead>
+          <tbody>${R.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>
+            '<tr><td>'+sd(x.date)+'</td><td>'+fN(x.total_order)+'</td><td>'+fN(x.delivered)
+            +'</td><td>'+fN(x.in_process)+'</td><td>'+fN(x.returned)+'</td><td>'+fN(x.failed_delivery)
+            +'</td><td>'+fC(x.shipment_price)+'</td></tr>').join('')}</tbody>
+        </table></div></div>`;
+    }
+
     if (d.status!=='ok') return `<div class="panel"><div class="empty">
       <div class="big" style="background:${S.s};color:${S.c}">${I.plug}</div>
       <b>${S.nama} belum terhubung</b><br>${S.peran}.<br><br>
@@ -1279,6 +1371,18 @@
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
             y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+    }
+
+    if (document.getElementById('c-ep')) {
+      const R = ((D.sales.everpro||{}).rows||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+      const keys = R.map(x=>x.date);
+      mk('c-ep', { type:'line', data:{ labels:keys.map(sd), datasets:[
+          garis('Terkirim', R.map(x=>Number(x.delivered)||0), '#10B981', 'y', true),
+          garis('Dalam proses', R.map(x=>Number(x.in_process)||0), '#4F46E5', 'y'),
+          garis('Bermasalah', R.map(x=>(Number(x.returned)||0)+(Number(x.failed_delivery)||0)+(Number(x.lost_broken)||0)), '#EF4444', 'y') ] },
+        options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fN(c.parsed.y)+' paket' } } },
+          scales:{ x:AX, y:AY({precision:0}) } } });
     }
 
     if (document.getElementById('c-gm')) {
