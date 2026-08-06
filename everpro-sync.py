@@ -95,6 +95,68 @@ def satu_hari(token, tgl):
     return baris
 
 
+def cari_daftar(o, dalam=0):
+    """cari array pesanan di dalam struktur balasan"""
+    if dalam > 4 or o is None:
+        return None
+    if isinstance(o, list):
+        return o if o and isinstance(o[0], dict) else None
+    if isinstance(o, dict):
+        for k in ("data", "list", "orders", "items", "result", "rows"):
+            if k in o:
+                r = cari_daftar(o[k], dalam + 1)
+                if r:
+                    return r
+        for v in o.values():
+            r = cari_daftar(v, dalam + 1)
+            if r:
+                return r
+    return None
+
+
+def rapikan_order(o):
+    """
+    Ambil hanya yang tidak bersifat pribadi.
+    Nama, telepon, dan alamat pembeli SENGAJA tidak diambil karena berkas ini
+    tersimpan di repository publik. Nama ditampilkan di dashboard dengan cara
+    mencocokkan nomor resi ke data Globemerce yang ditarik langsung.
+    """
+    sh = o.get("shipment") or {}
+    lg = o.get("logistic") or {}
+    pk = o.get("package") or {}
+    return {
+        "resi": o.get("awb_number") or "",
+        "no_order": o.get("shipment_order_no") or o.get("client_order_no") or "",
+        "tanggal": (o.get("created_at") or "")[:10],
+        "status": sh.get("status") or "",
+        "kurir": lg.get("name") or "",
+        "layanan": lg.get("rate_type_name") or lg.get("rate_name") or "",
+        "cod": bool(o.get("is_cod")),
+        "harga": float(sh.get("total_price") or sh.get("price") or 0),
+        "ongkir": float(sh.get("price") or 0),
+        "diskon": float(sh.get("discount") or 0),
+        "cashback": float(sh.get("cashback") or 0),
+        "cashback_status": sh.get("cashback_status") or "",
+        "berat": float(pk.get("weight") or 0),
+        "isi": pk.get("description") or "",
+    }
+
+
+def ambil_orders(token, dari, sampai, maks_hal=30):
+    semua, batas = [], 100
+    for hal in range(1, maks_hal + 1):
+        j = ambil(token, "/api/logistic/v2/public/orders"
+                  f"?page={hal}&limit={batas}&order_status=all"
+                  f"&start_date={dari}&end_date={sampai}")
+        isi = cari_daftar(j) or []
+        semua.extend(isi)
+        print(f"  halaman {hal}: {len(isi)} pesanan")
+        if len(isi) < batas:
+            break
+        time.sleep(0.3)
+    return [rapikan_order(x) for x in semua]
+
+
 def main():
     hari = int(sys.argv[1]) if len(sys.argv) > 1 else 35
     token = baca_token()
@@ -124,6 +186,28 @@ def main():
     with open(KELUARAN, "w") as f:
         json.dump(isi, f, ensure_ascii=False, indent=1)
     print(f"\nTersimpan: {KELUARAN} ({len(baris)} hari berisi data)")
+
+    # ---- daftar pesanan (tanpa data pribadi) ----
+    print("\nMenarik daftar pesanan...")
+    dari = (ini - timedelta(days=hari - 1)).isoformat()
+    sampai = ini.isoformat()
+    try:
+        orders = ambil_orders(token, dari, sampai)
+    except Exception as e:
+        print(f"  gagal: {e}")
+        orders = []
+
+    jalur_o = os.path.join(AKAR, "data", "everpro-orders.json")
+    with open(jalur_o, "w") as f:
+        json.dump({
+            "updated_at": datetime.now(WIB).strftime("%Y-%m-%d %H:%M"),
+            "catatan": "tanpa nama/telepon/alamat pembeli; nama dicocokkan lewat resi di dashboard",
+            "data": orders,
+        }, f, ensure_ascii=False, indent=1)
+    cair = sum(1 for o in orders if "cair" in (o["cashback_status"] or "").lower()
+               or "paid" in (o["cashback_status"] or "").lower()
+               or "success" in (o["cashback_status"] or "").lower())
+    print(f"Tersimpan: {jalur_o} ({len(orders)} pesanan, {cair} cashback tercatat cair)")
 
 
 if __name__ == "__main__":
