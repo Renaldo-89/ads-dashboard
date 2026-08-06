@@ -11,31 +11,49 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 <style>
   :root { color-scheme: light;
-    --ink:#111827; --ink-2:#374151; --muted:#6B7280; --faint:#9CA3AF;
-    --line:#EAECEF; --line-2:#F3F4F6; --panel:#FFFFFF; --bg:#F7F8FA;
-    --blue:#1A73E8; --blue-soft:#EAF1FE; --green:#1E8E3E; --green-soft:#E7F5EC;
-    --amber:#F59E0B; --amber-soft:#FEF4E2; --red:#DC2626; --red-soft:#FDECEC;
-    --violet:#7C3AED; --violet-soft:#F1EBFE; --sb:248px; }
+    --ink:#1E1B39; --ink-2:#454168; --muted:#6E6A8F; --faint:#A5A1C0;
+    --line:#EEEBFA; --line-2:#F5F3FD; --panel:#FFFFFF; --bg:#F7F6FE;
+    --blue:#4F46E5; --blue-soft:#EEF0FF;
+    --green:#10B981; --green-soft:#E6FBF4;
+    --amber:#F59E0B; --amber-soft:#FEF6E7;
+    --red:#EF4444;   --red-soft:#FEECEC;
+    --violet:#7C3AED; --violet-soft:#F3EEFE;
+    --pink:#D946EF;  --pink-soft:#FCEBFE;
+    --toska:#06B6D4; --toska-soft:#E6F9FD;
+    --grad:linear-gradient(135deg,#4F46E5 0%,#7C3AED 55%,#D946EF 100%);
+    --bayang:0 4px 20px rgba(79,70,229,.07);
+    --bayang-2:0 10px 34px rgba(79,70,229,.12);
+    --sb:248px; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased; }
+  body::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.14), transparent 62%),
+      radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.10),  transparent 60%),
+      radial-gradient(720px 460px at 60% 108%, rgba(217,70,239,.10), transparent 62%),
+      linear-gradient(180deg,#FBFAFF 0%,#F7F6FE 60%,#F4F2FD 100%); }
   ::-webkit-scrollbar { width:8px; height:8px; }
-  ::-webkit-scrollbar-thumb { background:#DDE1E6; border-radius:8px; }
+  ::-webkit-scrollbar-thumb { background:#DED9F5; border-radius:8px; }
 
   /* ---------- sidebar ---------- */
-  aside { position:fixed; inset:0 auto 0 0; width:var(--sb); background:var(--panel);
+  aside { position:fixed; inset:0 auto 0 0; width:var(--sb);
+    background:rgba(255,255,255,.86); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
     border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:60;
     padding:18px 14px calc(14px + env(safe-area-inset-bottom)); overflow-y:auto; }
   .brand { display:flex; align-items:center; gap:11px; padding:0 6px 16px; }
-  .brand .logo { width:36px; height:36px; border-radius:11px; background:var(--blue);
-    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; }
-  .brand h1 { font-size:15.5px; font-weight:700; margin:0; letter-spacing:-.3px; }
+  .brand .logo { width:38px; height:38px; border-radius:13px; background:var(--grad);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px;
+    box-shadow:0 6px 16px rgba(124,58,237,.32); }
+  .brand h1 { font-size:15.5px; font-weight:700; margin:0; letter-spacing:-.3px;
+    background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .brand p { font-size:11.5px; color:var(--faint); margin:1px 0 0; font-weight:500; }
 
-  .profile { border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:18px; }
+  .profile { border:1px solid var(--line); border-radius:16px; padding:13px; margin-bottom:18px;
+    background:linear-gradient(140deg,#FBFAFF,#F6F3FE); }
   .profile .row { display:flex; align-items:center; gap:10px; }
-  .avatar { width:34px; height:34px; border-radius:50%; background:var(--blue-soft); color:var(--blue);
+  .avatar { width:36px; height:36px; border-radius:50%; background:var(--grad); color:#fff;
     display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; flex-shrink:0; }
   .profile .nm { font-size:13.5px; font-weight:600; margin:0; letter-spacing:-.2px; }
   .profile .em { font-size:11px; color:var(--faint); margin:1px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -57,7 +75,8 @@
     border:none; background:none; border-radius:10px; cursor:pointer; font-family:inherit;
     font-size:13.5px; font-weight:500; color:var(--ink-2); text-align:left; transition:background .13s; }
   nav.side button:hover { background:var(--line-2); }
-  nav.side button.on { background:var(--blue); color:#fff; font-weight:600; }
+  nav.side button.on { background:var(--grad); color:#fff; font-weight:600;
+    box-shadow:0 6px 18px rgba(124,58,237,.28); }
   nav.side button svg { width:17px; height:17px; flex-shrink:0; }
   nav.side button .lbl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;
@@ -72,42 +91,47 @@
 
   /* ---------- main ---------- */
   main { margin-left:var(--sb); min-height:100vh; }
-  .topbar { position:sticky; top:0; z-index:40; background:rgba(247,248,250,.86);
+  .topbar { position:sticky; top:0; z-index:40; background:rgba(251,250,255,.82);
     backdrop-filter:saturate(180%) blur(16px); border-bottom:1px solid var(--line);
     padding:16px 28px 0; }
   .topbar .r1 { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .topbar h2 { font-size:22px; font-weight:700; margin:0; letter-spacing:-.5px; }
+  .topbar h2 { font-size:23px; font-weight:700; margin:0; letter-spacing:-.6px; }
   .topbar .crumb { font-size:12.5px; color:var(--muted); margin:3px 0 0; font-weight:500; }
   .burger { display:none; }
   .chips { display:flex; gap:7px; overflow-x:auto; padding:14px 0 13px; }
   .chips button { flex-shrink:0; border:1px solid var(--line); background:#fff; color:var(--ink-2);
     padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; }
-  .chips button.on { background:var(--blue-soft); border-color:#CFE0FC; color:var(--blue); }
+  .chips button.on { background:var(--grad); border-color:transparent; color:#fff;
+    box-shadow:0 5px 14px rgba(124,58,237,.26); }
 
   .chips button.bulan { color:var(--muted); }
-  .chips button.bulan.on { background:var(--green-soft); border-color:#CDE9D6; color:var(--green); }
+  .chips button.bulan.on { background:linear-gradient(135deg,#06B6D4,#10B981); border-color:transparent; color:#fff;
+    box-shadow:0 5px 14px rgba(6,182,212,.28); }
   .chips.sub { padding:0 0 12px; align-items:center; }
   .chips.sub::before { content:attr(data-lbl); flex-shrink:0; align-self:center; font-size:10.5px;
     font-weight:700; color:var(--faint); letter-spacing:.6px; padding-right:4px; }
   .chips.sub button { font-size:12px; padding:6px 13px; font-weight:500; max-width:240px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600;
+    box-shadow:0 4px 12px rgba(30,27,57,.22); }
 
   .body { padding:22px 28px 60px; max-width:1180px; }
   .page { display:none; } .page.on { display:block; }
 
-  .hello { display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:16px;
-    background:linear-gradient(120deg, var(--blue-soft), #F4FAF6); border:1px solid #E4EDFB; margin-bottom:14px; }
-  .hello .sun { width:42px; height:42px; border-radius:12px; background:#fff; color:var(--amber);
+  .hello { display:flex; align-items:center; gap:15px; padding:18px 20px; border-radius:20px;
+    background:linear-gradient(120deg,#EEF0FF 0%,#F5EEFE 55%,#FDEEFE 100%);
+    border:1px solid #EDE9FE; margin-bottom:14px; box-shadow:var(--bayang); }
+  .hello .sun { width:44px; height:44px; border-radius:14px; background:#fff; color:var(--violet);
+    box-shadow:0 4px 12px rgba(124,58,237,.16);
     display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .hello .sun svg { width:21px; height:21px; }
   .hello h3 { font-size:17px; font-weight:700; margin:0; letter-spacing:-.3px; }
   .hello p { font-size:12.5px; color:var(--muted); margin:2px 0 0; font-weight:500; }
 
   .strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:11px; margin-bottom:20px; }
-  .sc { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:14px;
-    background:var(--panel); border:1px solid var(--line); }
-  .sc .ic { width:36px; height:36px; border-radius:10px; display:flex; align-items:center;
+  .sc { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px;
+    background:var(--panel); border:1px solid var(--line); box-shadow:var(--bayang); }
+  .sc .ic { width:38px; height:38px; border-radius:12px; display:flex; align-items:center;
     justify-content:center; flex-shrink:0; }
   .sc .ic svg { width:18px; height:18px; }
   .sc .k { font-size:11.5px; color:var(--muted); margin:0; font-weight:600; }
@@ -119,12 +143,22 @@
   .note { font-size:12px; color:var(--faint); font-weight:500; }
   .lead { font-size:12.5px; color:var(--muted); line-height:1.55; margin:-6px 0 14px; max-width:70ch; }
 
-  .gmv { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:13px; margin-bottom:6px; }
-  .gcard { border-radius:18px; padding:20px 22px; border:1px solid var(--line); position:relative; overflow:hidden; }
-  .gcard .k { font-size:12px; font-weight:700; letter-spacing:.5px; margin:0 0 8px; opacity:.8; }
-  .gcard .v { font-size:34px; font-weight:700; letter-spacing:-1px; margin:0; line-height:1.05; }
-  .gcard .u { font-size:13px; font-weight:600; opacity:.75; margin-left:6px; }
-  .gcard .s { font-size:12.5px; margin:8px 0 0; font-weight:500; opacity:.8; }
+  .gmv { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:14px; margin-bottom:6px; }
+  .gcard { border-radius:22px; padding:22px 24px; position:relative; overflow:hidden; border:1px solid transparent; }
+  .gcard::after { content:''; position:absolute; width:190px; height:190px; border-radius:50%;
+    right:-60px; top:-80px; background:rgba(255,255,255,.18); pointer-events:none; }
+  .gcard .k { font-size:11.5px; font-weight:700; letter-spacing:.9px; margin:0 0 10px; opacity:.85; }
+  .gcard .v { font-size:38px; font-weight:700; letter-spacing:-1.4px; margin:0; line-height:1.02; }
+  .gcard .u { font-size:13px; font-weight:600; opacity:.7; margin-left:7px; letter-spacing:0; }
+  .gcard .s { font-size:12.5px; margin:10px 0 0; font-weight:500; opacity:.85; }
+  .gcard.terang { background:var(--grad); color:#fff; box-shadow:0 12px 32px rgba(124,58,237,.32); }
+  .gcard.gelap { background:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%); color:#fff;
+    box-shadow:0 12px 32px rgba(30,27,57,.34); }
+  .gcard.gelap .v { background:linear-gradient(120deg,#34D399,#22D3EE);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .gcard.gelap .k { color:#A5A1C0; }
+  .gcard.gelap .s { color:#CFCCE6; }
+  .gcard.gelap::after { background:rgba(52,211,153,.10); }
 
   /* tabel daftar pesanan */
   table.dt.pesanan { min-width:1020px; font-size:12.5px; }
@@ -132,7 +166,7 @@
   table.dt.pesanan th { font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-bottom:11px; }
   table.dt.pesanan th.num, table.dt.pesanan td.num { text-align:right; font-variant-numeric:tabular-nums; }
   table.dt.pesanan th.ctr, table.dt.pesanan td.ctr { text-align:center; }
-  table.dt.pesanan tbody tr:hover { background:#FAFBFC; }
+  table.dt.pesanan tbody tr:hover { background:#FBFAFF; }
   table.dt.pesanan td.tgl { white-space:nowrap; font-weight:600; }
   table.dt.pesanan td.tgl span { display:block; font-weight:500; color:var(--faint); font-size:11px; margin-top:2px; }
   table.dt.pesanan td.no { font-variant-numeric:tabular-nums; color:var(--muted); font-weight:600; white-space:nowrap; }
@@ -145,11 +179,11 @@
   table.dt .pill2 { display:inline-block; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
 
   .mgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-  .mt { background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:12px 13px;
+  .mt { background:var(--panel); border:1.5px solid var(--line); border-radius:16px; padding:13px 14px;
     text-align:left; font-family:inherit; cursor:pointer; transition:all .14s; }
   .mt:hover { border-color:#DDE1E6; }
   .mt:active { transform:scale(.985); }
-  .mt.on { border-color:var(--mc); box-shadow:0 2px 10px rgba(17,24,39,.06); }
+  .mt.on { border-color:var(--mc); box-shadow:0 6px 20px rgba(79,70,229,.14); }
   .mt .k { font-size:11.5px; color:var(--muted); margin:0 0 5px; font-weight:600; display:flex;
     align-items:center; gap:7px; }
   .mt.on .k { color:var(--mc); }
@@ -160,16 +194,19 @@
   .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:11px; }
   .kpis.tiga { grid-template-columns:repeat(3,1fr); }
   @media (max-width: 720px) { .kpis.tiga { grid-template-columns:repeat(2,1fr); } }
-  .kpi { background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:15px; }
+  .kpi { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:16px;
+    box-shadow:var(--bayang); transition:transform .15s, box-shadow .15s; }
+  .kpi:hover { transform:translateY(-2px); box-shadow:var(--bayang-2); }
   .kpi .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; }
-  .kpi .ic { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .kpi .ic { width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
   .kpi .ic svg { width:17px; height:17px; }
   .kpi .k { font-size:11.5px; color:var(--muted); margin:0; font-weight:600; letter-spacing:.1px; }
   .kpi .v { font-size:22px; font-weight:700; margin:3px 0 0; letter-spacing:-.6px; }
   .d { font-size:11.5px; font-weight:700; }
   .d.up { color:var(--green); } .d.down { color:var(--red); } .d.flat { color:var(--faint); }
 
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:18px;
+    box-shadow:var(--bayang); }
   .panel.tight { padding:14px 16px; }
   .wrap { position:relative; height:290px; }
   .wrap.sm { height:230px; }
@@ -179,7 +216,7 @@
 
   .li { display:flex; align-items:center; gap:13px; padding:13px 0; border-bottom:1px solid var(--line-2); }
   .li:last-child { border-bottom:none; }
-  .li .ic { width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center;
+  .li .ic { width:38px; height:38px; border-radius:12px; flex-shrink:0; display:flex; align-items:center;
     justify-content:center; font-size:13px; font-weight:700; }
   .li-b { flex:1; min-width:0; }
   .li-t { font-size:14px; font-weight:600; margin:0 0 3px; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -187,7 +224,7 @@
   .li-r { text-align:right; flex-shrink:0; }
   .li-v { font-size:14px; font-weight:700; letter-spacing:-.3px; }
   .li-vs { font-size:11px; color:var(--faint); font-weight:500; margin-top:1px; }
-  .track { height:5px; border-radius:3px; background:var(--line-2); overflow:hidden; display:flex; margin-top:8px; }
+  .track { height:6px; border-radius:4px; background:var(--line-2); overflow:hidden; display:flex; margin-top:8px; }
   .track i { display:block; height:100%; }
 
   table.dt { width:100%; border-collapse:collapse; font-size:12.5px; }
@@ -297,10 +334,10 @@
   const PROXY = 'https://ads-proxy.renaldo1600016091.workers.dev/';
 
   const PLAT = {
-    google_ads: { nama:'Google Ads', ini:'G',  c:'#1A73E8', s:'#EAF1FE' },
-    facebook:   { nama:'Meta Ads',   ini:'M',  c:'#0866FF', s:'#E9F1FF' },
-    tiktok:     { nama:'TikTok Ads', ini:'TT', c:'#111827', s:'#F0F1F3' },
-    tiktok_shop:{ nama:'TikTok Shop',ini:'TS', c:'#1E8E3E', s:'#E7F5EC' },
+    google_ads: { nama:'Google Ads', ini:'G',  c:'#4F46E5', s:'#EEF0FF' },
+    facebook:   { nama:'Meta Ads',   ini:'M',  c:'#2563EB', s:'#E8F0FE' },
+    tiktok:     { nama:'TikTok Ads', ini:'TT', c:'#1E1B39', s:'#F0F1F3' },
+    tiktok_shop:{ nama:'TikTok Shop',ini:'TS', c:'#10B981', s:'#E6FBF4' },
   };
   const IKLAN = ['google_ads','facebook','tiktok'];
   const KAND_SHOP = [['date','revenue','orders'],['date','total_amount','order_id'],['date','gmv','orders'],['date','revenue']];
@@ -327,8 +364,8 @@
 
   // sumber penjualan (disambungkan lewat Worker: ?sales=<id>)
   const SALES = [
-    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet · data bulanan', c:'#7C3AED', s:'#F1EBFE', ini:'GM' },
-    { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'#0891B2', s:'#E5F6FA', ini:'EP' },
+    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet', c:'#7C3AED', s:'#F3EEFE', ini:'GM' },
+    { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'#06B6D4', s:'#E6F9FD', ini:'EP' },
   ];
 
   const MENU = [
@@ -362,14 +399,14 @@
 
   // metrik yang bisa diklik, tiap metrik warnanya sendiri
   const METRIK = {
-    spend:       { lbl:'Biaya',       c:'#1A73E8', unit:'idr',   get:a=>a.spend },
-    conversions: { lbl:'Konversi',    c:'#1E8E3E', unit:'count', get:a=>a.conversions },
+    spend:       { lbl:'Biaya',       c:'#4F46E5', unit:'idr',   get:a=>a.spend },
+    conversions: { lbl:'Konversi',    c:'#10B981', unit:'count', get:a=>a.conversions },
     clicks:      { lbl:'Klik',        c:'#F59E0B', unit:'count', get:a=>a.clicks },
     impressions: { lbl:'Tayangan',    c:'#7C3AED', unit:'count', get:a=>a.impressions },
-    ctr:         { lbl:'CTR',         c:'#DC2626', unit:'pct',   get:a=>a.impressions>0?a.clicks/a.impressions*100:0 },
-    cpa:         { lbl:'Biaya/konv.', c:'#0891B2', unit:'idr',   get:a=>a.conversions>0?a.spend/a.conversions:0 },
-    cpc:         { lbl:'Biaya/klik',  c:'#DB2777', unit:'idr',   get:a=>a.clicks>0?a.spend/a.clicks:0 },
-    cvr:         { lbl:'Rasio konv.', c:'#EA580C', unit:'pct',   get:a=>a.clicks>0?a.conversions/a.clicks*100:0 },
+    ctr:         { lbl:'CTR',         c:'#D946EF', unit:'pct',   get:a=>a.impressions>0?a.clicks/a.impressions*100:0 },
+    cpa:         { lbl:'Biaya/konv.', c:'#06B6D4', unit:'idr',   get:a=>a.conversions>0?a.spend/a.conversions:0 },
+    cpc:         { lbl:'Biaya/klik',  c:'#EC4899', unit:'idr',   get:a=>a.clicks>0?a.spend/a.clicks:0 },
+    cvr:         { lbl:'Rasio konv.', c:'#F59E0B', unit:'pct',   get:a=>a.clicks>0?a.conversions/a.clicks*100:0 },
   };
   const MK = Object.keys(METRIK);
   const fMetrik = (k,v) => METRIK[k].unit==='idr'?fC(v):METRIK[k].unit==='pct'?fP(v):fN(v);
@@ -648,29 +685,29 @@
     </div>
 
     <div class="strip">
-      ${sc(I.money,'#1A73E8','#EAF1FE','Biaya iklan',fC(t.spend))}
-      ${sc(I.cart,'#1E8E3E','#E7F5EC','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
-      ${sc(I.target,'#F59E0B','#FEF4E2','Konversi',fN(t.conversions))}
-      ${sc(I.up,'#7C3AED','#F1EBFE','ROAS', roasGabungan()||'—')}
+      ${sc(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend))}
+      ${sc(I.cart,'#10B981','#E6FBF4','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
+      ${sc(I.target,'#F59E0B','#FEF6E7','Konversi',fN(t.conversions))}
+      ${sc(I.up,'#7C3AED','#F3EEFE','ROAS', roasGabungan()||'—')}
     </div>
 
     ${blokPenjualan(t)}
 
     <div class="sec"><h4>Metrik iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
     <div class="kpis">
-      ${kpi(I.money,'#1A73E8','#EAF1FE','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
-      ${kpi(I.target,'#1E8E3E','#E7F5EC','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
-      ${kpi(I.money,'#F59E0B','#FEF4E2','Biaya/konv.',cpa?fC(cpa):'—','')}
-      ${kpi(I.click,'#7C3AED','#F1EBFE','Klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
-      ${kpi(I.eye,'#DC2626','#FDECEC','CTR',fP(ctr),'')}
-      ${kpi(I.money,'#0891B2','#E5F6FA','Biaya/klik',cpc?fC(cpc):'—','')}
+      ${kpi(I.money,'#4F46E5','#EEF0FF','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
+      ${kpi(I.target,'#10B981','#E6FBF4','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
+      ${kpi(I.money,'#F59E0B','#FEF6E7','Biaya/konv.',cpa?fC(cpa):'—','')}
+      ${kpi(I.click,'#7C3AED','#F3EEFE','Klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
+      ${kpi(I.eye,'#EF4444','#FEECEC','CTR',fP(ctr),'')}
+      ${kpi(I.money,'#06B6D4','#E6F9FD','Biaya/klik',cpc?fC(cpc):'—','')}
     </div>
 
     <div class="sec"><h4>Tren harian</h4><span class="note">biaya iklan${D.shop.status==='ok'?' vs omzet':''}</span></div>
     <div class="panel">
       <div class="wrap"><canvas id="c-tren"></canvas></div>
-      <div class="lg"><span><i style="background:#1A73E8"></i>Biaya iklan</span>
-        ${D.shop.status==='ok'?'<span><i style="background:#1E8E3E"></i>Omzet</span>':''}
+      <div class="lg"><span><i style="background:#4F46E5"></i>Biaya iklan</span>
+        ${D.shop.status==='ok'?'<span><i style="background:#10B981"></i>Omzet</span>':''}
         <span><i style="background:#F59E0B"></i>Konversi</span></div>
     </div>
 
@@ -714,16 +751,16 @@
     return `<div class="sec"><h4>Penjualan</h4><span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
       ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
       <div class="kpis">
-        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
-        ${kpi(I.money,'#1E8E3E','#E7F5EC','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
-        ${kpi(I.money,'#1A73E8','#EAF1FE','Biaya iklan',fC(t.spend),'')}
-        ${kpi(I.up, laba>=0?'#1E8E3E':'#DC2626', laba>=0?'#E7F5EC':'#FDECEC','Laba setelah iklan',fC(laba),'')}
-        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
-        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
+        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
+        ${kpi(I.money,'#10B981','#E6FBF4','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
+        ${kpi(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend),'')}
+        ${kpi(I.up, laba>=0?'#10B981':'#EF4444', laba>=0?'#E6FBF4':'#FEECEC','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
+        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
       </div>
       <div class="panel tight" style="margin-top:11px">
-        ${li({c:'#1E8E3E',s:'#E7F5EC',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
-        ${li({c:'#1A73E8',s:'#EAF1FE',ini:'A'},'Biaya iklan per produk terjual',
+        ${li({c:'#10B981',s:'#E6FBF4',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
+        ${li({c:'#4F46E5',s:'#EEF0FF',ini:'A'},'Biaya iklan per produk terjual',
           (s.units||s.orders)>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
           (s.units||s.orders)>0?fC(t.spend/(s.units||s.orders)):'—','',0)}
       </div>`;
@@ -746,7 +783,7 @@
   function barisHarian() {
     const m = perTanggal(), keys = Array.from(m.keys()).sort().reverse();
     const shop = D.shop.status==='ok';
-    if (!keys.length) return '<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:26px 0;">Tidak ada data</td></tr>';
+    if (!keys.length) return '<tr><td colspan="7" style="text-align:center;color:#A5A1C0;padding:26px 0;">Tidak ada data</td></tr>';
     return keys.map(k=>{ const a=m.get(k);
       const roas = a.spend>0&&a.omzet>0 ? (a.omzet/a.spend).toFixed(2).replace('.',',')+'×' : '—';
       const cpa = a.conv>0 ? fC(a.spend/a.conv) : '—';
@@ -783,9 +820,9 @@
       const om = omzet(), t = agg(allRows());
       const roas = t.spend>0?om/t.spend:0;
       return `<div class="kpis">
-          ${kpi(I.cart,'#1E8E3E','#E7F5EC','Omzet',fC(om),'')}
-          ${kpi(I.money,'#1A73E8','#EAF1FE','Biaya iklan',fC(t.spend),'')}
-          ${kpi(I.up,'#7C3AED','#F1EBFE','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
+          ${kpi(I.cart,'#10B981','#E6FBF4','Omzet',fC(om),'')}
+          ${kpi(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend),'')}
+          ${kpi(I.up,'#7C3AED','#F3EEFE','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
         </div>
         <div class="sec"><h4>Omzet harian</h4></div>
         <div class="panel"><div class="wrap sm"><canvas id="c-shop"></canvas></div></div>`;
@@ -802,11 +839,11 @@
     const maxK = Math.max.apply(null, kmp.map(x=>x.spend).concat([1]));
     return `<div class="kpis">
         ${kpi(I.money,P.c,P.s,'Biaya',fC(a.spend),delta(a.spend,sum(pr,'spend'),false))}
-        ${kpi(I.target,'#1E8E3E','#E7F5EC','Konversi',fN(a.conversions),delta(a.conversions,sum(pr,'conversions'),false))}
-        ${kpi(I.money,'#F59E0B','#FEF4E2','Biaya/konv.',cpa?fC(cpa):'—','')}
-        ${kpi(I.click,'#7C3AED','#F1EBFE','Klik',fN(a.clicks),delta(a.clicks,sum(pr,'clicks'),false))}
-        ${kpi(I.eye,'#DC2626','#FDECEC','CTR',fP(ctr),'')}
-        ${kpi(I.up,'#0891B2','#E5F6FA','Rasio konv.',fP(cvr),'')}
+        ${kpi(I.target,'#10B981','#E6FBF4','Konversi',fN(a.conversions),delta(a.conversions,sum(pr,'conversions'),false))}
+        ${kpi(I.money,'#F59E0B','#FEF6E7','Biaya/konv.',cpa?fC(cpa):'—','')}
+        ${kpi(I.click,'#7C3AED','#F3EEFE','Klik',fN(a.clicks),delta(a.clicks,sum(pr,'clicks'),false))}
+        ${kpi(I.eye,'#EF4444','#FEECEC','CTR',fP(ctr),'')}
+        ${kpi(I.up,'#06B6D4','#E6F9FD','Rasio konv.',fP(cvr),'')}
       </div>
       <div class="sec"><h4>Tren harian</h4><span class="note">biaya &amp; konversi</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-plat" data-plat="${id}"></canvas></div>
@@ -859,29 +896,29 @@
         <div class="panel tight">${kartuSumber}</div>
         <div class="sec"><h4>Yang akan muncul setelah tersambung</h4></div>
         <div class="panel tight">
-          ${li({c:'#7C3AED',s:'#F1EBFE',ini:'1'},'Produk terjual','Jumlah unit dan pesanan per hari','','',0)}
-          ${li({c:'#1E8E3E',s:'#E7F5EC',ini:'2'},'Gross profit','Laba kotor langsung dari sistem penjualan','','',0)}
-          ${li({c:'#1A73E8',s:'#EAF1FE',ini:'3'},'Laba setelah iklan','Gross profit dikurangi total biaya iklan','','',0)}
-          ${li({c:'#F59E0B',s:'#FEF4E2',ini:'4'},'Pelanggan baru vs repeat','Perbandingan pembeli pertama kali dan pembeli ulang','','',0)}
-          ${li({c:'#0891B2',s:'#E5F6FA',ini:'5'},'Status pengiriman','Data dari Everpro: terkirim, dalam perjalanan, retur','','',0)}
+          ${li({c:'#7C3AED',s:'#F3EEFE',ini:'1'},'Produk terjual','Jumlah unit dan pesanan per hari','','',0)}
+          ${li({c:'#10B981',s:'#E6FBF4',ini:'2'},'Gross profit','Laba kotor langsung dari sistem penjualan','','',0)}
+          ${li({c:'#4F46E5',s:'#EEF0FF',ini:'3'},'Laba setelah iklan','Gross profit dikurangi total biaya iklan','','',0)}
+          ${li({c:'#F59E0B',s:'#FEF6E7',ini:'4'},'Pelanggan baru vs repeat','Perbandingan pembeli pertama kali dan pembeli ulang','','',0)}
+          ${li({c:'#06B6D4',s:'#E6F9FD',ini:'5'},'Status pengiriman','Data dari Everpro: terkirim, dalam perjalanan, retur','','',0)}
         </div>`;
     }
 
     const s = aggSales(salesRows());
     const laba = s.gross - t.spend;
     return `<div class="kpis">
-        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(s.units||s.orders),'')}
-        ${kpi(I.money,'#1E8E3E','#E7F5EC','Omzet',fC(s.revenue),'')}
-        ${kpi(I.money,'#1A73E8','#EAF1FE','Gross profit',fC(s.gross),'')}
-        ${kpi(I.up, laba>=0?'#1E8E3E':'#DC2626', laba>=0?'#E7F5EC':'#FDECEC','Laba setelah iklan',fC(laba),'')}
-        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(s.baru),'')}
-        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(s.repeat),'')}
+        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(s.units||s.orders),'')}
+        ${kpi(I.money,'#10B981','#E6FBF4','Omzet',fC(s.revenue),'')}
+        ${kpi(I.money,'#4F46E5','#EEF0FF','Gross profit',fC(s.gross),'')}
+        ${kpi(I.up, laba>=0?'#10B981':'#EF4444', laba>=0?'#E6FBF4':'#FEECEC','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(s.baru),'')}
+        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(s.repeat),'')}
       </div>
       <div class="sec"><h4>Tren harian</h4><span class="note">omzet, gross profit, biaya iklan</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-sales"></canvas></div>
         <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span>
-          <span><i style="background:#1E8E3E"></i>Gross profit</span>
-          <span><i style="background:#1A73E8"></i>Biaya iklan</span></div></div>
+          <span><i style="background:#10B981"></i>Gross profit</span>
+          <span><i style="background:#4F46E5"></i>Biaya iklan</span></div></div>
       <div class="sec"><h4>Per sumber</h4></div>
       <div class="panel tight">${kartuSumber}</div>`;
   }
@@ -899,11 +936,11 @@
 
     const kpis = `<div class="kpis">
         ${kpi(I.cart,S.c,S.s,'Pesanan',fN(a.orders),'')}
-        ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(a.units||a.orders),'')}
-        ${kpi(I.money,'#1E8E3E','#E7F5EC','Omzet',fC(a.revenue),'')}
-        ${kpi(I.money,'#1A73E8','#EAF1FE','Gross profit',fC(a.gross),'')}
-        ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(a.baru),'')}
-        ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(a.repeat),'')}
+        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(a.units||a.orders),'')}
+        ${kpi(I.money,'#10B981','#E6FBF4','Omzet',fC(a.revenue),'')}
+        ${kpi(I.money,'#4F46E5','#EEF0FF','Gross profit',fC(a.gross),'')}
+        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(a.baru),'')}
+        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(a.repeat),'')}
       </div>`;
 
     if (!P) return kpis + `
@@ -954,15 +991,15 @@
     }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
     const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
     const gmvHero = (D.gmv||[]).length ? `<div class="gmv">
-      <div class="gcard" style="background:linear-gradient(135deg,#F1EBFE,#FAF7FF)">
-        <p class="k" style="color:#7C3AED">GMV PERSONAL</p>
-        <p class="v" style="color:#5B21B6">${fGMV(g.personal)}<span class="u">GMV</span></p>
-        <p class="s" style="color:#6D28D9">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
+      <div class="gcard terang">
+        <p class="k">GMV PERSONAL</p>
+        <p class="v">${fGMV(g.personal)}<span class="u">GMV</span></p>
+        <p class="s">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
       </div>
-      <div class="gcard" style="background:linear-gradient(135deg,#E7F5EC,#F5FBF7)">
-        <p class="k" style="color:#1E8E3E">GMV GROUP</p>
-        <p class="v" style="color:#14532D">${fGMV(g.group)}<span class="u">GMV</span></p>
-        <p class="s" style="color:#166534">${g.tinggiG?('Tertinggi '+fGMV(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
+      <div class="gcard gelap">
+        <p class="k">GMV GROUP</p>
+        <p class="v">${fGMV(g.group)}<span class="u">GMV</span></p>
+        <p class="s">${g.tinggiG?('Tertinggi '+fGMV(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
       </div></div>` : '';
 
     // ---- daftar pesanan dalam bentuk tabel ----
@@ -986,10 +1023,10 @@
           ${kosongResi(o.resi)
             ? '<td class="resi-kosong">not generated yet</td>'
             : '<td class="resi">'+esc(o.resi)+'</td>'}
-          <td class="ctr">${pil(esc(o.status||'—'), selesai?'#1E7E34':'#916000', selesai?'#E7F5EC':'#FEF4E2')}</td>
-          <td class="ctr">${pil(ulangi?'Repeat':'Baru', ulangi?'#0891B2':'#F59E0B', ulangi?'#E5F6FA':'#FEF4E2')}</td>
+          <td class="ctr">${pil(esc(o.status||'—'), selesai?'#047857':'#B45309', selesai?'#E6FBF4':'#FEF6E7')}</td>
+          <td class="ctr">${pil(ulangi?'Repeat':'Baru', ulangi?'#06B6D4':'#F59E0B', ulangi?'#E6F9FD':'#FEF6E7')}</td>
           <td class="num uang">${fC(o.omzet)}</td>
-          <td class="num uang" style="color:#1E8E3E">${fC(o.profit)}</td>
+          <td class="num uang" style="color:#10B981">${fC(o.profit)}</td>
         </tr>`; }).join('')}
       </tbody></table></div></div>`;
 
@@ -997,10 +1034,10 @@
       <div class="sec"><h4>Ringkasan</h4><span class="note">periode terpilih</span></div>
       ${kpis.replace('class="kpis"','class="kpis tiga"')}
       <div class="strip" style="margin-top:11px">
-        ${sc(I.money,'#1E8E3E','#E7F5EC','Rata-rata per pesanan',fC(aov))}
-        ${sc(I.up,'#7C3AED','#F1EBFE','Margin kotor',fP(margin))}
-        ${sc(I.target,'#F59E0B','#FEF4E2','Pembeli baru',fN(baru.length)+' pesanan')}
-        ${sc(I.cart,'#0891B2','#E5F6FA','Pembeli ulang',fN(ulang.length)+' pesanan')}
+        ${sc(I.money,'#10B981','#E6FBF4','Rata-rata per pesanan',fC(aov))}
+        ${sc(I.up,'#7C3AED','#F3EEFE','Margin kotor',fP(margin))}
+        ${sc(I.target,'#F59E0B','#FEF6E7','Pembeli baru',fN(baru.length)+' pesanan')}
+        ${sc(I.cart,'#06B6D4','#E6F9FD','Pembeli ulang',fN(ulang.length)+' pesanan')}
       </div>
 
       <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
@@ -1008,11 +1045,11 @@
 
       <div class="sec"><h4>Tren harian</h4><span class="note">omzet dan gross profit</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-gm"></canvas></div>
-        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span><span><i style="background:#1E8E3E"></i>Gross profit</span></div></div>
+        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span><span><i style="background:#10B981"></i>Gross profit</span></div></div>
 
       <div class="sec"><h4>Produk terlaris</h4><span class="note">${produk.length} produk</span></div>
       <div class="panel tight">${produk.slice(0,10).map(p=>`<div class="li">
-        ${p.gambar?`<img src="${p.gambar}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;background:#F3F4F6" alt="">`
+        ${p.gambar?`<img src="${p.gambar}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;background:#F5F3FD" alt="">`
           :`<div class="ic" style="background:${S.s};color:${S.c}">${esc(p.nama.slice(0,2))}</div>`}
         <div class="li-b"><p class="li-t">${esc(p.nama)}</p>
         <p class="li-s">${fN(p.jumlah)} unit terjual</p>
@@ -1020,10 +1057,10 @@
         <div class="li-r"><div class="li-v">${fC(p.omzet)}</div><div class="li-vs">omzet</div></div></div>`).join('')}</div>
 
       <div class="sec"><h4>Kurir</h4></div>
-      <div class="panel tight">${bar(kurir,'#0891B2')}</div>
+      <div class="panel tight">${bar(kurir,'#06B6D4')}</div>
 
       <div class="sec"><h4>Status dan pembayaran</h4></div>
-      <div class="panel tight">${bar(status,'#1E8E3E')}${bar(bayar,'#F59E0B')}</div>`;
+      <div class="panel tight">${bar(status,'#10B981')}${bar(bayar,'#F59E0B')}</div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
@@ -1067,14 +1104,14 @@
     const P = PLAT.google_ads;
     return `<p class="lead">Pangsa tayang menunjukkan berapa persen lelang yang kamu menangkan. Sisanya hilang karena budget habis atau peringkat iklan kalah — dua penyebab dengan solusi yang sangat berbeda.</p>
       <div class="panel"><div class="wrap"><canvas id="c-is"></canvas></div>
-        <div class="lg"><span><i style="background:#1E8E3E"></i>Menang</span><span><i style="background:#F59E0B"></i>Hilang: budget</span><span><i style="background:#DC2626"></i>Hilang: peringkat</span></div></div>
+        <div class="lg"><span><i style="background:#10B981"></i>Menang</span><span><i style="background:#F59E0B"></i>Hilang: budget</span><span><i style="background:#EF4444"></i>Hilang: peringkat</span></div></div>
       <div class="sec"><h4>Per kampanye</h4></div>
       <div class="panel tight">${l.map(a=>{
-        const bb = a.bud>=a.rank, c = bb?'#F59E0B':'#DC2626';
+        const bb = a.bud>=a.rank, c = bb?'#F59E0B':'#EF4444';
         return `<div class="li"><div class="ic" style="background:${P.s};color:${P.c}">${P.ini}</div>
           <div class="li-b"><p class="li-t">${esc(a.key)}</p>
           <p class="li-s">Hilang karena budget ${fP(a.bud)} · karena peringkat ${fP(a.rank)}</p>
-          <div class="track"><i style="width:${a.is.toFixed(1)}%;background:#1E8E3E"></i><i style="width:${a.bud.toFixed(1)}%;background:#F59E0B"></i><i style="width:${a.rank.toFixed(1)}%;background:#DC2626"></i></div>
+          <div class="track"><i style="width:${a.is.toFixed(1)}%;background:#10B981"></i><i style="width:${a.bud.toFixed(1)}%;background:#F59E0B"></i><i style="width:${a.rank.toFixed(1)}%;background:#EF4444"></i></div>
           <p class="li-s" style="margin-top:7px;color:${c};font-weight:600">Penghambat utama: ${bb?'budget':'peringkat iklan'}</p></div>
           <div class="li-r"><div class="li-v">${fP(a.is)}</div><div class="li-vs">pangsa tayang</div></div></div>`; }).join('')}</div>
       <div class="sec"><h4>Posisi tayang</h4></div>
@@ -1099,7 +1136,7 @@
     const bt = boros.reduce((a,x)=>a+x.spend,0);
     return `<p class="lead">Pola per jam dari Google Ads. Berguna untuk menentukan penyesuaian bid berdasarkan jadwal.</p>
       <div class="panel"><div class="wrap"><canvas id="c-jam"></canvas></div>
-        <div class="lg"><span><i style="background:#1A73E8"></i>Biaya</span><span><i style="background:#1E8E3E"></i>Konversi</span></div></div>
+        <div class="lg"><span><i style="background:#4F46E5"></i>Biaya</span><span><i style="background:#10B981"></i>Konversi</span></div></div>
       <div class="sec"><h4>Sorotan</h4></div>
       <div class="panel tight">
         ${best?li(PLAT.google_ads,'Jam paling efisien — '+best.h.padStart(2,'0')+':00', fN(best.conv)+' konversi dari '+fC(best.spend)+' biaya', fC(best.cpa),'biaya/konv.',0):''}
@@ -1128,7 +1165,7 @@
     const max = top[0].spend||1;
     const P = PLAT.google_ads;
     const baris = arr => arr.map(t=>{ const bad = t.conversions===0 && t.spend>0;
-      const C = { s: bad?'#FDECEC':'#E7F5EC', c: bad?'#DC2626':'#1E8E3E', ini: bad?'!':'✓', nama:'' };
+      const C = { s: bad?'#FEECEC':'#E6FBF4', c: bad?'#EF4444':'#10B981', ini: bad?'!':'✓', nama:'' };
       return li(C, t.term, fN(t.clicks)+' klik · '+fN(t.impressions)+' tayang · CTR '+fP(t.ctr)+' · '+fN(t.conversions)+' konv',
         fC(t.spend), t.cpa?('Biaya/konv. '+fC(t.cpa)):'0 konversi', t.spend/max*100); }).join('');
     return `<p class="lead">Kata yang benar-benar diketik orang sebelum iklanmu muncul. Data dari Google Ads.</p>
@@ -1142,14 +1179,14 @@
     const out = [];
     const t = agg(allRows()), p = aggPrev(), om = omzet();
     const belum = IKLAN.filter(id=>D.iklan[id].status!=='ok').map(id=>PLAT[id].nama);
-    if (belum.length) out.push(['setup','#6B7280','#F3F4F6', belum.join(' dan ')+' belum terhubung, jadi angka di Overview belum mencakup seluruh biaya iklanmu.']);
-    if (D.shop.status!=='ok') out.push(['setup','#6B7280','#F3F4F6','TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet terisi sendiri.']);
+    if (belum.length) out.push(['setup','#6E6A8F','#F5F3FD', belum.join(' dan ')+' belum terhubung, jadi angka di Overview belum mencakup seluruh biaya iklanmu.']);
+    if (D.shop.status!=='ok') out.push(['setup','#6E6A8F','#F5F3FD','TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet terisi sendiri.']);
 
     if (p.spend>0) { const ds=(t.spend-p.spend)/p.spend*100;
-      if (Math.abs(ds)>=10) out.push([ds>0?'perhatian':'catatan', ds>0?'#F59E0B':'#1A73E8', ds>0?'#FEF4E2':'#EAF1FE',
+      if (Math.abs(ds)>=10) out.push([ds>0?'perhatian':'catatan', ds>0?'#F59E0B':'#4F46E5', ds>0?'#FEF6E7':'#EEF0FF',
         'Biaya iklan '+(ds>0?'naik':'turun')+' '+Math.abs(ds).toFixed(0)+'% jadi '+fIDR(t.spend)+' dibanding periode sebelumnya.']); }
     if (om>0 && t.spend>0) { const r=om/t.spend;
-      out.push([r>=2?'bagus':'perhatian', r>=2?'#1E8E3E':'#DC2626', r>=2?'#E7F5EC':'#FDECEC',
+      out.push([r>=2?'bagus':'perhatian', r>=2?'#10B981':'#EF4444', r>=2?'#E6FBF4':'#FEECEC',
         'ROAS gabungan '+r.toFixed(2).replace('.',',')+'× — setiap Rp1.000 biaya iklan menghasilkan '+fIDR(r*1000)+' omzet.']); }
 
     const per = IKLAN.filter(id=>D.iklan[id].status==='ok').map(id=>{ const a=agg(rowsOf(id));
@@ -1157,26 +1194,26 @@
       .filter(x=>x.spend>0);
     const dgn = per.filter(x=>x.cpa!==null).sort((a,b)=>a.cpa-b.cpa);
     if (dgn.length>1 && dgn[dgn.length-1].cpa > dgn[0].cpa*1.4)
-      out.push(['peluang','#1E8E3E','#E7F5EC', dgn[0].nama+' menghasilkan konversi seharga '+fIDR(dgn[0].cpa)+', sementara '+dgn[dgn.length-1].nama+' '+fIDR(dgn[dgn.length-1].cpa)+'. Pertimbangkan geser sebagian budget.']);
-    per.filter(x=>x.conv===0).forEach(x=>out.push(['anomali','#DC2626','#FDECEC', x.nama+' menghabiskan '+fIDR(x.spend)+' tanpa konversi. Cek pelacakan konversinya.']));
+      out.push(['peluang','#10B981','#E6FBF4', dgn[0].nama+' menghasilkan konversi seharga '+fIDR(dgn[0].cpa)+', sementara '+dgn[dgn.length-1].nama+' '+fIDR(dgn[dgn.length-1].cpa)+'. Pertimbangkan geser sebagian budget.']);
+    per.filter(x=>x.conv===0).forEach(x=>out.push(['anomali','#EF4444','#FEECEC', x.nama+' menghabiskan '+fIDR(x.spend)+' tanpa konversi. Cek pelacakan konversinya.']));
 
     const kmp = [];
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const [k,a] of grup(rowsOf(id), r=>r.campaign)) kmp.push({ nama:k, spend:a.spend, conv:a.conversions }); }
-    kmp.filter(c=>c.conv===0 && c.spend>0).forEach(c=>out.push(['anomali','#DC2626','#FDECEC',
+    kmp.filter(c=>c.conv===0 && c.spend>0).forEach(c=>out.push(['anomali','#EF4444','#FEECEC',
       '"'+c.nama+'" menghabiskan '+fIDR(c.spend)+' tanpa satu pun konversi di periode ini.']));
 
     auctionAgg().forEach(a=>{
-      if (a.bud>=35) out.push(['lelang','#1A73E8','#EAF1FE','"'+a.key+'" hanya memenangkan '+fP(a.is)+' lelang dan kehilangan '+fP(a.bud)+' tayangan karena budget habis — masih ada ruang volume besar bila budget dinaikkan.']);
-      else if (a.rank>=25) out.push(['lelang','#1A73E8','#EAF1FE','"'+a.key+'" kehilangan '+fP(a.rank)+' tayangan karena peringkat iklan, bukan budget. Perbaiki relevansi iklan dan halaman tujuan.']);
+      if (a.bud>=35) out.push(['lelang','#4F46E5','#EEF0FF','"'+a.key+'" hanya memenangkan '+fP(a.is)+' lelang dan kehilangan '+fP(a.bud)+' tayangan karena budget habis — masih ada ruang volume besar bila budget dinaikkan.']);
+      else if (a.rank>=25) out.push(['lelang','#4F46E5','#EEF0FF','"'+a.key+'" kehilangan '+fP(a.rank)+' tayangan karena peringkat iklan, bukan budget. Perbaiki relevansi iklan dan halaman tujuan.']);
     });
 
     const wt = termAgg().filter(t=>t.conversions===0 && t.spend>0).sort((a,b)=>b.spend-a.spend);
-    if (wt.length) out.push(['saran','#F59E0B','#FEF4E2', wt.length+' kata kunci pencarian menghabiskan '+fIDR(wt.reduce((a,t)=>a+t.spend,0))+' tanpa konversi. Terboros: "'+wt.slice(0,3).map(t=>t.term).join('", "')+'".']);
+    if (wt.length) out.push(['saran','#F59E0B','#FEF6E7', wt.length+' kata kunci pencarian menghabiskan '+fIDR(wt.reduce((a,t)=>a+t.spend,0))+' tanpa konversi. Terboros: "'+wt.slice(0,3).map(t=>t.term).join('", "')+'".']);
 
     const jam = jamAgg(), boros = jam.filter(x=>x.conv===0 && x.spend>0);
     const bt = boros.reduce((a,x)=>a+x.spend,0);
-    if (bt > t.spend*0.12 && boros.length) out.push(['saran','#F59E0B','#FEF4E2',
+    if (bt > t.spend*0.12 && boros.length) out.push(['saran','#F59E0B','#FEF6E7',
       'Jam tanpa konversi menyerap '+fIDR(bt)+' ('+Math.round(bt/(t.spend||1)*100)+'% dari total). Terboros pukul '+boros.slice(0,3).map(x=>x.h.padStart(2,'0')+':00').join(', ')+'.']);
 
     if (!out.length) return `<div class="panel"><div class="empty">Belum ada temuan menonjol di periode ini.</div></div>`;
@@ -1187,11 +1224,11 @@
   }
 
   // ---------- grafik ----------
-  const AX = { ticks:{font:{size:10.5,weight:'600'},color:'#9CA3AF',maxTicksLimit:6,maxRotation:0,autoSkip:true},
+  const AX = { ticks:{font:{size:10.5,weight:'600'},color:'#A5A1C0',maxTicksLimit:6,maxRotation:0,autoSkip:true},
     grid:{display:false}, border:{display:false} };
-  const AY = extra => ({ ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4, ...(extra||{})},
-    grid:{color:'#F3F4F6',drawTicks:false}, border:{display:false} });
-  const TIP = { backgroundColor:'#111827', padding:11, cornerRadius:10, usePointStyle:true, boxWidth:8, boxHeight:8,
+  const AY = extra => ({ ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4, ...(extra||{})},
+    grid:{color:'#F1EEFC',drawTicks:false}, border:{display:false} });
+  const TIP = { backgroundColor:'#1E1B39', padding:11, cornerRadius:12, usePointStyle:true, boxWidth:8, boxHeight:8,
     titleFont:{size:11.5,weight:'600'}, bodyFont:{size:12.5} };
   const mk = (id,cfg) => { const el=document.getElementById(id); if(!el) return;
     if (charts[id]) charts[id].destroy(); charts[id]=new Chart(el.getContext('2d'), cfg); };
@@ -1211,21 +1248,21 @@
   function afterRender() {
     if (page==='overview') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
-      const ds = [ garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).spend)), '#1A73E8', 'y', true) ];
-      if (D.shop.status==='ok') ds.push(garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#1E8E3E', 'y'));
+      const ds = [ garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).spend)), '#4F46E5', 'y', true) ];
+      if (D.shop.status==='ok') ds.push(garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#10B981', 'y'));
       ds.push(garis('Konversi', keys.map(k=>m.get(k).conv), '#F59E0B', 'y1'));
       mk('c-tren', { type:'line', data:{ labels:keys.map(sd), datasets:ds },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '
             + (c.dataset.yAxisID==='y1' ? fN(c.parsed.y) : fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
 
     if (page==='tiktok_shop' && D.shop.status==='ok') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
       mk('c-shop', { type:'line', data:{ labels:keys.map(sd), datasets:[
-          garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#1E8E3E', 'y', true)] },
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#10B981', 'y', true)] },
         options:{ responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' Omzet: '+fIDR(c.parsed.y) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
@@ -1241,7 +1278,7 @@
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
 
     if (document.getElementById('c-gm')) {
@@ -1252,7 +1289,7 @@
       const keys = Array.from(m.keys()).sort();
       mk('c-gm', { type:'line', data:{ labels:keys.map(sd), datasets:[
           garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
-          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#1E8E3E', 'y') ] },
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#10B981', 'y') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
@@ -1268,8 +1305,8 @@
       const keys = Array.from(m.keys()).sort();
       mk('c-sales', { type:'line', data:{ labels:keys.map(sd), datasets:[
           garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
-          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#1E8E3E', 'y'),
-          garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).ads)), '#1A73E8', 'y') ] },
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#10B981', 'y'),
+          garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).ads)), '#4F46E5', 'y') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
@@ -1290,8 +1327,8 @@
       let kiri=false;
       dipakai.forEach(u=>{
         const idAx = unit(u), pos = kiri?'right':'left'; kiri=true;
-        scales[idAx] = { position:pos, grid:{ color: pos==='left'?'#F3F4F6':'transparent', drawTicks:false }, border:{display:false},
-          ticks:{ font:{size:10}, color:'#9CA3AF', maxTicksLimit:4,
+        scales[idAx] = { position:pos, grid:{ color: pos==='left'?'#F5F3FD':'transparent', drawTicks:false }, border:{display:false},
+          ticks:{ font:{size:10}, color:'#A5A1C0', maxTicksLimit:4,
             callback:v=> u==='idr' ? (Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb')
                       : u==='pct' ? v+'%' : fN(v) } };
       });
@@ -1306,13 +1343,13 @@
     if (page==='lelang') {
       const l = auctionAgg();
       mk('c-is', { type:'bar', data:{ labels:l.map(a=>a.key), datasets:[
-          { label:'Menang', data:l.map(a=>Number(a.is.toFixed(1))), backgroundColor:'#1E8E3E', stack:'s', borderRadius:{topLeft:6,bottomLeft:6}, barThickness:30 },
+          { label:'Menang', data:l.map(a=>Number(a.is.toFixed(1))), backgroundColor:'#10B981', stack:'s', borderRadius:{topLeft:6,bottomLeft:6}, barThickness:30 },
           { label:'Budget', data:l.map(a=>Number(a.bud.toFixed(1))), backgroundColor:'#F59E0B', stack:'s', barThickness:30 },
-          { label:'Peringkat', data:l.map(a=>Number(a.rank.toFixed(1))), backgroundColor:'#DC2626', stack:'s', borderRadius:{topRight:6,bottomRight:6}, barThickness:30 } ] },
+          { label:'Peringkat', data:l.map(a=>Number(a.rank.toFixed(1))), backgroundColor:'#EF4444', stack:'s', borderRadius:{topRight:6,bottomRight:6}, barThickness:30 } ] },
         options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+String(c.parsed.x).replace('.',',')+'%' } } },
-          scales:{ x:{ stacked:true, max:100, ticks:{font:{size:10},color:'#9CA3AF',callback:v=>v+'%'}, grid:{color:'#F3F4F6',drawTicks:false}, border:{display:false} },
-            y:{ stacked:true, ticks:{font:{size:11.5,weight:'600'},color:'#374151',
+          scales:{ x:{ stacked:true, max:100, ticks:{font:{size:10},color:'#A5A1C0',callback:v=>v+'%'}, grid:{color:'#F5F3FD',drawTicks:false}, border:{display:false} },
+            y:{ stacked:true, ticks:{font:{size:11.5,weight:'600'},color:'#454168',
               callback:function(v){ const s=this.getLabelForValue(v); return s.length>22?s.slice(0,21)+'…':s; }},
               grid:{display:false}, border:{display:false} } } } });
     }
@@ -1321,12 +1358,12 @@
       const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
       const hrs = Array.from({length:24},(_,i)=>String(i));
       mk('c-jam', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:[
-          garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), '#1A73E8', 'y', true),
-          garis('Konversi', hrs.map(h=>m.has(h)?m.get(h).conversions:0), '#1E8E3E', 'y1') ] },
+          garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), '#4F46E5', 'y', true),
+          garis('Konversi', hrs.map(h=>m.has(h)?m.get(h).conversions:0), '#10B981', 'y1') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:{ ...AX, ticks:{...AX.ticks, maxTicksLimit:12} }, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
   }
 
