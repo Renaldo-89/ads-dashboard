@@ -520,8 +520,8 @@
     if (!daftarAkun.includes(fAkun)) fAkun = 'all';
     const ea = document.getElementById('akun-chips');
     ea.dataset.lbl = 'AKUN';
-    if (daftarAkun.length < 2) { ea.style.display='none'; fAkun='all'; }
-    else { ea.style.display='flex';
+    if (daftarAkun.length < 2) { ea.dataset.punya='0'; fAkun='all'; }
+    else { ea.dataset.punya='1';
       ea.innerHTML = '<button data-akun="all" class="'+(fAkun==='all'?'on':'')+'">Semua</button>'
         + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(a)+'</button>').join(''); }
 
@@ -536,10 +536,22 @@
     if (!daftarKmp.includes(fKmp)) fKmp = 'all';
     const ek = document.getElementById('kmp-chips');
     ek.dataset.lbl = 'KAMPANYE';
-    if (daftarKmp.length < 2) { ek.style.display='none'; fKmp='all'; }
-    else { ek.style.display='flex';
+    if (daftarKmp.length < 2) { ek.dataset.punya='0'; fKmp='all'; }
+    else { ek.dataset.punya='1';
       ek.innerHTML = '<button data-kmp="all" class="'+(fKmp==='all'?'on':'')+'">Semua</button>'
         + daftarKmp.map(k=>'<button data-kmp="'+esc(k)+'" class="'+(fKmp===k?'on':'')+'">'+esc(k)+'</button>').join(''); }
+
+    tampilFilter();
+  }
+
+  // filter akun & kampanye hanya relevan di halaman Platform dan Analisis
+  function tampilFilter() {
+    const m = MENU.find(x=>x.id===page);
+    const boleh = m && m.g !== 1;
+    ['akun-chips','kmp-chips'].forEach(id=>{
+      const el = document.getElementById(id);
+      el.style.display = (boleh && el.dataset.punya==='1') ? 'flex' : 'none';
+    });
   }
 
   // ---------- navigasi ----------
@@ -569,6 +581,7 @@
     if (fKmp!=='all') crumb += ' · ' + fKmp;
     if (fAkun==='all' && fKmp==='all') crumb += (m.g===2 ? ' · platform' : m.g===3 ? ' · analisis' : ' · semua platform');
     document.getElementById('pcrumb').textContent = crumb;
+    tampilFilter();
     Object.values(charts).forEach(c=>c.destroy()); charts={};
     const el = document.getElementById('content');
     if (page==='overview') el.innerHTML = pgOverview();
