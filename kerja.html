@@ -389,8 +389,8 @@
   // Kontrak data yang diharapkan dari Worker, per baris:
   // { date, orders, units, revenue, gross_profit, customers_new, customers_repeat }
   async function tarikSales(src, from, to) {
-    const q = new URLSearchParams({ sales:src, date_from:from, date_to:to, _:String(Date.now()) });
-    const res = await fetch(PROXY+'?'+q.toString(), { cache:'no-store' });
+    const q = new URLSearchParams({ date_from:from, date_to:to, _:String(Date.now()) });
+    const res = await fetch(PROXY+'?sales='+src+'&'+q.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error(String(res.status));
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
@@ -457,7 +457,12 @@
       try { prevSales[s.id] = await tarikSales(s.id, pr.from, pr.to); } catch(e) { prevSales[s.id]=[]; }
     }));
 
-    D = { iklan, prev, shop, extra, sales, prevSales };
+    let pesanan = [];
+    if (sales.globemerce && sales.globemerce.status==='ok') {
+      try { pesanan = await tarikSales('globemerce&detail=1', r.from, r.to); } catch(e) { pesanan = []; }
+    }
+
+    D = { iklan, prev, shop, extra, sales, prevSales, pesanan };
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
     document.getElementById('live-txt').textContent = 'Segar ' + jam;
@@ -862,14 +867,18 @@
       Sambungkan lewat Worker Cloudflare dengan alamat <code>?sales=${id}</code>,
       lalu datanya otomatis muncul di sini dan ikut terhitung di Overview.</div></div>`;
     const a = aggSales(d.rows);
-    return `<div class="kpis">
+    const P = (id==='globemerce' && D.pesanan && D.pesanan.length) ? D.pesanan : null;
+
+    const kpis = `<div class="kpis">
         ${kpi(I.cart,S.c,S.s,'Pesanan',fN(a.orders),'')}
         ${kpi(I.cart,'#7C3AED','#F1EBFE','Produk terjual',fN(a.units||a.orders),'')}
         ${kpi(I.money,'#1E8E3E','#E7F5EC','Omzet',fC(a.revenue),'')}
         ${kpi(I.money,'#1A73E8','#EAF1FE','Gross profit',fC(a.gross),'')}
         ${kpi(I.target,'#F59E0B','#FEF4E2','Pelanggan baru',fN(a.baru),'')}
         ${kpi(I.up,'#0891B2','#E5F6FA','Pelanggan repeat',fN(a.repeat),'')}
-      </div>
+      </div>`;
+
+    if (!P) return kpis + `
       <div class="sec"><h4>Rincian harian</h4></div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt">
         <thead><tr><th>Tanggal</th><th>Pesanan</th><th>Produk</th><th>Omzet</th><th>Gross profit</th><th>Baru</th><th>Repeat</th></tr></thead>
@@ -878,6 +887,83 @@
           return '<tr><td>'+sd(r.date)+'</td><td>'+fN(r.orders)+'</td><td>'+fN(r.units||r.orders)
             +'</td><td>'+fC(r.revenue)+'</td><td>'+fC(g)+'</td><td>'+fN(r.customers_new)+'</td><td>'+fN(r.customers_repeat)+'</td></tr>';
         }).join('')}</tbody></table></div></div>`;
+
+    // ---- tampilan lengkap berbasis pesanan ----
+    const hitung = (fn) => { const m=new Map(); for (const o of P){ const k=fn(o)||'Lainnya';
+      if(!m.has(k)) m.set(k,{k, n:0, omzet:0, profit:0, unit:0});
+      const x=m.get(k); x.n++; x.omzet+=o.omzet||0; x.profit+=o.profit||0; x.unit+=o.unit||0; }
+      return Array.from(m.values()).sort((x,y)=>y.omzet-x.omzet); };
+
+    const produk = (()=>{ const m=new Map();
+      for (const o of P) for (const p of (o.produk||[])) {
+        if(!m.has(p.nama)) m.set(p.nama,{nama:p.nama, jumlah:0, omzet:0, gambar:p.gambar});
+        const x=m.get(p.nama); x.jumlah+=p.jumlah||0; x.omzet+=(p.harga||0)*(p.jumlah||0); }
+      return Array.from(m.values()).sort((x,y)=>y.jumlah-x.jumlah); })();
+
+    const kurir = hitung(o=>o.kurir);
+    const status = hitung(o=>o.status);
+    const bayar = hitung(o=>o.pembayaran);
+    const baru = P.filter(o=>o.jenis_pembeli==='baru');
+    const ulang = P.filter(o=>o.jenis_pembeli==='repeat');
+    const aov = P.length ? P.reduce((s,o)=>s+(o.omzet||0),0)/P.length : 0;
+    const margin = a.revenue>0 ? a.gross/a.revenue*100 : 0;
+    const maxP = produk.length ? produk[0].jumlah : 1;
+
+    const bar = (arr, warna) => arr.slice(0,8).map(x=>{
+      const pct = arr[0].omzet>0 ? x.omzet/arr[0].omzet*100 : 0;
+      return `<div class="li"><div class="li-b"><p class="li-t">${esc(x.k)}</p>
+        <p class="li-s">${fN(x.n)} pesanan · ${fN(x.unit)} produk</p>
+        <div class="track"><i style="width:${pct.toFixed(1)}%;background:${warna}"></i></div></div>
+        <div class="li-r"><div class="li-v">${fC(x.omzet)}</div><div class="li-vs">omzet</div></div></div>`;
+    }).join('');
+
+    const badge = (t,c,s) => `<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:${s};color:${c}">${t}</span>`;
+
+    return kpis + `
+      <div class="strip" style="margin-top:14px">
+        ${sc(I.money,'#1E8E3E','#E7F5EC','Rata-rata per pesanan',fC(aov))}
+        ${sc(I.up,'#7C3AED','#F1EBFE','Margin kotor',fP(margin))}
+        ${sc(I.target,'#F59E0B','#FEF4E2','Pembeli baru',fN(baru.length)+' pesanan')}
+        ${sc(I.cart,'#0891B2','#E5F6FA','Pembeli ulang',fN(ulang.length)+' pesanan')}
+      </div>
+
+      <div class="sec"><h4>Tren harian</h4><span class="note">omzet dan gross profit</span></div>
+      <div class="panel"><div class="wrap sm"><canvas id="c-gm"></canvas></div>
+        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span><span><i style="background:#1E8E3E"></i>Gross profit</span></div></div>
+
+      <div class="sec"><h4>Produk terlaris</h4><span class="note">${produk.length} produk</span></div>
+      <div class="panel tight">${produk.slice(0,10).map(p=>`<div class="li">
+        ${p.gambar?`<img src="${p.gambar}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;background:#F3F4F6" alt="">`
+          :`<div class="ic" style="background:${S.s};color:${S.c}">${esc(p.nama.slice(0,2))}</div>`}
+        <div class="li-b"><p class="li-t">${esc(p.nama)}</p>
+        <p class="li-s">${fN(p.jumlah)} unit terjual</p>
+        <div class="track"><i style="width:${(p.jumlah/maxP*100).toFixed(1)}%;background:${S.c}"></i></div></div>
+        <div class="li-r"><div class="li-v">${fC(p.omzet)}</div><div class="li-vs">omzet</div></div></div>`).join('')}</div>
+
+      <div class="sec"><h4>Kurir</h4></div>
+      <div class="panel tight">${bar(kurir,'#0891B2')}</div>
+
+      <div class="sec"><h4>Status dan pembayaran</h4></div>
+      <div class="panel tight">${bar(status,'#1E8E3E')}${bar(bayar,'#F59E0B')}</div>
+
+      <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
+      <div class="panel tight"><div class="scroll-y">${P.slice().sort((x,y)=>String(y.tanggal+y.waktu).localeCompare(String(x.tanggal+x.waktu))).map(o=>{
+        const selesai = /complete|delivered|selesai/i.test(o.status||'');
+        return `<div class="li">
+          <div class="ic" style="background:${o.jenis_pembeli==='repeat'?'#E5F6FA':'#FEF4E2'};color:${o.jenis_pembeli==='repeat'?'#0891B2':'#F59E0B'}">
+            ${o.jenis_pembeli==='repeat'?'R':'B'}</div>
+          <div class="li-b">
+            <p class="li-t">#${esc(o.no)} · ${esc(o.pembeli||'—')}</p>
+            <p class="li-s">${sd(o.tanggal)} ${o.waktu||''} · ${esc(o.kurir||'—')} · ${esc(o.pembayaran||'')}
+              ${o.resi?' · resi '+esc(o.resi):''}</p>
+            <p class="li-s" style="margin-top:4px">${(o.produk||[]).map(p=>esc(p.nama)+' ×'+fN(p.jumlah)).join(' · ')||'—'}</p>
+            <p style="margin-top:6px">${badge(o.status||'—', selesai?'#1E7E34':'#916000', selesai?'#E7F5EC':'#FEF4E2')}
+              ${badge(o.jenis_pembeli==='repeat'?'Pembeli ulang':'Pembeli baru',
+                o.jenis_pembeli==='repeat'?'#0891B2':'#F59E0B', o.jenis_pembeli==='repeat'?'#E5F6FA':'#FEF4E2')}</p>
+          </div>
+          <div class="li-r"><div class="li-v">${fC(o.omzet)}</div>
+            <div class="li-vs">profit ${fC(o.profit)}</div></div></div>`;
+      }).join('')}</div></div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
@@ -1096,6 +1182,20 @@
           plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
           scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
             y1:{ position:'right', ticks:{font:{size:10},color:'#9CA3AF',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+    }
+
+    if (document.getElementById('c-gm')) {
+      const m = new Map();
+      for (const o of (D.pesanan||[])) { if(!o.tanggal) continue;
+        if(!m.has(o.tanggal)) m.set(o.tanggal,{rev:0,gp:0});
+        const a=m.get(o.tanggal); a.rev+=o.omzet||0; a.gp+=o.profit||0; }
+      const keys = Array.from(m.keys()).sort();
+      mk('c-gm', { type:'line', data:{ labels:keys.map(sd), datasets:[
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#1E8E3E', 'y') ] },
+        options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
+          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
     }
 
     if (document.getElementById('c-sales')) {
