@@ -127,6 +127,10 @@ def rapikan_order(o):
     return {
         "resi": o.get("awb_number") or "",
         "no_order": o.get("shipment_order_no") or o.get("client_order_no") or "",
+        "no_client": o.get("client_order_no") or "",
+        "no_shipment": o.get("shipment_order_no") or "",
+        "ref": o.get("unique_reference_id") or "",
+        "ref_logistik": o.get("logistic_reference_number") or "",
         "tanggal": (o.get("created_at") or "")[:10],
         "status": sh.get("status") or "",
         "kurir": lg.get("name") or "",

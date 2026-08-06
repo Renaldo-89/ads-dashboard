@@ -645,25 +645,41 @@
     });
   }
 
-  // ---------- penggabungan Everpro <-> Globemerce lewat nomor resi ----------
+  // ---------- penggabungan Everpro <-> Globemerce ----------
+  // Dicocokkan lewat nomor resi; kalau resi belum terbit (mis. GoSend),
+  // dicocokkan lewat nomor order Globemerce yang tersimpan di kolom rujukan Everpro.
   const bersihResi = r => String(r||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  const angkaSaja  = s => String(s||'').replace(/\D/g,'');
 
-  function petaPembeli() {              // resi -> data pembeli dari Globemerce
-    const m = new Map();
-    for (const o of (D.pesanan||[])) {
-      const k = bersihResi(o.resi);
-      if (k) m.set(k, o);
+  function kunciKirim(x) {              // semua kemungkinan kunci dari sisi Everpro
+    const k = [];
+    const r = bersihResi(x.resi); if (r) k.push('R:'+r);
+    for (const f of ['no_client','no_shipment','no_order','ref','ref_logistik']) {
+      const n = angkaSaja(x[f]);
+      if (n && n.length >= 6) k.push('O:'+n);
     }
+    return k;
+  }
+  function kunciPesanan(o) {            // kunci dari sisi Globemerce
+    const k = [];
+    const r = bersihResi(o.resi);
+    if (r && !/notgenerated/i.test(r)) k.push('R:'+r);
+    const n = angkaSaja(o.no);
+    if (n && n.length >= 6) k.push('O:'+n);
+    return k;
+  }
+
+  function petaPembeli() {              // kunci -> pesanan Globemerce
+    const m = new Map();
+    for (const o of (D.pesanan||[])) for (const k of kunciPesanan(o)) if (!m.has(k)) m.set(k, o);
     return m;
   }
-  function petaKirim() {                // resi -> status pengiriman dari Everpro
+  function petaKirim() {                // kunci -> pengiriman Everpro
     const m = new Map();
-    for (const x of (D.kirim||[])) {
-      const k = bersihResi(x.resi);
-      if (k) m.set(k, x);
-    }
+    for (const x of (D.kirim||[])) for (const k of kunciKirim(x)) if (!m.has(k)) m.set(k, x);
     return m;
   }
+  const cari = (peta, kunci) => { for (const k of kunci) if (peta.has(k)) return peta.get(k); return null; };
 
   const WARNA_KIRIM = t => {
     const s = String(t||'').toLowerCase();
@@ -989,20 +1005,21 @@
       <code>data/everpro-orders.json</code>.</div></div>`;
 
     const pb = petaPembeli();
-    const cocok = K.filter(x=>pb.has(bersihResi(x.resi))).length;
+    const cocok = K.filter(x=>cari(pb, kunciKirim(x))).length;
     const cair = K.filter(x=>/cair|paid|success|disburse/i.test(x.cashback_status||'')).length;
     const totalCb = K.reduce((a,x)=>a+(Number(x.cashback)||0),0);
     const cairCb = K.filter(x=>/cair|paid|success|disburse/i.test(x.cashback_status||''))
                     .reduce((a,x)=>a+(Number(x.cashback)||0),0);
 
     const baris = K.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(x=>{
-      const p = pb.get(bersihResi(x.resi));
+      const p = cari(pb, kunciKirim(x));
       const [wc, ws] = WARNA_KIRIM(x.status);
       const [cc, cs, ct] = WARNA_CASHBACK(x.cashback_status);
       return `<tr>
         <td class="tgl">${sd(x.tanggal)}</td>
         <td class="resi">${x.resi ? esc(x.resi) : '<span style="color:var(--red)">belum ada resi</span>'}</td>
-        <td class="nama" title="${p?esc(p.pembeli||''):''}">${p ? esc(p.pembeli||'—')
+        <td class="nama" title="${p?esc(p.pembeli||''):''}">${p
+          ? esc(p.pembeli||'—') + '<br><span style="font-weight:500;color:var(--faint);font-size:11px">#'+esc(p.no)+'</span>'
           : '<span style="color:var(--faint)">tidak ada di Globemerce</span>'}</td>
         <td class="kurir">${esc(x.kurir||'—')}${x.layanan?'<br><span style="color:var(--faint);font-size:11px">'+esc(x.layanan)+'</span>':''}</td>
         <td class="ctr">${x.cod?'<span class="pill2" style="background:#FEF6E7;color:#B45309">COD</span>'
@@ -1203,13 +1220,15 @@
       ${P.slice().sort((x,y)=>String(y.tanggal+y.waktu).localeCompare(String(x.tanggal+x.waktu))).map(o=>{
         const selesai = /complete|delivered|selesai/i.test(o.status||'');
         const ulangi = o.jenis_pembeli==='repeat';
-        const kir = pk.get(bersihResi(o.resi));
+        const kir = cari(pk, kunciPesanan(o));
         let selKirim = '';
         if (adaKirim) {
           if (kir) { const [c,s] = WARNA_KIRIM(kir.status);
             const cb = /cair|paid|success|disburse/i.test(kir.cashback_status||'');
+            const resiEp = kosongResi(o.resi) && kir.resi ? kir.resi : null;
             selKirim = '<td class="ctr"><span class="pill2" style="background:'+s+';color:'+c+'">'
               + esc(kir.status||'—') + '</span>'
+              + (resiEp ? '<br><span style="font-size:10px;color:var(--muted)">'+esc(resiEp)+'</span>' : '')
               + (kir.cashback ? '<br><span style="font-size:10px;color:'+(cb?'#047857':'#B45309')+'">cashback '
                   + (cb?'cair':'proses') + '</span>' : '') + '</td>';
           } else selKirim = '<td class="ctr"><span style="color:var(--faint);font-size:11px">—</span></td>';
