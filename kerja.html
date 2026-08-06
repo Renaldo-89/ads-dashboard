@@ -144,6 +144,8 @@
   .mt .v { font-size:19px; font-weight:700; margin:0; letter-spacing:-.5px; color:var(--ink); }
 
   .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:11px; }
+  .kpis.tiga { grid-template-columns:repeat(3,1fr); }
+  @media (max-width: 720px) { .kpis.tiga { grid-template-columns:repeat(2,1fr); } }
   .kpi { background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:15px; }
   .kpi .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:11px; }
   .kpi .ic { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
@@ -936,16 +938,17 @@
       tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
       tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
     }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
+    const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
     const gmvHero = (D.gmv||[]).length ? `<div class="gmv">
       <div class="gcard" style="background:linear-gradient(135deg,#F1EBFE,#FAF7FF)">
         <p class="k" style="color:#7C3AED">GMV PERSONAL</p>
-        <p class="v" style="color:#5B21B6">${fN(g.personal)}<span class="u">GMV</span></p>
-        <p class="s" style="color:#6D28D9">${g.tinggiP?('Tertinggi '+fN(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
+        <p class="v" style="color:#5B21B6">${fGMV(g.personal)}<span class="u">GMV</span></p>
+        <p class="s" style="color:#6D28D9">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
       </div>
       <div class="gcard" style="background:linear-gradient(135deg,#E7F5EC,#F5FBF7)">
         <p class="k" style="color:#1E8E3E">GMV GROUP</p>
-        <p class="v" style="color:#14532D">${fN(g.group)}<span class="u">GMV</span></p>
-        <p class="s" style="color:#166534">${g.tinggiG?('Tertinggi '+fN(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
+        <p class="v" style="color:#14532D">${fGMV(g.group)}<span class="u">GMV</span></p>
+        <p class="s" style="color:#166534">${g.tinggiG?('Tertinggi '+fGMV(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
       </div></div>` : '';
 
     // ---- daftar pesanan dalam bentuk tabel ----
@@ -976,17 +979,17 @@
       </tbody></table></div></div>`;
 
     return gmvHero + `
-      <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
-      ${tabel}
-
-      <div class="sec"><h4>Ringkasan</h4></div>
-      ${kpis}
+      <div class="sec"><h4>Ringkasan</h4><span class="note">periode terpilih</span></div>
+      ${kpis.replace('class="kpis"','class="kpis tiga"')}
       <div class="strip" style="margin-top:11px">
         ${sc(I.money,'#1E8E3E','#E7F5EC','Rata-rata per pesanan',fC(aov))}
         ${sc(I.up,'#7C3AED','#F1EBFE','Margin kotor',fP(margin))}
         ${sc(I.target,'#F59E0B','#FEF4E2','Pembeli baru',fN(baru.length)+' pesanan')}
         ${sc(I.cart,'#0891B2','#E5F6FA','Pembeli ulang',fN(ulang.length)+' pesanan')}
       </div>
+
+      <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
+      ${tabel}
 
       <div class="sec"><h4>Tren harian</h4><span class="note">omzet dan gross profit</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-gm"></canvas></div>
