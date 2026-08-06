@@ -119,6 +119,17 @@
   .note { font-size:12px; color:var(--faint); font-weight:500; }
   .lead { font-size:12.5px; color:var(--muted); line-height:1.55; margin:-6px 0 14px; max-width:70ch; }
 
+  .gmv { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:13px; margin-bottom:6px; }
+  .gcard { border-radius:18px; padding:20px 22px; border:1px solid var(--line); position:relative; overflow:hidden; }
+  .gcard .k { font-size:12px; font-weight:700; letter-spacing:.5px; margin:0 0 8px; opacity:.8; }
+  .gcard .v { font-size:34px; font-weight:700; letter-spacing:-1px; margin:0; line-height:1.05; }
+  .gcard .u { font-size:13px; font-weight:600; opacity:.75; margin-left:6px; }
+  .gcard .s { font-size:12.5px; margin:8px 0 0; font-weight:500; opacity:.8; }
+
+  table.dt td.resi-kosong { color:var(--red); font-weight:600; }
+  table.dt .pill2 { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  table.dt td.prod { white-space:normal; max-width:280px; font-weight:500; color:var(--ink-2); font-size:12px; }
+
   .mgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .mt { background:var(--panel); border:1.5px solid var(--line); border-radius:14px; padding:12px 13px;
     text-align:left; font-family:inherit; cursor:pointer; transition:all .14s; }
@@ -457,12 +468,13 @@
       try { prevSales[s.id] = await tarikSales(s.id, pr.from, pr.to); } catch(e) { prevSales[s.id]=[]; }
     }));
 
-    let pesanan = [];
+    let pesanan = [], gmv = [];
     if (sales.globemerce && sales.globemerce.status==='ok') {
       try { pesanan = await tarikSales('globemerce&detail=1', r.from, r.to); } catch(e) { pesanan = []; }
+      try { gmv = await tarikSales('globemerce&gmv=1', r.from, r.to); } catch(e) { gmv = []; }
     }
 
-    D = { iklan, prev, shop, extra, sales, prevSales, pesanan };
+    D = { iklan, prev, shop, extra, sales, prevSales, pesanan, gmv };
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
     document.getElementById('live-txt').textContent = 'Segar ' + jam;
@@ -917,10 +929,59 @@
         <div class="li-r"><div class="li-v">${fC(x.omzet)}</div><div class="li-vs">omzet</div></div></div>`;
     }).join('');
 
-    const badge = (t,c,s) => `<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:${s};color:${c}">${t}</span>`;
+    // ---- GMV personal & grup, dua kartu utama di paling atas ----
+    const g = (D.gmv||[]).reduce((a,x)=>({
+      personal: a.personal + (Number(x.gmv_personal)||0),
+      group: a.group + (Number(x.gmv_group)||0),
+      tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
+      tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
+    }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
+    const gmvHero = (D.gmv||[]).length ? `<div class="gmv">
+      <div class="gcard" style="background:linear-gradient(135deg,#F1EBFE,#FAF7FF)">
+        <p class="k" style="color:#7C3AED">GMV PERSONAL</p>
+        <p class="v" style="color:#5B21B6">${fN(g.personal)}<span class="u">GMV</span></p>
+        <p class="s" style="color:#6D28D9">${g.tinggiP?('Tertinggi '+fN(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
+      </div>
+      <div class="gcard" style="background:linear-gradient(135deg,#E7F5EC,#F5FBF7)">
+        <p class="k" style="color:#1E8E3E">GMV GROUP</p>
+        <p class="v" style="color:#14532D">${fN(g.group)}<span class="u">GMV</span></p>
+        <p class="s" style="color:#166534">${g.tinggiG?('Tertinggi '+fN(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
+      </div></div>` : '';
 
-    return kpis + `
-      <div class="strip" style="margin-top:14px">
+    // ---- daftar pesanan dalam bentuk tabel ----
+    const pil = (t,c,s) => `<span class="pill2" style="background:${s};color:${c}">${t}</span>`;
+    const kosongResi = r => !r || /not\s*generated/i.test(String(r));
+    const tabel = `<div class="panel tight"><div class="scroll-y scroll-x"><table class="dt">
+      <thead><tr>
+        <th>Tanggal</th><th>No</th><th>Pembeli</th><th>Produk</th><th>Kurir</th>
+        <th>Resi</th><th>Status</th><th>Tipe</th><th>Omzet</th><th>Profit</th>
+      </tr></thead><tbody>
+      ${P.slice().sort((x,y)=>String(y.tanggal+y.waktu).localeCompare(String(x.tanggal+x.waktu))).map(o=>{
+        const selesai = /complete|delivered|selesai/i.test(o.status||'');
+        const ulangi = o.jenis_pembeli==='repeat';
+        return `<tr>
+          <td>${sd(o.tanggal)}<span style="color:var(--faint);font-weight:500"> ${o.waktu||''}</span></td>
+          <td>#${esc(o.no)}</td>
+          <td>${esc(o.pembeli||'—')}</td>
+          <td class="prod">${(o.produk||[]).map(p=>esc(p.nama)+' ×'+fN(p.jumlah)).join(', ')||'—'}</td>
+          <td>${esc(o.kurir||'—')}</td>
+          ${kosongResi(o.resi)
+            ? '<td class="resi-kosong">not generated yet</td>'
+            : '<td>'+esc(o.resi)+'</td>'}
+          <td>${pil(esc(o.status||'—'), selesai?'#1E7E34':'#916000', selesai?'#E7F5EC':'#FEF4E2')}</td>
+          <td>${pil(ulangi?'Repeat':'Baru', ulangi?'#0891B2':'#F59E0B', ulangi?'#E5F6FA':'#FEF4E2')}</td>
+          <td>${fC(o.omzet)}</td>
+          <td>${fC(o.profit)}</td>
+        </tr>`; }).join('')}
+      </tbody></table></div></div>`;
+
+    return gmvHero + `
+      <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
+      ${tabel}
+
+      <div class="sec"><h4>Ringkasan</h4></div>
+      ${kpis}
+      <div class="strip" style="margin-top:11px">
         ${sc(I.money,'#1E8E3E','#E7F5EC','Rata-rata per pesanan',fC(aov))}
         ${sc(I.up,'#7C3AED','#F1EBFE','Margin kotor',fP(margin))}
         ${sc(I.target,'#F59E0B','#FEF4E2','Pembeli baru',fN(baru.length)+' pesanan')}
@@ -944,26 +1005,7 @@
       <div class="panel tight">${bar(kurir,'#0891B2')}</div>
 
       <div class="sec"><h4>Status dan pembayaran</h4></div>
-      <div class="panel tight">${bar(status,'#1E8E3E')}${bar(bayar,'#F59E0B')}</div>
-
-      <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
-      <div class="panel tight"><div class="scroll-y">${P.slice().sort((x,y)=>String(y.tanggal+y.waktu).localeCompare(String(x.tanggal+x.waktu))).map(o=>{
-        const selesai = /complete|delivered|selesai/i.test(o.status||'');
-        return `<div class="li">
-          <div class="ic" style="background:${o.jenis_pembeli==='repeat'?'#E5F6FA':'#FEF4E2'};color:${o.jenis_pembeli==='repeat'?'#0891B2':'#F59E0B'}">
-            ${o.jenis_pembeli==='repeat'?'R':'B'}</div>
-          <div class="li-b">
-            <p class="li-t">#${esc(o.no)} · ${esc(o.pembeli||'—')}</p>
-            <p class="li-s">${sd(o.tanggal)} ${o.waktu||''} · ${esc(o.kurir||'—')} · ${esc(o.pembayaran||'')}
-              ${o.resi?' · resi '+esc(o.resi):''}</p>
-            <p class="li-s" style="margin-top:4px">${(o.produk||[]).map(p=>esc(p.nama)+' ×'+fN(p.jumlah)).join(' · ')||'—'}</p>
-            <p style="margin-top:6px">${badge(o.status||'—', selesai?'#1E7E34':'#916000', selesai?'#E7F5EC':'#FEF4E2')}
-              ${badge(o.jenis_pembeli==='repeat'?'Pembeli ulang':'Pembeli baru',
-                o.jenis_pembeli==='repeat'?'#0891B2':'#F59E0B', o.jenis_pembeli==='repeat'?'#E5F6FA':'#FEF4E2')}</p>
-          </div>
-          <div class="li-r"><div class="li-v">${fC(o.omzet)}</div>
-            <div class="li-vs">profit ${fC(o.profit)}</div></div></div>`;
-      }).join('')}</div></div>`;
+      <div class="panel tight">${bar(status,'#1E8E3E')}${bar(bayar,'#F59E0B')}</div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
