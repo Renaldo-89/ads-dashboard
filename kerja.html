@@ -7,6 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kerja">
 <meta name="theme-color" content="#FFFFFF">
+<script>
+  // dipasang sebelum halaman digambar supaya tidak ada kedipan putih saat mode gelap
+  try { document.documentElement.dataset.tema = localStorage.getItem('tema') || 'terang'; }
+  catch (e) { document.documentElement.dataset.tema = 'terang'; }
+</script>
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 <style>
@@ -20,26 +25,52 @@
     --violet:#7C3AED; --violet-soft:#F3EEFE;
     --pink:#D946EF;  --pink-soft:#FCEBFE;
     --toska:#06B6D4; --toska-soft:#E6F9FD;
+    --green-ink:#047857; --amber-ink:#B45309; --red-ink:#B91C1C; --red-line:#FBD5D5;
     --grad:linear-gradient(135deg,#4F46E5 0%,#7C3AED 55%,#D946EF 100%);
     --bayang:0 4px 20px rgba(79,70,229,.07);
     --bayang-2:0 10px 34px rgba(79,70,229,.12);
+    --kaca:rgba(255,255,255,.86); --kaca-2:rgba(255,255,255,.22);
+    --lembut:linear-gradient(140deg,#FBFAFF,#F6F3FE);
+    --hover:#FBFAFF; --scroll:#DED9F5; --kartu-gelap:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%);
+    --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.14), transparent 62%),
+      radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.10),  transparent 60%),
+      radial-gradient(720px 460px at 60% 108%, rgba(217,70,239,.10), transparent 62%),
+      linear-gradient(180deg,#FBFAFF 0%,#F7F6FE 60%,#F4F2FD 100%);
     --sb:248px; }
+
+  /* ---------- palet gelap ---------- */
+  [data-tema="gelap"] { color-scheme: dark;
+    --ink:#EDEBFA; --ink-2:#C6C2E4; --muted:#9B97BC; --faint:#726E96;
+    --line:#2C2950; --line-2:#232041; --panel:#1A1836; --bg:#0F0E24;
+    --blue:#8B84F8;   --blue-soft:#262353;
+    --green:#34D399;  --green-soft:#123A2F;  --green-ink:#6EE7B7;
+    --amber:#FBBF24;  --amber-soft:#3D2F13;  --amber-ink:#FCD34D;
+    --red:#F87171;    --red-soft:#3E1F24;    --red-ink:#FCA5A5; --red-line:#5C2B33;
+    --violet:#A78BFA; --violet-soft:#2E2659;
+    --pink:#E879F9;   --pink-soft:#3C2250;
+    --toska:#22D3EE;  --toska-soft:#10353F;
+    --bayang:0 4px 20px rgba(0,0,0,.34);
+    --bayang-2:0 10px 34px rgba(0,0,0,.46);
+    --kaca:rgba(26,24,54,.86); --kaca-2:rgba(255,255,255,.16);
+    --lembut:linear-gradient(140deg,#232041,#1C1A3A);
+    --hover:#221F45; --scroll:#3A3566;
+    --kartu-gelap:linear-gradient(150deg,#2B2758 0%,#221F45 60%,#1B1938 100%);
+    --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.26), transparent 62%),
+      radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.20),  transparent 60%),
+      radial-gradient(720px 460px at 60% 108%, rgba(217,70,239,.16), transparent 62%),
+      linear-gradient(180deg,#13112C 0%,#0F0E24 60%,#0C0B1E 100%); }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; padding:0; background:var(--bg); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased; }
   body::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
-    background:
-      radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.14), transparent 62%),
-      radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.10),  transparent 60%),
-      radial-gradient(720px 460px at 60% 108%, rgba(217,70,239,.10), transparent 62%),
-      linear-gradient(180deg,#FBFAFF 0%,#F7F6FE 60%,#F4F2FD 100%); }
+    background:var(--latar); }
   ::-webkit-scrollbar { width:8px; height:8px; }
-  ::-webkit-scrollbar-thumb { background:#DED9F5; border-radius:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
 
   /* ---------- sidebar ---------- */
   aside { position:fixed; inset:0 auto 0 0; width:var(--sb);
-    background:rgba(255,255,255,.86); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    background:var(--kaca); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
     border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:60;
     padding:18px 14px calc(14px + env(safe-area-inset-bottom)); overflow-y:auto; }
   .brand { display:flex; align-items:center; gap:11px; padding:0 6px 16px; }
@@ -51,7 +82,7 @@
   .brand p { font-size:11.5px; color:var(--faint); margin:1px 0 0; font-weight:500; }
 
   .profile { border:1px solid var(--line); border-radius:16px; padding:13px; margin-bottom:18px;
-    background:linear-gradient(140deg,#FBFAFF,#F6F3FE); }
+    background:var(--lembut); }
   .profile .row { display:flex; align-items:center; gap:10px; }
   .avatar { width:36px; height:36px; border-radius:50%; background:var(--grad); color:#fff;
     display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px; flex-shrink:0; }
@@ -81,7 +112,7 @@
   nav.side button .lbl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;
     background:var(--line-2); color:var(--muted); flex-shrink:0; }
-  nav.side button.on .tag { background:rgba(255,255,255,.22); color:#fff; }
+  nav.side button.on .tag { background:var(--kaca-2); color:#fff; }
   .tag.ok { background:var(--green-soft); color:var(--green); }
   .tag.off { background:var(--line-2); color:var(--faint); }
 
@@ -152,7 +183,7 @@
   .gcard .u { font-size:13px; font-weight:600; opacity:.7; margin-left:7px; letter-spacing:0; }
   .gcard .s { font-size:12.5px; margin:10px 0 0; font-weight:500; opacity:.85; }
   .gcard.terang { background:var(--grad); color:#fff; box-shadow:0 12px 32px rgba(124,58,237,.32); }
-  .gcard.gelap { background:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%); color:#fff;
+  .gcard.gelap { background:var(--kartu-gelap); color:#fff;
     box-shadow:0 12px 32px rgba(30,27,57,.34); }
   .gcard.gelap .v { background:linear-gradient(120deg,#34D399,#22D3EE);
     -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -166,7 +197,7 @@
   table.dt.pesanan th { font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-bottom:11px; }
   table.dt.pesanan th.num, table.dt.pesanan td.num { text-align:right; font-variant-numeric:tabular-nums; }
   table.dt.pesanan th.ctr, table.dt.pesanan td.ctr { text-align:center; }
-  table.dt.pesanan tbody tr:hover { background:#FBFAFF; }
+  table.dt.pesanan tbody tr:hover { background:var(--hover); }
   table.dt.pesanan td.tgl { white-space:nowrap; font-weight:600; }
   table.dt.pesanan td.tgl span { display:block; font-weight:500; color:var(--faint); font-size:11px; margin-top:2px; }
   table.dt.pesanan td.no { font-variant-numeric:tabular-nums; color:var(--muted); font-weight:600; white-space:nowrap; }
@@ -289,9 +320,12 @@
     </div>
     <div class="foot">
       <span class="live" id="live"><i></i><span id="live-txt">memuat…</span></span>
-      <button class="mini" id="reload" aria-label="Muat ulang">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
-      </button>
+      <span style="display:flex;gap:6px">
+        <button class="mini" id="tema" aria-label="Ganti tema" title="Mode terang / gelap"></button>
+        <button class="mini" id="reload" aria-label="Muat ulang">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        </button>
+      </span>
     </div>
   </div>
 
@@ -334,10 +368,10 @@
   const PROXY = 'https://ads-proxy.renaldo1600016091.workers.dev/';
 
   const PLAT = {
-    google_ads: { nama:'Google Ads', ini:'G',  c:'#4F46E5', s:'#EEF0FF' },
-    facebook:   { nama:'Meta Ads',   ini:'M',  c:'#2563EB', s:'#E8F0FE' },
-    tiktok:     { nama:'TikTok Ads', ini:'TT', c:'#1E1B39', s:'#F0F1F3' },
-    tiktok_shop:{ nama:'TikTok Shop',ini:'TS', c:'#10B981', s:'#E6FBF4' },
+    google_ads: { nama:'Google Ads', ini:'G',  c:'var(--blue)', s:'var(--blue-soft)' },
+    facebook:   { nama:'Meta Ads',   ini:'M',  c:'var(--blue)', s:'var(--blue-soft)' },
+    tiktok:     { nama:'TikTok Ads', ini:'TT', c:'var(--ink)', s:'var(--line)' },
+    tiktok_shop:{ nama:'TikTok Shop',ini:'TS', c:'var(--green)', s:'var(--green-soft)' },
   };
   const IKLAN = ['google_ads','facebook','tiktok'];
   const KAND_SHOP = [['date','revenue','orders'],['date','total_amount','order_id'],['date','gmv','orders'],['date','revenue']];
@@ -364,8 +398,8 @@
 
   // sumber penjualan (disambungkan lewat Worker: ?sales=<id>)
   const SALES = [
-    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet', c:'#7C3AED', s:'#F3EEFE', ini:'GM' },
-    { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'#06B6D4', s:'#E6F9FD', ini:'EP' },
+    { id:'globemerce', nama:'Globemerce', peran:'Sumber pesanan dan omzet', c:'var(--violet)', s:'var(--violet-soft)', ini:'GM' },
+    { id:'everpro',    nama:'Everpro',    peran:'Pengiriman dan status paket', c:'var(--toska)', s:'var(--toska-soft)', ini:'EP' },
   ];
 
   const MENU = [
@@ -399,14 +433,14 @@
 
   // metrik yang bisa diklik, tiap metrik warnanya sendiri
   const METRIK = {
-    spend:       { lbl:'Biaya',       c:'#4F46E5', unit:'idr',   get:a=>a.spend },
-    conversions: { lbl:'Konversi',    c:'#10B981', unit:'count', get:a=>a.conversions },
-    clicks:      { lbl:'Klik',        c:'#F59E0B', unit:'count', get:a=>a.clicks },
-    impressions: { lbl:'Tayangan',    c:'#7C3AED', unit:'count', get:a=>a.impressions },
-    ctr:         { lbl:'CTR',         c:'#D946EF', unit:'pct',   get:a=>a.impressions>0?a.clicks/a.impressions*100:0 },
-    cpa:         { lbl:'Biaya/konv.', c:'#06B6D4', unit:'idr',   get:a=>a.conversions>0?a.spend/a.conversions:0 },
-    cpc:         { lbl:'Biaya/klik',  c:'#EC4899', unit:'idr',   get:a=>a.clicks>0?a.spend/a.clicks:0 },
-    cvr:         { lbl:'Rasio konv.', c:'#F59E0B', unit:'pct',   get:a=>a.clicks>0?a.conversions/a.clicks*100:0 },
+    spend:       { lbl:'Biaya',       c:'var(--blue)', unit:'idr',   get:a=>a.spend },
+    conversions: { lbl:'Konversi',    c:'var(--green)', unit:'count', get:a=>a.conversions },
+    clicks:      { lbl:'Klik',        c:'var(--amber)', unit:'count', get:a=>a.clicks },
+    impressions: { lbl:'Tayangan',    c:'var(--violet)', unit:'count', get:a=>a.impressions },
+    ctr:         { lbl:'CTR',         c:'var(--pink)', unit:'pct',   get:a=>a.impressions>0?a.clicks/a.impressions*100:0 },
+    cpa:         { lbl:'Biaya/konv.', c:'var(--toska)', unit:'idr',   get:a=>a.conversions>0?a.spend/a.conversions:0 },
+    cpc:         { lbl:'Biaya/klik',  c:'var(--pink)', unit:'idr',   get:a=>a.clicks>0?a.spend/a.clicks:0 },
+    cvr:         { lbl:'Rasio konv.', c:'var(--amber)', unit:'pct',   get:a=>a.clicks>0?a.conversions/a.clicks*100:0 },
   };
   const MK = Object.keys(METRIK);
   const fMetrik = (k,v) => METRIK[k].unit==='idr'?fC(v):METRIK[k].unit==='pct'?fP(v):fN(v);
@@ -764,20 +798,20 @@
 
   const WARNA_KIRIM = t => {
     const s = String(t||'').toLowerCase();
-    if (/deliver|terkirim|selesai|complete|success/.test(s)) return ['#047857','#E6FBF4'];
-    if (/return|retur|rts|lost|hilang|fail|gagal|problem|kendala/.test(s)) return ['#B91C1C','#FEECEC'];
-    if (/pickup|jemput|request|draft|menunggu|pending/.test(s)) return ['#B45309','#FEF6E7'];
-    return ['#4F46E5','#EEF0FF'];        // dalam perjalanan / lainnya
+    if (/deliver|terkirim|selesai|complete|success/.test(s)) return ['var(--green-ink)','var(--green-soft)'];
+    if (/return|retur|rts|lost|hilang|fail|gagal|problem|kendala/.test(s)) return ['var(--red-ink)','var(--red-soft)'];
+    if (/pickup|jemput|request|draft|menunggu|pending/.test(s)) return ['var(--amber-ink)','var(--amber-soft)'];
+    return ['var(--blue)','var(--blue-soft)'];        // dalam perjalanan / lainnya
   };
   const WARNA_CASHBACK = t => {
     const s = String(t||'').toLowerCase();
-    if (!s) return ['#6E6A8F','#F5F3FD','—'];
-    if (/cair|paid|success|disburse|selesai|done/.test(s)) return ['#047857','#E6FBF4','Cair'];
-    if (/tertunda|pending|process|proses|waiting|on_?going/.test(s)) return ['#B45309','#FEF6E7','Tertunda'];
-    if (/cancel|batal|reject|fail|gagal/.test(s)) return ['#B91C1C','#FEECEC','Dibatalkan'];
-    if (/di luar rentang/.test(s)) return ['#6E6A8F','#F5F3FD','Di luar rentang'];
-    if (/belum tercatat/.test(s)) return ['#6E6A8F','#F5F3FD','Belum tercatat'];
-    return ['#4F46E5','#EEF0FF', s];
+    if (!s) return ['var(--muted)','var(--line-2)','—'];
+    if (/cair|paid|success|disburse|selesai|done/.test(s)) return ['var(--green-ink)','var(--green-soft)','Cair'];
+    if (/tertunda|pending|process|proses|waiting|on_?going/.test(s)) return ['var(--amber-ink)','var(--amber-soft)','Tertunda'];
+    if (/cancel|batal|reject|fail|gagal/.test(s)) return ['var(--red-ink)','var(--red-soft)','Dibatalkan'];
+    if (/di luar rentang/.test(s)) return ['var(--muted)','var(--line-2)','Di luar rentang'];
+    if (/belum tercatat/.test(s)) return ['var(--muted)','var(--line-2)','Belum tercatat'];
+    return ['var(--blue)','var(--blue-soft)', s];
   };
   const cbCair = x => /^cair$/i.test(String(x.cashback_status||''));
   const cbTunda = x => /tertunda|pending|proses/i.test(String(x.cashback_status||''));
@@ -846,9 +880,9 @@
           <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}
             · seluruh data ${fC(c.semuaTunda)}</p>
         </div></div>
-      ${c.nTelat ? `<div class="panel tight" style="border-color:#FBD5D5;background:#FEF6F6;margin-bottom:6px">
-        <div class="li"><div class="ic" style="background:#FEECEC;color:#EF4444">${I.alert}</div>
-        <div class="li-b"><p class="li-t" style="color:#B91C1C">${fN(c.nTelat)} cashback terlambat cair</p>
+      ${c.nTelat ? `<div class="panel tight" style="border-color:var(--red-line);background:var(--red-soft);margin-bottom:6px">
+        <div class="li"><div class="ic" style="background:var(--red-soft);color:var(--red)">${I.alert}</div>
+        <div class="li-b"><p class="li-t" style="color:var(--red-ink)">${fN(c.nTelat)} cashback terlambat cair</p>
         <p class="li-s">Total ${fC(c.telat)} · paling lama ${c.terlama} hari lewat dari estimasi Everpro</p></div>
         </div></div>` : ''}
       ${!c.adaPeriode ? `<div class="note" style="margin:2px 0 0">
@@ -857,7 +891,7 @@
       <div class="note" style="margin:2px 0 12px">Dikelompokkan menurut tanggal cashback masuk saldo · sumber halaman My Balance Everpro${
         cashbackInfo && cashbackInfo.dari ? ' · '+cashbackInfo.dari+' s/d '+cashbackInfo.sampai : ''}${
         seg ? ' · diperbarui '+sd(seg) : ''}${
-        basi ? ' <b style="color:#B45309">— data '+umur+' hari, jalankan ambil-cashback.js lagi</b>' : ''}</div>`;
+        basi ? ' <b style="color:var(--amber-ink)">— data '+umur+' hari, jalankan ambil-cashback.js lagi</b>' : ''}</div>`;
   }
 
   // ---------- navigasi ----------
@@ -921,30 +955,30 @@
     </div>
 
     <div class="strip">
-      ${sc(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend))}
-      ${sc(I.cart,'#10B981','#E6FBF4','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
-      ${sc(I.target,'#F59E0B','#FEF6E7','Konversi',fN(t.conversions))}
-      ${sc(I.up,'#7C3AED','#F3EEFE','ROAS', roasGabungan()||'—')}
+      ${sc(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend))}
+      ${sc(I.cart,'var(--green)','var(--green-soft)','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
+      ${sc(I.target,'var(--amber)','var(--amber-soft)','Konversi',fN(t.conversions))}
+      ${sc(I.up,'var(--violet)','var(--violet-soft)','ROAS', roasGabungan()||'—')}
     </div>
 
     ${blokPenjualan(t)}
 
     <div class="sec"><h4>Metrik iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
     <div class="kpis">
-      ${kpi(I.money,'#4F46E5','#EEF0FF','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
-      ${kpi(I.target,'#10B981','#E6FBF4','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
-      ${kpi(I.money,'#F59E0B','#FEF6E7','Biaya/konv.',cpa?fC(cpa):'—','')}
-      ${kpi(I.click,'#7C3AED','#F3EEFE','Klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
-      ${kpi(I.eye,'#EF4444','#FEECEC','CTR',fP(ctr),'')}
-      ${kpi(I.money,'#06B6D4','#E6F9FD','Biaya/klik',cpc?fC(cpc):'—','')}
+      ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
+      ${kpi(I.target,'var(--green)','var(--green-soft)','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
+      ${kpi(I.money,'var(--amber)','var(--amber-soft)','Biaya/konv.',cpa?fC(cpa):'—','')}
+      ${kpi(I.click,'var(--violet)','var(--violet-soft)','Klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
+      ${kpi(I.eye,'var(--red)','var(--red-soft)','CTR',fP(ctr),'')}
+      ${kpi(I.money,'var(--toska)','var(--toska-soft)','Biaya/klik',cpc?fC(cpc):'—','')}
     </div>
 
     <div class="sec"><h4>Tren harian</h4><span class="note">biaya iklan${D.shop.status==='ok'?' vs omzet':''}</span></div>
     <div class="panel">
       <div class="wrap"><canvas id="c-tren"></canvas></div>
-      <div class="lg"><span><i style="background:#4F46E5"></i>Biaya iklan</span>
-        ${D.shop.status==='ok'?'<span><i style="background:#10B981"></i>Omzet</span>':''}
-        <span><i style="background:#F59E0B"></i>Konversi</span></div>
+      <div class="lg"><span><i style="background:var(--blue)"></i>Biaya iklan</span>
+        ${D.shop.status==='ok'?'<span><i style="background:var(--green)"></i>Omzet</span>':''}
+        <span><i style="background:var(--amber)"></i>Konversi</span></div>
     </div>
 
     <div class="sec"><h4>Ringkas per platform</h4></div>
@@ -987,16 +1021,16 @@
     return `<div class="sec"><h4>Penjualan</h4><span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
       ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
       <div class="kpis">
-        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
-        ${kpi(I.money,'#10B981','#E6FBF4','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
-        ${kpi(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend),'')}
-        ${kpi(I.up, laba>=0?'#10B981':'#EF4444', laba>=0?'#E6FBF4':'#FEECEC','Laba setelah iklan',fC(laba),'')}
-        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
-        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
+        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
+        ${kpi(I.money,'var(--green)','var(--green-soft)','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
+        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),'')}
+        ${kpi(I.up, laba>=0?'var(--green)':'var(--red)', laba>=0?'var(--green-soft)':'var(--red-soft)','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
       </div>
       <div class="panel tight" style="margin-top:11px">
-        ${li({c:'#10B981',s:'#E6FBF4',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
-        ${li({c:'#4F46E5',s:'#EEF0FF',ini:'A'},'Biaya iklan per produk terjual',
+        ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
+        ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
           (s.units||s.orders)>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
           (s.units||s.orders)>0?fC(t.spend/(s.units||s.orders)):'—','',0)}
       </div>`;
@@ -1019,7 +1053,7 @@
   function barisHarian() {
     const m = perTanggal(), keys = Array.from(m.keys()).sort().reverse();
     const shop = D.shop.status==='ok';
-    if (!keys.length) return '<tr><td colspan="7" style="text-align:center;color:#A5A1C0;padding:26px 0;">Tidak ada data</td></tr>';
+    if (!keys.length) return '<tr><td colspan="7" style="text-align:center;color:var(--faint);padding:26px 0;">Tidak ada data</td></tr>';
     return keys.map(k=>{ const a=m.get(k);
       const roas = a.spend>0&&a.omzet>0 ? (a.omzet/a.spend).toFixed(2).replace('.',',')+'×' : '—';
       const cpa = a.conv>0 ? fC(a.spend/a.conv) : '—';
@@ -1056,9 +1090,9 @@
       const om = omzet(), t = agg(allRows());
       const roas = t.spend>0?om/t.spend:0;
       return `<div class="kpis">
-          ${kpi(I.cart,'#10B981','#E6FBF4','Omzet',fC(om),'')}
-          ${kpi(I.money,'#4F46E5','#EEF0FF','Biaya iklan',fC(t.spend),'')}
-          ${kpi(I.up,'#7C3AED','#F3EEFE','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
+          ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet',fC(om),'')}
+          ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),'')}
+          ${kpi(I.up,'var(--violet)','var(--violet-soft)','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
         </div>
         <div class="sec"><h4>Omzet harian</h4></div>
         <div class="panel"><div class="wrap sm"><canvas id="c-shop"></canvas></div></div>`;
@@ -1075,15 +1109,15 @@
     const maxK = Math.max.apply(null, kmp.map(x=>x.spend).concat([1]));
     return `<div class="kpis">
         ${kpi(I.money,P.c,P.s,'Biaya',fC(a.spend),delta(a.spend,sum(pr,'spend'),false))}
-        ${kpi(I.target,'#10B981','#E6FBF4','Konversi',fN(a.conversions),delta(a.conversions,sum(pr,'conversions'),false))}
-        ${kpi(I.money,'#F59E0B','#FEF6E7','Biaya/konv.',cpa?fC(cpa):'—','')}
-        ${kpi(I.click,'#7C3AED','#F3EEFE','Klik',fN(a.clicks),delta(a.clicks,sum(pr,'clicks'),false))}
-        ${kpi(I.eye,'#EF4444','#FEECEC','CTR',fP(ctr),'')}
-        ${kpi(I.up,'#06B6D4','#E6F9FD','Rasio konv.',fP(cvr),'')}
+        ${kpi(I.target,'var(--green)','var(--green-soft)','Konversi',fN(a.conversions),delta(a.conversions,sum(pr,'conversions'),false))}
+        ${kpi(I.money,'var(--amber)','var(--amber-soft)','Biaya/konv.',cpa?fC(cpa):'—','')}
+        ${kpi(I.click,'var(--violet)','var(--violet-soft)','Klik',fN(a.clicks),delta(a.clicks,sum(pr,'clicks'),false))}
+        ${kpi(I.eye,'var(--red)','var(--red-soft)','CTR',fP(ctr),'')}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Rasio konv.',fP(cvr),'')}
       </div>
       <div class="sec"><h4>Tren harian</h4><span class="note">biaya &amp; konversi</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-plat" data-plat="${id}"></canvas></div>
-        <div class="lg"><span><i style="background:${P.c}"></i>Biaya</span><span><i style="background:#F59E0B"></i>Konversi</span></div></div>
+        <div class="lg"><span><i style="background:${P.c}"></i>Biaya</span><span><i style="background:var(--amber)"></i>Konversi</span></div></div>
       ${akun.length>1?`<div class="sec"><h4>Per akun</h4></div><div class="panel tight">${
         akun.map(x=>{ const c=x.conversions>0?x.spend/x.conversions:0;
           return li(P, namaAkun(x.key), fN(x.clicks)+' klik · '+fN(x.conversions)+' konv', fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), 0); }).join('')
@@ -1133,29 +1167,29 @@
         <div class="panel tight">${kartuSumber}</div>
         <div class="sec"><h4>Yang akan muncul setelah tersambung</h4></div>
         <div class="panel tight">
-          ${li({c:'#7C3AED',s:'#F3EEFE',ini:'1'},'Produk terjual','Jumlah unit dan pesanan per hari','','',0)}
-          ${li({c:'#10B981',s:'#E6FBF4',ini:'2'},'Gross profit','Laba kotor langsung dari sistem penjualan','','',0)}
-          ${li({c:'#4F46E5',s:'#EEF0FF',ini:'3'},'Laba setelah iklan','Gross profit dikurangi total biaya iklan','','',0)}
-          ${li({c:'#F59E0B',s:'#FEF6E7',ini:'4'},'Pelanggan baru vs repeat','Perbandingan pembeli pertama kali dan pembeli ulang','','',0)}
-          ${li({c:'#06B6D4',s:'#E6F9FD',ini:'5'},'Status pengiriman','Data dari Everpro: terkirim, dalam perjalanan, retur','','',0)}
+          ${li({c:'var(--violet)',s:'var(--violet-soft)',ini:'1'},'Produk terjual','Jumlah unit dan pesanan per hari','','',0)}
+          ${li({c:'var(--green)',s:'var(--green-soft)',ini:'2'},'Gross profit','Laba kotor langsung dari sistem penjualan','','',0)}
+          ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'3'},'Laba setelah iklan','Gross profit dikurangi total biaya iklan','','',0)}
+          ${li({c:'var(--amber)',s:'var(--amber-soft)',ini:'4'},'Pelanggan baru vs repeat','Perbandingan pembeli pertama kali dan pembeli ulang','','',0)}
+          ${li({c:'var(--toska)',s:'var(--toska-soft)',ini:'5'},'Status pengiriman','Data dari Everpro: terkirim, dalam perjalanan, retur','','',0)}
         </div>`;
     }
 
     const s = aggSales(salesRows());
     const laba = s.gross - t.spend;
     return `<div class="kpis">
-        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(s.units||s.orders),'')}
-        ${kpi(I.money,'#10B981','#E6FBF4','Omzet',fC(s.revenue),'')}
-        ${kpi(I.money,'#4F46E5','#EEF0FF','Gross profit',fC(s.gross),'')}
-        ${kpi(I.up, laba>=0?'#10B981':'#EF4444', laba>=0?'#E6FBF4':'#FEECEC','Laba setelah iklan',fC(laba),'')}
-        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(s.baru),'')}
-        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(s.repeat),'')}
+        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Produk terjual',fN(s.units||s.orders),'')}
+        ${kpi(I.money,'var(--green)','var(--green-soft)','Omzet',fC(s.revenue),'')}
+        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Gross profit',fC(s.gross),'')}
+        ${kpi(I.up, laba>=0?'var(--green)':'var(--red)', laba>=0?'var(--green-soft)':'var(--red-soft)','Laba setelah iklan',fC(laba),'')}
+        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),'')}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Pelanggan repeat',fN(s.repeat),'')}
       </div>
       <div class="sec"><h4>Tren harian</h4><span class="note">omzet, gross profit, biaya iklan</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-sales"></canvas></div>
-        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span>
-          <span><i style="background:#10B981"></i>Gross profit</span>
-          <span><i style="background:#4F46E5"></i>Biaya iklan</span></div></div>
+        <div class="lg"><span><i style="background:var(--violet)"></i>Omzet</span>
+          <span><i style="background:var(--green)"></i>Gross profit</span>
+          <span><i style="background:var(--blue)"></i>Biaya iklan</span></div></div>
       <div class="sec"><h4>Per sumber</h4></div>
       <div class="panel tight">${kartuSumber}</div>`;
   }
@@ -1190,12 +1224,12 @@
           ? esc(p.pembeli||'—') + '<br><span style="font-weight:500;color:var(--faint);font-size:11px">#'+esc(p.no)+'</span>'
           : '<span style="color:var(--faint)">tidak ada di Globemerce</span>'}</td>
         <td class="kurir">${esc(x.kurir||'—')}${x.layanan?'<br><span style="color:var(--faint);font-size:11px">'+esc(x.layanan)+'</span>':''}</td>
-        <td class="ctr">${x.cod?'<span class="pill2" style="background:#FEF6E7;color:#B45309">COD</span>'
-                              :'<span class="pill2" style="background:#F5F3FD;color:#6E6A8F">Non COD</span>'}</td>
+        <td class="ctr">${x.cod?'<span class="pill2" style="background:var(--amber-soft);color:var(--amber-ink)">COD</span>'
+                              :'<span class="pill2" style="background:var(--line-2);color:var(--muted)">Non COD</span>'}</td>
         <td class="ctr"><span class="pill2" style="background:${ws};color:${wc}">${esc(x.status||'—')}</span></td>
         <td class="num uang">${fC(x.harga)}</td>
         <td class="num uang">${x.cashback?fC(x.cashback):'—'}</td>
-        <td class="ctr"><span class="pill2" style="background:${x.cashback_telat?'#FEECEC':cs};color:${x.cashback_telat?'#B91C1C':cc}">${
+        <td class="ctr"><span class="pill2" style="background:${x.cashback_telat?'var(--red-soft)':cs};color:${x.cashback_telat?'var(--red-ink)':cc}">${
             x.cashback_telat ? 'Telat '+x.cashback_telat+' hari' : esc(ct||'—')}</span>
           ${x.cashback_telat ? '<br><span style="font-size:10px;color:var(--faint)">est '+esc(x.cashback_est)+'</span>'
             : (x.cashback_tgl?'<br><span style="font-size:10px;color:var(--faint)">'+esc(x.cashback_tgl)+'</span>':'')}</td>
@@ -1242,13 +1276,13 @@
       const rasio = selesai>0 ? kirim/selesai*100 : 0;
 
       const bagian = [
-        ['Terkirim', kirim, '#10B981', '#E6FBF4'],
-        ['Dalam proses', proses, '#4F46E5', '#EEF0FF'],
-        ['Menunggu pickup', tunggu, '#F59E0B', '#FEF6E7'],
-        ['Retur', retur, '#D946EF', '#FCEBFE'],
-        ['Gagal kirim', gagal, '#EF4444', '#FEECEC'],
-        ['Gagal pickup', gagalPickup, '#EF4444', '#FEECEC'],
-        ['Hilang atau rusak', hilang, '#6E6A8F', '#F5F3FD'],
+        ['Terkirim', kirim, 'var(--green)', 'var(--green-soft)'],
+        ['Dalam proses', proses, 'var(--blue)', 'var(--blue-soft)'],
+        ['Menunggu pickup', tunggu, 'var(--amber)', 'var(--amber-soft)'],
+        ['Retur', retur, 'var(--pink)', 'var(--pink-soft)'],
+        ['Gagal kirim', gagal, 'var(--red)', 'var(--red-soft)'],
+        ['Gagal pickup', gagalPickup, 'var(--red)', 'var(--red-soft)'],
+        ['Hilang atau rusak', hilang, 'var(--muted)', 'var(--line-2)'],
       ].filter(x=>x[1]>0);
       const maxB = bagian.length ? Math.max(...bagian.map(x=>x[1])) : 1;
 
@@ -1274,11 +1308,11 @@
                 : (everproInfo && everproInfo.updated_at ? 'berkas · '+everproInfo.updated_at : '')}</span></div>
         <div class="kpis tiga">
           ${kpi(I.cart,S.c,S.s,'Total pengiriman',fN(total),'')}
-          ${kpi(I.money,'#4F46E5','#EEF0FF','Ongkos kirim',fC(ongkir),'')}
-          ${kpi(I.up,'#10B981','#E6FBF4','Rasio terkirim',fP(rasio),'')}
-          ${kpi(I.cart,'#06B6D4','#E6F9FD','Terkirim COD',fN(j('delivered_cod')),'')}
-          ${kpi(I.cart,'#7C3AED','#F3EEFE','Terkirim non-COD',fN(j('delivered_non_cod')),'')}
-          ${kpi(I.alert, (retur+gagal+hilang)>0?'#EF4444':'#6E6A8F', (retur+gagal+hilang)>0?'#FEECEC':'#F5F3FD',
+          ${kpi(I.money,'var(--blue)','var(--blue-soft)','Ongkos kirim',fC(ongkir),'')}
+          ${kpi(I.up,'var(--green)','var(--green-soft)','Rasio terkirim',fP(rasio),'')}
+          ${kpi(I.cart,'var(--toska)','var(--toska-soft)','Terkirim COD',fN(j('delivered_cod')),'')}
+          ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Terkirim non-COD',fN(j('delivered_non_cod')),'')}
+          ${kpi(I.alert, (retur+gagal+hilang)>0?'var(--red)':'var(--muted)', (retur+gagal+hilang)>0?'var(--red-soft)':'var(--line-2)',
             'Bermasalah',fN(retur+gagal+hilang),'')}
         </div>
 
@@ -1292,9 +1326,9 @@
 
         <div class="sec"><h4>Tren harian</h4><span class="note">terkirim vs dalam proses</span></div>
         <div class="panel"><div class="wrap sm"><canvas id="c-ep"></canvas></div>
-          <div class="lg"><span><i style="background:#10B981"></i>Terkirim</span>
-            <span><i style="background:#4F46E5"></i>Dalam proses</span>
-            <span><i style="background:#EF4444"></i>Bermasalah</span></div></div>
+          <div class="lg"><span><i style="background:var(--green)"></i>Terkirim</span>
+            <span><i style="background:var(--blue)"></i>Dalam proses</span>
+            <span><i style="background:var(--red)"></i>Bermasalah</span></div></div>
 
         ${tabelKirim()}
 
@@ -1318,11 +1352,11 @@
 
     const kpis = `<div class="kpis">
         ${kpi(I.cart,S.c,S.s,'Pesanan',fN(a.orders),'')}
-        ${kpi(I.cart,'#7C3AED','#F3EEFE','Produk terjual',fN(a.units||a.orders),'')}
-        ${kpi(I.money,'#10B981','#E6FBF4','Omzet',fC(a.revenue),'')}
-        ${kpi(I.money,'#4F46E5','#EEF0FF','Gross profit',fC(a.gross),'')}
-        ${kpi(I.target,'#F59E0B','#FEF6E7','Pelanggan baru',fN(a.baru),'')}
-        ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(a.repeat),'')}
+        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Produk terjual',fN(a.units||a.orders),'')}
+        ${kpi(I.money,'var(--green)','var(--green-soft)','Omzet',fC(a.revenue),'')}
+        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Gross profit',fC(a.gross),'')}
+        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(a.baru),'')}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Pelanggan repeat',fN(a.repeat),'')}
       </div>`;
 
     if (!P) return kpis + `
@@ -1422,10 +1456,10 @@
             ? '<td class="resi-kosong">not generated yet</td>'
             : '<td class="resi">'+esc(o.resi)+'</td>'}
           ${selKirim}
-          <td class="ctr">${pil(esc(o.status||'—'), selesai?'#047857':'#B45309', selesai?'#E6FBF4':'#FEF6E7')}</td>
-          <td class="ctr">${pil(ulangi?'Repeat':'Baru', ulangi?'#06B6D4':'#F59E0B', ulangi?'#E6F9FD':'#FEF6E7')}</td>
+          <td class="ctr">${pil(esc(o.status||'—'), selesai?'var(--green-ink)':'var(--amber-ink)', selesai?'var(--green-soft)':'var(--amber-soft)')}</td>
+          <td class="ctr">${pil(ulangi?'Repeat':'Baru', ulangi?'var(--toska)':'var(--amber)', ulangi?'var(--toska-soft)':'var(--amber-soft)')}</td>
           <td class="num uang">${fC(o.omzet)}</td>
-          <td class="num uang" style="color:#10B981">${fC(o.profit)}</td>
+          <td class="num uang" style="color:var(--green)">${fC(o.profit)}</td>
         </tr>`; }).join('')}
       </tbody></table></div></div>`;
 
@@ -1433,10 +1467,10 @@
       <div class="sec"><h4>Ringkasan</h4><span class="note">periode terpilih</span></div>
       ${kpis.replace('class="kpis"','class="kpis tiga"')}
       <div class="strip" style="margin-top:11px">
-        ${sc(I.money,'#10B981','#E6FBF4','Rata-rata per pesanan',fC(aov))}
-        ${sc(I.up,'#7C3AED','#F3EEFE','Margin kotor',fP(margin))}
-        ${sc(I.target,'#F59E0B','#FEF6E7','Pembeli baru',fN(baru.length)+' pesanan')}
-        ${sc(I.cart,'#06B6D4','#E6F9FD','Pembeli ulang',fN(ulang.length)+' pesanan')}
+        ${sc(I.money,'var(--green)','var(--green-soft)','Rata-rata per pesanan',fC(aov))}
+        ${sc(I.up,'var(--violet)','var(--violet-soft)','Margin kotor',fP(margin))}
+        ${sc(I.target,'var(--amber)','var(--amber-soft)','Pembeli baru',fN(baru.length)+' pesanan')}
+        ${sc(I.cart,'var(--toska)','var(--toska-soft)','Pembeli ulang',fN(ulang.length)+' pesanan')}
       </div>
 
       <div class="sec"><h4>Daftar pesanan</h4><span class="note">${P.length} pesanan</span></div>
@@ -1444,11 +1478,11 @@
 
       <div class="sec"><h4>Tren harian</h4><span class="note">omzet dan gross profit</span></div>
       <div class="panel"><div class="wrap sm"><canvas id="c-gm"></canvas></div>
-        <div class="lg"><span><i style="background:#7C3AED"></i>Omzet</span><span><i style="background:#10B981"></i>Gross profit</span></div></div>
+        <div class="lg"><span><i style="background:var(--violet)"></i>Omzet</span><span><i style="background:var(--green)"></i>Gross profit</span></div></div>
 
       <div class="sec"><h4>Produk terlaris</h4><span class="note">${produk.length} produk</span></div>
       <div class="panel tight">${produk.slice(0,10).map(p=>`<div class="li">
-        ${p.gambar?`<img src="${p.gambar}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;background:#F5F3FD" alt="">`
+        ${p.gambar?`<img src="${p.gambar}" style="width:38px;height:38px;border-radius:10px;object-fit:cover;background:var(--line-2)" alt="">`
           :`<div class="ic" style="background:${S.s};color:${S.c}">${esc(p.nama.slice(0,2))}</div>`}
         <div class="li-b"><p class="li-t">${esc(p.nama)}</p>
         <p class="li-s">${fN(p.jumlah)} unit terjual</p>
@@ -1456,10 +1490,10 @@
         <div class="li-r"><div class="li-v">${fC(p.omzet)}</div><div class="li-vs">omzet</div></div></div>`).join('')}</div>
 
       <div class="sec"><h4>Kurir</h4></div>
-      <div class="panel tight">${bar(kurir,'#06B6D4')}</div>
+      <div class="panel tight">${bar(kurir,'var(--toska)')}</div>
 
       <div class="sec"><h4>Status dan pembayaran</h4></div>
-      <div class="panel tight">${bar(status,'#10B981')}${bar(bayar,'#F59E0B')}</div>`;
+      <div class="panel tight">${bar(status,'var(--green)')}${bar(bayar,'var(--amber)')}</div>`;
   }
 
   const kosong = (P, teks) => `<div class="panel"><div class="empty">
@@ -1504,14 +1538,14 @@
     const P = PLAT.google_ads;
     return `<p class="lead">Pangsa tayang menunjukkan berapa persen lelang yang kamu menangkan. Sisanya hilang karena budget habis atau peringkat iklan kalah — dua penyebab dengan solusi yang sangat berbeda.</p>
       <div class="panel"><div class="wrap"><canvas id="c-is"></canvas></div>
-        <div class="lg"><span><i style="background:#10B981"></i>Menang</span><span><i style="background:#F59E0B"></i>Hilang: budget</span><span><i style="background:#EF4444"></i>Hilang: peringkat</span></div></div>
+        <div class="lg"><span><i style="background:var(--green)"></i>Menang</span><span><i style="background:var(--amber)"></i>Hilang: budget</span><span><i style="background:var(--red)"></i>Hilang: peringkat</span></div></div>
       <div class="sec"><h4>Per kampanye</h4></div>
       <div class="panel tight">${l.map(a=>{
-        const bb = a.bud>=a.rank, c = bb?'#F59E0B':'#EF4444';
+        const bb = a.bud>=a.rank, c = bb?'var(--amber)':'var(--red)';
         return `<div class="li"><div class="ic" style="background:${P.s};color:${P.c}">${P.ini}</div>
           <div class="li-b"><p class="li-t">${esc(a.key)}</p>
           <p class="li-s">Hilang karena budget ${fP(a.bud)} · karena peringkat ${fP(a.rank)}</p>
-          <div class="track"><i style="width:${a.is.toFixed(1)}%;background:#10B981"></i><i style="width:${a.bud.toFixed(1)}%;background:#F59E0B"></i><i style="width:${a.rank.toFixed(1)}%;background:#EF4444"></i></div>
+          <div class="track"><i style="width:${a.is.toFixed(1)}%;background:var(--green)"></i><i style="width:${a.bud.toFixed(1)}%;background:var(--amber)"></i><i style="width:${a.rank.toFixed(1)}%;background:var(--red)"></i></div>
           <p class="li-s" style="margin-top:7px;color:${c};font-weight:600">Penghambat utama: ${bb?'budget':'peringkat iklan'}</p></div>
           <div class="li-r"><div class="li-v">${fP(a.is)}</div><div class="li-vs">pangsa tayang</div></div></div>`; }).join('')}</div>
       <div class="sec"><h4>Posisi tayang</h4></div>
@@ -1537,7 +1571,7 @@
     const bt = boros.reduce((a,x)=>a+x.spend,0);
     return `<p class="lead">Pola per jam dari Google Ads. Berguna untuk menentukan penyesuaian bid berdasarkan jadwal.</p>
       <div class="panel"><div class="wrap"><canvas id="c-jam"></canvas></div>
-        <div class="lg"><span><i style="background:#4F46E5"></i>Biaya</span><span><i style="background:#10B981"></i>Konversi</span></div></div>
+        <div class="lg"><span><i style="background:var(--blue)"></i>Biaya</span><span><i style="background:var(--green)"></i>Konversi</span></div></div>
       <div class="sec"><h4>Sorotan</h4></div>
       <div class="panel tight">
         ${best?li(PLAT.google_ads,'Jam paling efisien — '+best.h.padStart(2,'0')+':00', fN(best.conv)+' konversi dari '+fC(best.spend)+' biaya', fC(best.cpa),'biaya/konv.',0):''}
@@ -1567,7 +1601,7 @@
     const max = top[0].spend||1;
     const P = PLAT.google_ads;
     const baris = arr => arr.map(t=>{ const bad = t.conversions===0 && t.spend>0;
-      const C = { s: bad?'#FEECEC':'#E6FBF4', c: bad?'#EF4444':'#10B981', ini: bad?'!':'✓', nama:'' };
+      const C = { s: bad?'var(--red-soft)':'var(--green-soft)', c: bad?'var(--red)':'var(--green)', ini: bad?'!':'✓', nama:'' };
       return li(C, t.term, fN(t.clicks)+' klik · '+fN(t.impressions)+' tayang · CTR '+fP(t.ctr)+' · '+fN(t.conversions)+' konv',
         fC(t.spend), t.cpa?('Biaya/konv. '+fC(t.cpa)):'0 konversi', t.spend/max*100); }).join('');
     return `<p class="lead">Kata yang benar-benar diketik orang sebelum iklanmu muncul. Data dari Google Ads.</p>
@@ -1581,14 +1615,14 @@
     const out = [];
     const t = agg(allRows()), p = aggPrev(), om = omzet();
     const belum = IKLAN.filter(id=>D.iklan[id].status!=='ok').map(id=>PLAT[id].nama);
-    if (belum.length) out.push(['setup','#6E6A8F','#F5F3FD', belum.join(' dan ')+' belum terhubung, jadi angka di Overview belum mencakup seluruh biaya iklanmu.']);
-    if (D.shop.status!=='ok') out.push(['setup','#6E6A8F','#F5F3FD','TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet terisi sendiri.']);
+    if (belum.length) out.push(['setup','var(--muted)','var(--line-2)', belum.join(' dan ')+' belum terhubung, jadi angka di Overview belum mencakup seluruh biaya iklanmu.']);
+    if (D.shop.status!=='ok') out.push(['setup','var(--muted)','var(--line-2)','TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet terisi sendiri.']);
 
     if (p.spend>0) { const ds=(t.spend-p.spend)/p.spend*100;
-      if (Math.abs(ds)>=10) out.push([ds>0?'perhatian':'catatan', ds>0?'#F59E0B':'#4F46E5', ds>0?'#FEF6E7':'#EEF0FF',
+      if (Math.abs(ds)>=10) out.push([ds>0?'perhatian':'catatan', ds>0?'var(--amber)':'var(--blue)', ds>0?'var(--amber-soft)':'var(--blue-soft)',
         'Biaya iklan '+(ds>0?'naik':'turun')+' '+Math.abs(ds).toFixed(0)+'% jadi '+fIDR(t.spend)+' dibanding periode sebelumnya.']); }
     if (om>0 && t.spend>0) { const r=om/t.spend;
-      out.push([r>=2?'bagus':'perhatian', r>=2?'#10B981':'#EF4444', r>=2?'#E6FBF4':'#FEECEC',
+      out.push([r>=2?'bagus':'perhatian', r>=2?'var(--green)':'var(--red)', r>=2?'var(--green-soft)':'var(--red-soft)',
         'ROAS gabungan '+r.toFixed(2).replace('.',',')+'× — setiap Rp1.000 biaya iklan menghasilkan '+fIDR(r*1000)+' omzet.']); }
 
     const per = IKLAN.filter(id=>D.iklan[id].status==='ok').map(id=>{ const a=agg(rowsOf(id));
@@ -1596,26 +1630,26 @@
       .filter(x=>x.spend>0);
     const dgn = per.filter(x=>x.cpa!==null).sort((a,b)=>a.cpa-b.cpa);
     if (dgn.length>1 && dgn[dgn.length-1].cpa > dgn[0].cpa*1.4)
-      out.push(['peluang','#10B981','#E6FBF4', dgn[0].nama+' menghasilkan konversi seharga '+fIDR(dgn[0].cpa)+', sementara '+dgn[dgn.length-1].nama+' '+fIDR(dgn[dgn.length-1].cpa)+'. Pertimbangkan geser sebagian budget.']);
-    per.filter(x=>x.conv===0).forEach(x=>out.push(['anomali','#EF4444','#FEECEC', x.nama+' menghabiskan '+fIDR(x.spend)+' tanpa konversi. Cek pelacakan konversinya.']));
+      out.push(['peluang','var(--green)','var(--green-soft)', dgn[0].nama+' menghasilkan konversi seharga '+fIDR(dgn[0].cpa)+', sementara '+dgn[dgn.length-1].nama+' '+fIDR(dgn[dgn.length-1].cpa)+'. Pertimbangkan geser sebagian budget.']);
+    per.filter(x=>x.conv===0).forEach(x=>out.push(['anomali','var(--red)','var(--red-soft)', x.nama+' menghabiskan '+fIDR(x.spend)+' tanpa konversi. Cek pelacakan konversinya.']));
 
     const kmp = [];
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const [k,a] of grup(rowsOf(id), r=>r.campaign)) kmp.push({ nama:k, spend:a.spend, conv:a.conversions }); }
-    kmp.filter(c=>c.conv===0 && c.spend>0).forEach(c=>out.push(['anomali','#EF4444','#FEECEC',
+    kmp.filter(c=>c.conv===0 && c.spend>0).forEach(c=>out.push(['anomali','var(--red)','var(--red-soft)',
       '"'+c.nama+'" menghabiskan '+fIDR(c.spend)+' tanpa satu pun konversi di periode ini.']));
 
     auctionAgg().forEach(a=>{
-      if (a.bud>=35) out.push(['lelang','#4F46E5','#EEF0FF','"'+a.key+'" hanya memenangkan '+fP(a.is)+' lelang dan kehilangan '+fP(a.bud)+' tayangan karena budget habis — masih ada ruang volume besar bila budget dinaikkan.']);
-      else if (a.rank>=25) out.push(['lelang','#4F46E5','#EEF0FF','"'+a.key+'" kehilangan '+fP(a.rank)+' tayangan karena peringkat iklan, bukan budget. Perbaiki relevansi iklan dan halaman tujuan.']);
+      if (a.bud>=35) out.push(['lelang','var(--blue)','var(--blue-soft)','"'+a.key+'" hanya memenangkan '+fP(a.is)+' lelang dan kehilangan '+fP(a.bud)+' tayangan karena budget habis — masih ada ruang volume besar bila budget dinaikkan.']);
+      else if (a.rank>=25) out.push(['lelang','var(--blue)','var(--blue-soft)','"'+a.key+'" kehilangan '+fP(a.rank)+' tayangan karena peringkat iklan, bukan budget. Perbaiki relevansi iklan dan halaman tujuan.']);
     });
 
     const wt = termAgg().filter(t=>t.conversions===0 && t.spend>0).sort((a,b)=>b.spend-a.spend);
-    if (wt.length) out.push(['saran','#F59E0B','#FEF6E7', wt.length+' kata kunci pencarian menghabiskan '+fIDR(wt.reduce((a,t)=>a+t.spend,0))+' tanpa konversi. Terboros: "'+wt.slice(0,3).map(t=>t.term).join('", "')+'".']);
+    if (wt.length) out.push(['saran','var(--amber)','var(--amber-soft)', wt.length+' kata kunci pencarian menghabiskan '+fIDR(wt.reduce((a,t)=>a+t.spend,0))+' tanpa konversi. Terboros: "'+wt.slice(0,3).map(t=>t.term).join('", "')+'".']);
 
     const jam = jamAgg(), boros = jam.filter(x=>x.conv===0 && x.spend>0);
     const bt = boros.reduce((a,x)=>a+x.spend,0);
-    if (bt > t.spend*0.12 && boros.length) out.push(['saran','#F59E0B','#FEF6E7',
+    if (bt > t.spend*0.12 && boros.length) out.push(['saran','var(--amber)','var(--amber-soft)',
       'Jam tanpa konversi menyerap '+fIDR(bt)+' ('+Math.round(bt/(t.spend||1)*100)+'% dari total). Terboros pukul '+boros.slice(0,3).map(x=>x.h.padStart(2,'0')+':00').join(', ')+'.']);
 
     if (!out.length) return `<div class="panel"><div class="empty">Belum ada temuan menonjol di periode ini.</div></div>`;
@@ -1626,12 +1660,19 @@
   }
 
   // ---------- grafik ----------
-  const AX = { ticks:{font:{size:10.5,weight:'600'},color:'#A5A1C0',maxTicksLimit:6,maxRotation:0,autoSkip:true},
-    grid:{display:false}, border:{display:false} };
-  const AY = extra => ({ ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4, ...(extra||{})},
-    grid:{color:'#F1EEFC',drawTicks:false}, border:{display:false} });
-  const TIP = { backgroundColor:'#1E1B39', padding:11, cornerRadius:12, usePointStyle:true, boxWidth:8, boxHeight:8,
-    titleFont:{size:11.5,weight:'600'}, bodyFont:{size:12.5} };
+  // canvas tidak mengerti var(--x), jadi nilainya dibaca dulu dari tema yang aktif
+  const W = v => {
+    if (typeof v !== 'string' || !v.startsWith('var(')) return v;
+    return getComputedStyle(document.documentElement)
+             .getPropertyValue(v.slice(4, -1).trim()).trim() || v;
+  };
+
+  const AX = () => ({ ticks:{font:{size:10.5,weight:'600'},color:W('var(--faint)'),maxTicksLimit:6,maxRotation:0,autoSkip:true},
+    grid:{display:false}, border:{display:false} });
+  const AY = extra => ({ ticks:{font:{size:10},color:W('var(--faint)'),maxTicksLimit:4, ...(extra||{})},
+    grid:{color:W('var(--line)'),drawTicks:false}, border:{display:false} });
+  const TIP = () => ({ backgroundColor:W('var(--ink)'), titleColor:W('var(--panel)'), bodyColor:W('var(--panel)'), padding:11, cornerRadius:12, usePointStyle:true, boxWidth:8, boxHeight:8,
+    titleFont:{size:11.5,weight:'600'}, bodyFont:{size:12.5} });
   const mk = (id,cfg) => { const el=document.getElementById(id); if(!el) return;
     if (charts[id]) charts[id].destroy(); charts[id]=new Chart(el.getContext('2d'), cfg); };
 
@@ -1650,24 +1691,24 @@
   function afterRender() {
     if (page==='overview') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
-      const ds = [ garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).spend)), '#4F46E5', 'y', true) ];
-      if (D.shop.status==='ok') ds.push(garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#10B981', 'y'));
-      ds.push(garis('Konversi', keys.map(k=>m.get(k).conv), '#F59E0B', 'y1'));
+      const ds = [ garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).spend)), W('var(--blue)'), 'y', true) ];
+      if (D.shop.status==='ok') ds.push(garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), W('var(--green)'), 'y'));
+      ds.push(garis('Konversi', keys.map(k=>m.get(k).conv), W('var(--amber)'), 'y1'));
       mk('c-tren', { type:'line', data:{ labels:keys.map(sd), datasets:ds },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '
             + (c.dataset.yAxisID==='y1' ? fN(c.parsed.y) : fIDR(c.parsed.y)) } } },
-          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+          scales:{ x:AX(), y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}),
+            y1:{ position:'right', ticks:{font:{size:10},color:W('var(--faint)'),maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
 
     if (page==='tiktok_shop' && D.shop.status==='ok') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
       mk('c-shop', { type:'line', data:{ labels:keys.map(sd), datasets:[
-          garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), '#10B981', 'y', true)] },
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).omzet)), W('var(--green)'), 'y', true)] },
         options:{ responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' Omzet: '+fIDR(c.parsed.y) } } },
-          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' Omzet: '+fIDR(c.parsed.y) } } },
+          scales:{ x:AX(), y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
     }
 
     const cp = document.getElementById('c-plat');
@@ -1676,23 +1717,23 @@
       const m = grup(rowsOf(id), r=>r.date), keys = Array.from(m.keys()).sort();
       mk('c-plat', { type:'line', data:{ labels:keys.map(sd), datasets:[
           garis('Biaya', keys.map(k=>Math.round(m.get(k).spend)), P.c, 'y', true),
-          garis('Konversi', keys.map(k=>m.get(k).conversions), '#F59E0B', 'y1') ] },
+          garis('Konversi', keys.map(k=>m.get(k).conversions), W('var(--amber)'), 'y1') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
-          scales:{ x:AX, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
+          scales:{ x:AX(), y:AY({callback:v=>Math.round(v/1000)+'rb'}),
+            y1:{ position:'right', ticks:{font:{size:10},color:W('var(--faint)'),maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
 
     if (document.getElementById('c-ep')) {
       const R = ((D.sales.everpro||{}).rows||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
       const keys = R.map(x=>x.date);
       mk('c-ep', { type:'line', data:{ labels:keys.map(sd), datasets:[
-          garis('Terkirim', R.map(x=>Number(x.delivered)||0), '#10B981', 'y', true),
-          garis('Dalam proses', R.map(x=>Number(x.in_process)||0), '#4F46E5', 'y'),
-          garis('Bermasalah', R.map(x=>(Number(x.returned)||0)+(Number(x.failed_delivery)||0)+(Number(x.lost_broken)||0)), '#EF4444', 'y') ] },
+          garis('Terkirim', R.map(x=>Number(x.delivered)||0), W('var(--green)'), 'y', true),
+          garis('Dalam proses', R.map(x=>Number(x.in_process)||0), W('var(--blue)'), 'y'),
+          garis('Bermasalah', R.map(x=>(Number(x.returned)||0)+(Number(x.failed_delivery)||0)+(Number(x.lost_broken)||0)), W('var(--red)'), 'y') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fN(c.parsed.y)+' paket' } } },
-          scales:{ x:AX, y:AY({precision:0}) } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+fN(c.parsed.y)+' paket' } } },
+          scales:{ x:AX(), y:AY({precision:0}) } } });
     }
 
     if (document.getElementById('c-gm')) {
@@ -1702,11 +1743,11 @@
         const a=m.get(o.tanggal); a.rev+=o.omzet||0; a.gp+=o.profit||0; }
       const keys = Array.from(m.keys()).sort();
       mk('c-gm', { type:'line', data:{ labels:keys.map(sd), datasets:[
-          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
-          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#10B981', 'y') ] },
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), W('var(--violet)'), 'y', true),
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), W('var(--green)'), 'y') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
-          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
+          scales:{ x:AX(), y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
     }
 
     if (document.getElementById('c-sales')) {
@@ -1718,12 +1759,12 @@
       for (const r of allRows()) { if(!r.date) continue; put(r.date,'ads',Number(r.spend)||0); }
       const keys = Array.from(m.keys()).sort();
       mk('c-sales', { type:'line', data:{ labels:keys.map(sd), datasets:[
-          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), '#7C3AED', 'y', true),
-          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), '#10B981', 'y'),
-          garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).ads)), '#4F46E5', 'y') ] },
+          garis('Omzet', keys.map(k=>Math.round(m.get(k).rev)), W('var(--violet)'), 'y', true),
+          garis('Gross profit', keys.map(k=>Math.round(m.get(k).gp)), W('var(--green)'), 'y'),
+          garis('Biaya iklan', keys.map(k=>Math.round(m.get(k).ads)), W('var(--blue)'), 'y') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
-          scales:{ x:AX, y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+fIDR(c.parsed.y) } } },
+          scales:{ x:AX(), y:AY({callback:v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb'}) } } });
     }
 
     if (document.getElementById('c-jamplat')) {
@@ -1737,19 +1778,19 @@
         const data = hrs.map(h=>{ const v=M.get(m.get(h)||kosongAgg); return Number.isFinite(v)?Number(v.toFixed(2)):0; });
         return garis(M.lbl, data, M.c, unit(M.unit), i===0);
       });
-      const scales = { x:{ ...AX, ticks:{ ...AX.ticks, maxTicksLimit:8 } } };
+      const scales = { x:{ ...AX(), ticks:{ ...AX().ticks, maxTicksLimit:8 } } };
       let kiri=false;
       dipakai.forEach(u=>{
         const idAx = unit(u), pos = kiri?'right':'left'; kiri=true;
-        scales[idAx] = { position:pos, grid:{ color: pos==='left'?'#F5F3FD':'transparent', drawTicks:false }, border:{display:false},
-          ticks:{ font:{size:10}, color:'#A5A1C0', maxTicksLimit:4,
+        scales[idAx] = { position:pos, grid:{ color: pos==='left'?W('var(--line-2)'):'transparent', drawTicks:false }, border:{display:false},
+          ticks:{ font:{size:10}, color:W('var(--faint)'), maxTicksLimit:4,
             callback:v=> u==='idr' ? (Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'jt':Math.round(v/1000)+'rb')
                       : u==='pct' ? v+'%' : fN(v) } };
       });
       if (dipakai.length>2) scales[unit(dipakai[2])].display = false;
       mk('c-jamplat', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:ds },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{
             label:c=>' '+c.dataset.label+': '+fMetrikP(pilih[c.datasetIndex], c.parsed.y) } } },
           scales } });
     }
@@ -1757,13 +1798,13 @@
     if (page==='lelang') {
       const l = auctionAgg();
       mk('c-is', { type:'bar', data:{ labels:l.map(a=>a.key), datasets:[
-          { label:'Menang', data:l.map(a=>Number(a.is.toFixed(1))), backgroundColor:'#10B981', stack:'s', borderRadius:{topLeft:6,bottomLeft:6}, barThickness:30 },
-          { label:'Budget', data:l.map(a=>Number(a.bud.toFixed(1))), backgroundColor:'#F59E0B', stack:'s', barThickness:30 },
-          { label:'Peringkat', data:l.map(a=>Number(a.rank.toFixed(1))), backgroundColor:'#EF4444', stack:'s', borderRadius:{topRight:6,bottomRight:6}, barThickness:30 } ] },
+          { label:'Menang', data:l.map(a=>Number(a.is.toFixed(1))), backgroundColor:W('var(--green)'), stack:'s', borderRadius:{topLeft:6,bottomLeft:6}, barThickness:30 },
+          { label:'Budget', data:l.map(a=>Number(a.bud.toFixed(1))), backgroundColor:W('var(--amber)'), stack:'s', barThickness:30 },
+          { label:'Peringkat', data:l.map(a=>Number(a.rank.toFixed(1))), backgroundColor:W('var(--red)'), stack:'s', borderRadius:{topRight:6,bottomRight:6}, barThickness:30 } ] },
         options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+String(c.parsed.x).replace('.',',')+'%' } } },
-          scales:{ x:{ stacked:true, max:100, ticks:{font:{size:10},color:'#A5A1C0',callback:v=>v+'%'}, grid:{color:'#F5F3FD',drawTicks:false}, border:{display:false} },
-            y:{ stacked:true, ticks:{font:{size:11.5,weight:'600'},color:'#454168',
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+String(c.parsed.x).replace('.',',')+'%' } } },
+          scales:{ x:{ stacked:true, max:100, ticks:{font:{size:10},color:W('var(--faint)'),callback:v=>v+'%'}, grid:{color:W('var(--line-2)'),drawTicks:false}, border:{display:false} },
+            y:{ stacked:true, ticks:{font:{size:11.5,weight:'600'},color:W('var(--ink-2)'),
               callback:function(v){ const s=this.getLabelForValue(v); return s.length>22?s.slice(0,21)+'…':s; }},
               grid:{display:false}, border:{display:false} } } } });
     }
@@ -1772,12 +1813,12 @@
       const m = grup(flt((D.extra&&D.extra.hour)||[]), r=>String(Number(r.hour)));
       const hrs = Array.from({length:24},(_,i)=>String(i));
       mk('c-jam', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:[
-          garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), '#4F46E5', 'y', true),
-          garis('Konversi', hrs.map(h=>m.has(h)?m.get(h).conversions:0), '#10B981', 'y1') ] },
+          garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), W('var(--blue)'), 'y', true),
+          garis('Konversi', hrs.map(h=>m.has(h)?m.get(h).conversions:0), W('var(--green)'), 'y1') ] },
         options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-          plugins:{ legend:{display:false}, tooltip:{ ...TIP, callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
-          scales:{ x:{ ...AX, ticks:{...AX.ticks, maxTicksLimit:12} }, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
-            y1:{ position:'right', ticks:{font:{size:10},color:'#A5A1C0',maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
+          plugins:{ legend:{display:false}, tooltip:{ ...TIP(), callbacks:{ label:c=>' '+c.dataset.label+': '+(c.dataset.yAxisID==='y1'?fN(c.parsed.y):fIDR(c.parsed.y)) } } },
+          scales:{ x:{ ...AX(), ticks:{...AX().ticks, maxTicksLimit:12} }, y:AY({callback:v=>Math.round(v/1000)+'rb'}),
+            y1:{ position:'right', ticks:{font:{size:10},color:W('var(--faint)'),maxTicksLimit:4,precision:0}, grid:{display:false}, border:{display:false} } } } });
     }
   }
 
@@ -1814,6 +1855,26 @@
     else { pilih = pilih.concat(k); if (pilih.length>4) pilih = pilih.slice(-4); }
     render();
   });
+  // ---------- tema terang / gelap ----------
+  const IKON_TEMA = {
+    terang: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
+    gelap:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
+  };
+  function pakaiTema(t) {
+    document.documentElement.dataset.tema = t;
+    try { localStorage.setItem('tema', t); } catch (e) {}
+    const b = document.getElementById('tema');
+    // tombol menampilkan tujuan, bukan keadaan sekarang
+    b.innerHTML = t === 'gelap' ? IKON_TEMA.terang : IKON_TEMA.gelap;
+    b.title = t === 'gelap' ? 'Pindah ke mode terang' : 'Pindah ke mode gelap';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', t === 'gelap' ? '#0F0E24' : '#FFFFFF');
+    if (D && D.iklan) render();          // grafik digambar ulang dengan warna tema baru
+  }
+  document.getElementById('tema').addEventListener('click', () =>
+    pakaiTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap'));
+  pakaiTema(document.documentElement.dataset.tema || 'terang');
+
   document.getElementById('reload').addEventListener('click', ()=>{ BUST = String(Date.now()); D.extra = null; muat(); });
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
 
