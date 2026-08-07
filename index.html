@@ -311,6 +311,8 @@
   let period='30', filter='all', fKmp='all', fPlat='all', tab='overview', sub='lelang', termSort='spend';
   let gran='day', selected=['spend','conversions'];
   let accounts = {}, meta = null;
+  const NAMA_AKUN = new Map();
+  const namaAkun = id => NAMA_AKUN.get(String(id)) || String(id);
   let RAW = { daily:[], prevDaily:[], hourly:[], auction:[], network:[], terms:[], statis:false };
   let data = { daily:[], prevDaily:[], hourly:[], auction:[], terms:[], network:[] };
   let charts = {}, insights = [];
@@ -421,9 +423,9 @@
 
     try {
       const [daily, prevDaily, hourly, auction, network, terms] = await Promise.all([
-        live(['account_id','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to),
-        live(['account_id','date','spend','clicks','impressions','conversions'], pr.from, pr.to).catch(()=>[]),
-        live(['account_id','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
+        live(['account_id','account_name','campaign','date','spend','clicks','impressions','conversions'], r.from, r.to),
+        live(['account_id','account_name','date','spend','clicks','impressions','conversions'], pr.from, pr.to).catch(()=>[]),
+        live(['account_id','account_name','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share','search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','date','ad_network_type','device','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]),
         live(['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[])
@@ -500,16 +502,18 @@
   }
 
   function buildAccounts() {
+    for (const r of RAW.daily) if (r.account_id && r.account_name)
+      NAMA_AKUN.set(String(r.account_id), String(r.account_name));
     const ids = Array.from(new Set(RAW.daily
       .filter(r=>fPlat==='all' || r._p===fPlat)
       .map(r=>r.account_id).filter(Boolean))).sort();
     accounts = {};
-    ids.forEach((id,i)=>{ const col = PALETTE[i%PALETTE.length]; accounts[id] = { name:id, color:col, soft:SOFT[col]||'#F2F2F5' }; });
+    ids.forEach((id,i)=>{ const col = PALETTE[i%PALETTE.length]; accounts[id] = { name:namaAkun(id), color:col, soft:SOFT[col]||'#F2F2F5' }; });
     const el = document.getElementById('account-switch');
     if (ids.length<2) { el.style.display='none'; filter='all'; return; }
     el.style.display='flex';
     el.innerHTML = '<button data-account="all" class="'+(filter==='all'?'active':'')+'">Semua akun</button>'
-      + ids.map(id=>'<button data-account="'+id+'" class="'+(filter===id?'active':'')+'">'+esc(id)+'</button>').join('');
+      + ids.map(id=>'<button data-account="'+id+'" class="'+(filter===id?'active':'')+'">'+esc(namaAkun(id))+'</button>').join('');
   }
 
   const PNAMA = { google_ads:'Google Ads', facebook:'Meta Ads', tiktok:'TikTok Ads' };

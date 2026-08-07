@@ -415,6 +415,8 @@
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let everproInfo = null;
+  const NAMA_AKUN = new Map();
+  const namaAkun = id => NAMA_AKUN.get(String(id)) || String(id);
   let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{}, sales:{}, prevSales:{} };
 
   function rentang(p) {
@@ -498,7 +500,7 @@
     if (!Array.isArray(rows)) throw new Error('kosong');
     return rows;
   }
-  const FI = ['account_id','campaign','date','spend','clicks','impressions','conversions'];
+  const FI = ['account_id','account_name','campaign','date','spend','clicks','impressions','conversions'];
 
   async function muat() {
     document.getElementById('loading').style.display='block';
@@ -510,7 +512,7 @@
     await Promise.all(IKLAN.map(async id => {
       try { iklan[id] = { status:'ok', rows: await tarik(id, FI, r.from, r.to) }; }
       catch(e) { iklan[id] = { status:'off', rows:[] }; }
-      try { prev[id] = await tarik(id, ['account_id','campaign','date','spend','clicks','conversions'], pr.from, pr.to); } catch(e) { prev[id]=[]; }
+      try { prev[id] = await tarik(id, ['account_id','account_name','campaign','date','spend','clicks','conversions'], pr.from, pr.to); } catch(e) { prev[id]=[]; }
     }));
 
     let shop = { status:'off', rows:[], field:null, cnt:null };
@@ -522,7 +524,7 @@
 
     const extra = {};
     if (iklan.google_ads.status==='ok') {
-      extra.hour = await tarik('google_ads',['account_id','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
+      extra.hour = await tarik('google_ads',['account_id','account_name','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
       extra.auction = await tarik('google_ads',['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share','search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'], r.from, r.to).catch(()=>[]);
       extra.terms = await tarik('google_ads',['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
     } else { extra.hour=[]; extra.auction=[]; extra.terms=[]; }
@@ -606,7 +608,10 @@
 
     const akun = new Map();
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
-      for (const r of d.rows) if (r.account_id) akun.set(String(r.account_id), id); }
+      for (const r of d.rows) if (r.account_id) {
+        akun.set(String(r.account_id), id);
+        if (r.account_name) NAMA_AKUN.set(String(r.account_id), String(r.account_name));
+      } }
     const daftarAkun = Array.from(akun.keys()).sort();
     if (!daftarAkun.includes(fAkun)) fAkun = 'all';
     const ea = document.getElementById('akun-chips');
@@ -614,7 +619,7 @@
     if (daftarAkun.length < 2) { ea.dataset.punya='0'; fAkun='all'; }
     else { ea.dataset.punya='1';
       ea.innerHTML = '<button data-akun="all" class="'+(fAkun==='all'?'on':'')+'">Semua</button>'
-        + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(a)+'</button>').join(''); }
+        + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(namaAkun(a))+'</button>').join(''); }
 
     const kmp = new Set();
     for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
@@ -726,7 +731,7 @@
     const m = MENU.find(x=>x.id===page) || MENU[0];
     document.getElementById('ptitle').textContent = m.t;
     let crumb = rentang(period).label;
-    if (fAkun!=='all') crumb += ' · akun ' + fAkun;
+    if (fAkun!=='all') crumb += ' · ' + namaAkun(fAkun);
     if (fKmp!=='all') crumb += ' · ' + fKmp;
     if (fAkun==='all' && fKmp==='all') crumb += (m.g===2 ? ' · platform' : m.g===3 ? ' · analisis' : ' · semua platform');
     document.getElementById('pcrumb').textContent = crumb;
@@ -929,7 +934,7 @@
         <div class="lg"><span><i style="background:${P.c}"></i>Biaya</span><span><i style="background:#F59E0B"></i>Konversi</span></div></div>
       ${akun.length>1?`<div class="sec"><h4>Per akun</h4></div><div class="panel tight">${
         akun.map(x=>{ const c=x.conversions>0?x.spend/x.conversions:0;
-          return li(P, x.key, fN(x.clicks)+' klik · '+fN(x.conversions)+' konv', fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), 0); }).join('')
+          return li(P, namaAkun(x.key), fN(x.clicks)+' klik · '+fN(x.conversions)+' konv', fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), 0); }).join('')
       }</div>`:''}
       ${jamPanel(id)}
       <div class="sec"><h4>Kampanye</h4><span class="note">${kmp.length} kampanye</span></div>
