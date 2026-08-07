@@ -31,7 +31,8 @@
     --bayang-2:0 10px 34px rgba(79,70,229,.12);
     --kaca:rgba(255,255,255,.86); --kaca-2:rgba(255,255,255,.22);
     --lembut:linear-gradient(140deg,#FBFAFF,#F6F3FE);
-    --hover:#FBFAFF; --scroll:#DED9F5; --kaca-top:rgba(251,250,255,.82); --titik:#D6D9DE; --kartu-gelap:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%);
+    --hover:#FBFAFF; --scroll:#DED9F5; --kaca-top:rgba(251,250,255,.82); --titik:#D6D9DE;
+    --sapa:linear-gradient(120deg,#EEF0FF 0%,#F5EEFE 55%,#FDEEFE 100%); --kartu-gelap:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%);
     --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.14), transparent 62%),
       radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.10),  transparent 60%),
       radial-gradient(720px 460px at 60% 108%, rgba(217,70,239,.10), transparent 62%),
@@ -54,6 +55,7 @@
     --kaca:rgba(26,24,54,.86); --kaca-2:rgba(255,255,255,.16);
     --lembut:linear-gradient(140deg,#232041,#1C1A3A);
     --hover:#221F45; --scroll:#3A3566; --kaca-top:rgba(15,14,36,.86); --titik:#3F3A6B;
+    --sapa:linear-gradient(120deg,#232052 0%,#2A2150 55%,#331F4E 100%);
     --kartu-gelap:linear-gradient(150deg,#2B2758 0%,#221F45 60%,#1B1938 100%);
     --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.26), transparent 62%),
       radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.20),  transparent 60%),
@@ -143,14 +145,14 @@
     font-weight:700; color:var(--faint); letter-spacing:.6px; padding-right:4px; }
   .chips.sub button { font-size:12px; padding:6px 13px; font-weight:500; max-width:240px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600;
+  .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600;
     box-shadow:0 4px 12px rgba(30,27,57,.22); }
 
   .body { padding:22px 28px 60px; max-width:1180px; }
   .page { display:none; } .page.on { display:block; }
 
   .hello { display:flex; align-items:center; gap:15px; padding:18px 20px; border-radius:20px;
-    background:linear-gradient(120deg,#EEF0FF 0%,#F5EEFE 55%,#FDEEFE 100%);
+    background:var(--sapa);
     border:1px solid var(--line); margin-bottom:14px; box-shadow:var(--bayang); }
   .hello .sun { width:44px; height:44px; border-radius:14px; background:var(--panel); color:var(--violet);
     box-shadow:0 4px 12px rgba(124,58,237,.16);
@@ -1677,16 +1679,20 @@
     if (charts[id]) charts[id].destroy(); charts[id]=new Chart(el.getContext('2d'), cfg); };
 
   // gradasi lembut di bawah garis
-  function grad(ctx, area, hex) {
-    if (!area) return hex+'22';
+  function grad(ctx, area, warna) {
+    const h = W(warna);
+    if (!area) return h+'22';
     const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-    g.addColorStop(0, hex+'40'); g.addColorStop(1, hex+'00');
+    g.addColorStop(0, h+'40'); g.addColorStop(1, h+'00');
     return g;
   }
-  const garis = (label, data, warna, axis, isi) => ({
-    label, data, borderColor:warna, borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
-    yAxisID:axis, fill:!!isi,
-    backgroundColor: isi ? (c=>grad(c.chart.ctx, c.chart.chartArea, warna)) : warna });
+  // warna bisa datang sebagai var(--x) dari PLAT/METRICS, jadi diterjemahkan di sini
+  const garis = (label, data, warna, axis, isi) => {
+    const c = W(warna);
+    return { label, data, borderColor:c, borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
+      yAxisID:axis, fill:!!isi,
+      backgroundColor: isi ? (k=>grad(k.chart.ctx, k.chart.chartArea, c)) : c };
+  };
 
   function afterRender() {
     if (page==='overview') {

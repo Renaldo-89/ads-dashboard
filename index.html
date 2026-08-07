@@ -30,6 +30,7 @@
     --tombol-garis:rgba(255,255,255,.9); --tombol-latar:rgba(255,255,255,.75);
     --kartu:rgba(255,255,255,.62); --kartu-on:rgba(255,255,255,.96); --kartu-garis:rgba(255,255,255,.9);
     --chip:rgba(255,255,255,.7); --bar:rgba(255,255,255,.78); --panel-kaca:rgba(255,255,255,.9);
+    --kartu-grafik:linear-gradient(160deg, rgba(255,255,255,.92), rgba(248,250,253,.78));
     --biru-soft:#E8F0FE; --hijau-soft:#E6F4EA; --kuning-soft:#FEF7E0; --ungu-soft:#F3E8FD;
     --merah-soft:#FCE8E6; --toska-soft:#E0F7FA; --pink-soft:#FCE4F0; --oranye-soft:#FDEEE0;
     --hijau-pil:#E7F5EC;
@@ -53,6 +54,7 @@
     --tombol-garis:rgba(255,255,255,.12); --tombol-latar:rgba(255,255,255,.08);
     --kartu:rgba(255,255,255,.045); --kartu-on:rgba(255,255,255,.10); --kartu-garis:rgba(255,255,255,.10);
     --chip:rgba(255,255,255,.06); --bar:rgba(20,20,23,.82); --panel-kaca:rgba(23,23,27,.9);
+    --kartu-grafik:linear-gradient(160deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
     --latar:radial-gradient(900px 520px at 8% -6%,  rgba(138,180,248,.14), transparent 62%),
       radial-gradient(760px 460px at 98% 6%,  rgba(129,201,149,.10), transparent 60%),
       radial-gradient(820px 520px at 50% 104%,rgba(253,214,99,.09),  transparent 62%),
@@ -86,14 +88,14 @@
   .chips button { flex-shrink:0; border:1.5px solid var(--kartu-garis); background:var(--chip);
     backdrop-filter:blur(8px); color:var(--ink-2); padding:8px 17px; border-radius:999px; font-size:13.5px;
     font-weight:600; font-family:inherit; cursor:pointer; transition:all .16s; letter-spacing:-.1px; }
-  .chips button.active { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .chips button.active { background:var(--ink); border-color:var(--ink); color:var(--panel); }
   .chips.periods button { font-size:12.5px; padding:7px 14px; font-weight:500; }
   .chips.periods button.active { background:var(--blue-soft); border-color:var(--blue-soft); color:var(--blue); font-weight:600; }
   .chips.periods button.bulan { color:var(--muted); }
   .chips.periods button.bulan.active { background:var(--hijau-pil); border-color:var(--hijau-pil); color:var(--green); }
   .chips.campaigns button { font-size:12px; padding:6px 13px; font-weight:500; max-width:230px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .chips.campaigns button.active { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  .chips.campaigns button.active { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600; }
   .chips.campaigns::before { content:'Kampanye'; flex-shrink:0; align-self:center; font-size:10.5px;
     font-weight:700; color:var(--faint); letter-spacing:.5px; padding-right:3px; }
 
@@ -129,7 +131,7 @@
   .d.up { color:var(--green); } .d.down { color:var(--red); } .d.flat { color:var(--muted); }
 
   .chart-card { border-radius:20px; padding:16px 12px 8px; margin-top:12px;
-    background:linear-gradient(160deg, rgba(255,255,255,.92), rgba(248,250,253,.78));
+    background:var(--kartu-grafik);
     border:1px solid var(--kartu-garis); backdrop-filter:blur(10px); box-shadow:0 2px 10px rgba(16,24,40,.05); }
   .chart-wrap { position:relative; height:210px; }
   .chart-wrap.tall { height:240px; }
