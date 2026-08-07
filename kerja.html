@@ -71,6 +71,43 @@
   ::-webkit-scrollbar { width:8px; height:8px; }
   ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
 
+  /* ---------- podium peringkat CS ---------- */
+  .podium { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:14px; align-items:end;
+    margin-bottom:16px; }
+  .pod { text-align:center; min-width:0; }
+  .pod .orang { width:56px; height:56px; border-radius:50%; margin:0 auto 9px; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:19px;
+    letter-spacing:-.5px; position:relative; }
+  .pod.satu .orang { width:70px; height:70px; font-size:24px; }
+  .pod .mahkota { position:absolute; top:-24px; left:50%; width:34px; height:34px;
+    transform:translateX(-50%); color:#FBBF24; animation:goyang 2.6s ease-in-out infinite; }
+  .pod .nm { font-size:14px; font-weight:700; margin:0 0 1px; letter-spacing:-.2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pod .sk { font-size:11.5px; color:var(--muted); margin:0 0 9px; font-weight:500; }
+  .pod .bar { border-radius:14px 14px 0 0; display:flex; flex-direction:column;
+    align-items:center; justify-content:flex-start; padding:12px 8px 14px; color:#fff;
+    transform-origin:bottom; animation:tumbuh .7s cubic-bezier(.22,1,.36,1) both; }
+  .pod .gmv { font-size:20px; font-weight:700; letter-spacing:-.6px; }
+  .pod.satu .gmv { font-size:24px; }
+  .pod .unit { font-size:10.5px; opacity:.85; font-weight:600; letter-spacing:.4px; }
+  .pod .rank { font-size:26px; font-weight:800; opacity:.28; margin-top:auto; letter-spacing:-1px; }
+  .pod.satu .bar { background:linear-gradient(180deg,#F59E0B,#D97706); height:148px; animation-delay:.28s;
+    box-shadow:0 10px 26px rgba(217,119,6,.32); }
+  .pod.dua .bar  { background:linear-gradient(180deg,#94A3B8,#64748B); height:108px; animation-delay:.06s; }
+  .pod.tiga .bar { background:linear-gradient(180deg,#C08457,#96613C); height:84px;  animation-delay:.16s; }
+  .pod.satu .orang { background:linear-gradient(140deg,#FBBF24,#D97706); box-shadow:0 8px 22px rgba(217,119,6,.36); }
+  .pod.dua .orang  { background:linear-gradient(140deg,#CBD5E1,#64748B); }
+  .pod.tiga .orang { background:linear-gradient(140deg,#D9A57C,#96613C); }
+  @keyframes tumbuh { from { transform:scaleY(.04); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
+  @keyframes goyang { 0%,100% { transform:translateX(-50%) translateY(0) rotate(-6deg); }
+    50% { transform:translateX(-50%) translateY(-5px) rotate(6deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .pod .bar { animation:none; } .pod .mahkota { animation:none; }
+  }
+  @media (max-width:560px) { .podium { gap:8px; } .pod .orang { width:46px; height:46px; font-size:16px; }
+    .pod.satu .orang { width:56px; height:56px; font-size:19px; } .pod .gmv { font-size:16px; }
+    .pod.satu .gmv { font-size:19px; } }
+
   /* ---------- sidebar ---------- */
   aside { position:fixed; inset:0 auto 0 0; width:var(--sb);
     background:var(--kaca); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
@@ -1269,16 +1306,37 @@
   // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
   let fCS = 'all';
 
+  // Nama tampilan berbeda dari nama di Globemerce
+  const NAMA_CS = { yara: 'Lili' };
+  // Bukan Customer Service. Disembunyikan dari peringkat, tapi tetap dihitung di catatan
+  // supaya total di halaman ini masih bisa dicocokkan dengan halaman Globemerce.
+  const BUKAN_CS = { NANDA: 'order sendiri', DINDA: 'advertiser' };
+  const namaCS = n => NAMA_CS[String(n||'').trim()] || NAMA_CS[String(n||'').trim().toLowerCase()]
+    || (String(n||'').trim() || '(tanpa nama)');
+  const inisial = n => String(n||'?').trim().slice(0,2).toUpperCase();
+  const MAHKOTA = '<svg class="mahkota" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+    + '<path d="M3 8.5l3.6 3 3.3-5.2a1.3 1.3 0 0 1 2.2 0l3.3 5.2 3.6-3c.9-.7 2.1.2 1.7 1.3l-2.5 7.4'
+    + 'a1.4 1.4 0 0 1-1.3 1H5.1a1.4 1.4 0 0 1-1.3-1L1.3 9.8C.9 8.7 2.1 7.8 3 8.5Z"/></svg>';
+
   function rekapCS() {
     const pk = petaKirim();
     const m = new Map();
+    const luar = new Map();          // nama -> jumlah order yang dikeluarkan
     for (const o of (D.pesanan || [])) {
-      const nama = (o.agen || '').trim() || '(tanpa nama)';
+      const asli = (o.agen || '').trim();
+      const alasan = BUKAN_CS[asli.toUpperCase()];
+      if (alasan) {
+        const k = asli.toUpperCase();
+        if (!luar.has(k)) luar.set(k, { nama: asli, alasan, n: 0 });
+        luar.get(k).n++;
+        continue;
+      }
+      const nama = namaCS(asli);
       if (!m.has(nama)) m.set(nama, {
-        nama, order:0, omzet:0, baru:0, repeat:0, bermasalah:0, terkirim:0, dilacak:0, pesanan:[] });
+        nama, order:0, gmv:0, baru:0, repeat:0, bermasalah:0, terkirim:0, dilacak:0, pesanan:[] });
       const c = m.get(nama);
       c.order++;
-      c.omzet += Number(o.omzet) || 0;
+      c.gmv += Number(o.pv) || 0;
       if (o.jenis_pembeli === 'repeat') c.repeat++; else c.baru++;
       const kir = cari(pk, kunciPesanan(o));
       if (kir) {
@@ -1288,7 +1346,24 @@
       }
       c.pesanan.push({ ...o, _kirim: kir });
     }
-    return [...m.values()].sort((a, b) => b.order - a.order);
+    const daftar = [...m.values()].sort((a, b) => b.gmv - a.gmv || b.order - a.order);
+    daftar.luar = [...luar.values()].sort((a, b) => b.n - a.n);
+    return daftar;
+  }
+
+  // tiga teratas ditampilkan sebagai podium, juara di tengah
+  function podium(R) {
+    const tiga = R.slice(0, 3);
+    if (tiga.length < 2) return '';
+    const kelas = ['satu', 'dua', 'tiga'];
+    const kartu = (c, i) => c ? `<div class="pod ${kelas[i]}">
+        <div class="orang">${i === 0 ? MAHKOTA : ''}${esc(inisial(c.nama))}</div>
+        <p class="nm" title="${esc(c.nama)}">${esc(c.nama)}</p>
+        <p class="sk">${fN(c.order)} order · ${fP(c.order ? c.repeat / c.order * 100 : 0)} repeat</p>
+        <div class="bar"><div class="gmv">${fN(Math.round(c.gmv))}</div>
+          <div class="unit">GMV</div><div class="rank">${i + 1}</div></div>
+      </div>` : '<div></div>';
+    return `<div class="podium">${kartu(tiga[1], 1)}${kartu(tiga[0], 0)}${kartu(tiga[2], 2)}</div>`;
   }
 
   function pgCS() {
@@ -1298,13 +1373,13 @@
       Nama CS dibaca dari kolom <b>Sender</b> di Globemerce, dan belum ada pesanan di periode ini.</div></div>`;
 
     const total = R.reduce((a, c) => ({
-      order: a.order + c.order, baru: a.baru + c.baru,
+      order: a.order + c.order, gmv: a.gmv + c.gmv, baru: a.baru + c.baru,
       repeat: a.repeat + c.repeat, bermasalah: a.bermasalah + c.bermasalah,
       dilacak: a.dilacak + c.dilacak,
-    }), { order:0, baru:0, repeat:0, bermasalah:0, dilacak:0 });
+    }), { order:0, gmv:0, baru:0, repeat:0, bermasalah:0, dilacak:0 });
 
     const rasio = c => c.dilacak ? c.bermasalah / c.dilacak * 100 : 0;
-    const maks = Math.max(...R.map(c => c.order), 1);
+    const maks = Math.max(...R.map(c => c.gmv), 1);
 
     if (fCS !== 'all' && !R.some(c => c.nama === fCS)) fCS = 'all';
 
@@ -1314,6 +1389,7 @@
         <span class="tag">${fN(c.order)}</span></button>`).join('')}</div>`;
 
     const kartu = `<div class="kpis tiga">
+      ${kpi(I.spark,'#F59E0B','#FEF6E7','Total GMV',fN(Math.round(total.gmv)),'')}
       ${kpi(I.cart,'#7C3AED','#F3EEFE','Total order',fN(total.order),'')}
       ${kpi(I.cs,'#4F46E5','#EEF0FF','Jumlah CS aktif',fN(R.length),'')}
       ${kpi(I.up,'#F59E0B','#FEF6E7','Pelanggan baru',fN(total.baru),'')}
@@ -1323,21 +1399,27 @@
       ${kpi(I.eye,'#10B981','#E6FBF4','Order terlacak di Everpro',fN(total.dilacak),'')}
     </div>`;
 
-    const peringkat = `<div class="sec"><h4>Perbandingan antar CS</h4>
-        <span class="note">diurutkan dari order terbanyak</span></div>
+    const catatan = R.luar.length
+      ? `<div class="note" style="margin:-4px 0 12px">Tidak ikut diperingkat: ${
+          R.luar.map(x => `${fN(x.n)} order ${esc(x.nama)} (${esc(x.alasan)})`).join(' · ')}.</div>` : '';
+
+    const peringkat = `<div class="sec"><h4>Peringkat performa</h4>
+        <span class="note">berdasarkan GMV point dari Globemerce</span></div>
+      ${podium(R)}${catatan}
       <div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
-        <thead><tr><th>Customer Service</th><th class="num">Order</th><th class="num">Omzet</th>
+        <thead><tr><th>Customer Service</th><th class="num">GMV</th><th class="num">Order</th>
           <th class="num">Baru</th><th class="num">Repeat</th><th class="ctr">% Repeat</th>
           <th class="num">Bermasalah</th><th class="ctr">% Bermasalah</th></tr></thead>
-        <tbody>${R.map(c => {
+        <tbody>${R.map((c, i) => {
           const rp = c.order ? c.repeat / c.order * 100 : 0;
           const rb = rasio(c);
           const wb = rb >= 10 ? 'var(--red)' : rb > 0 ? 'var(--amber)' : 'var(--muted)';
+          const medali = ['#F59E0B', '#94A3B8', '#C08457'][i] || null;
           return `<tr>
-            <td class="nama"><b>${esc(c.nama)}</b>
-              <div class="track" style="margin-top:6px"><i style="width:${(c.order/maks*100).toFixed(1)}%;background:var(--violet)"></i></div></td>
+            <td class="nama"><b>${medali ? '<span style="color:'+medali+'">#'+(i+1)+'</span> ' : ''}${esc(c.nama)}</b>
+              <div class="track" style="margin-top:6px"><i style="width:${(c.gmv/maks*100).toFixed(1)}%;background:${medali||'var(--violet)'}"></i></div></td>
+            <td class="num">${fN(Math.round(c.gmv))}</td>
             <td class="num">${fN(c.order)}</td>
-            <td class="num uang">${fC(c.omzet)}</td>
             <td class="num">${fN(c.baru)}</td>
             <td class="num">${fN(c.repeat)}</td>
             <td class="ctr"><span class="pill2" style="background:var(--toska-soft);color:var(--toska)">${fP(rp)}</span></td>
