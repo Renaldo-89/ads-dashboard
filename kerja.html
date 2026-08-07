@@ -650,22 +650,26 @@
   }
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
-  const butuhExtra = () => ['lelang','jam','katakunci','google_ads'].includes(page);
+  // tiap halaman hanya butuh satu kumpulan data berat, jadi ditarik terpisah
+  const PERLU = { google_ads:'hour', jam:'hour', lelang:'auction', katakunci:'terms' };
+  const KUERI = { hour:F_JAM, auction:F_LELANG, terms:F_KATA };
+  const butuhExtra = () => !!PERLU[page];
 
-  async function muatExtra() {
-    if (D.extra || !D.iklan.google_ads || D.iklan.google_ads.status!=='ok') return;
-    D.extra = { hour:[], auction:[], terms:[], memuat:true };
+  function muatExtra() {
+    const k = PERLU[page];
+    if (!k || !D.iklan.google_ads || D.iklan.google_ads.status!=='ok') return;
+    if (!D.extra) D.extra = { memuat:{} };
+    if (D.extra[k] || D.extra.memuat[k]) return;      // sudah ada atau sedang ditarik
+    D.extra.memuat[k] = true;
     render();
     const { r } = D._rentang;
-    const [hour, auction, terms] = await Promise.all([
-      tarik('google_ads', F_JAM, r.from, r.to).catch(()=>[]),
-      tarik('google_ads', F_LELANG, r.from, r.to).catch(()=>[]),
-      tarik('google_ads', F_KATA, r.from, r.to).catch(()=>[]),
-    ]);
-    D.extra = { hour, auction, terms, memuat:false };
-    render();
+    tarik('google_ads', KUERI[k], r.from, r.to)
+      .then(rows => { D.extra[k] = rows; })
+      .catch(()  => { D.extra[k] = []; })
+      .finally(() => { delete D.extra.memuat[k]; render(); });
   }
-  const extraSiap = () => D.extra && !D.extra.memuat;
+  // kesiapan dinilai per kumpulan, bukan menunggu ketiganya selesai
+  const extraSiap = k => !!(D.extra && Array.isArray(D.extra[k]));
 
   // ---------- agregasi ----------
   const rowsOf = id => (D.iklan[id] && D.iklan[id].status==='ok') ? flt(D.iklan[id].rows) : [];
@@ -1135,7 +1139,7 @@
   // panel per jam dengan metrik yang bisa diklik (khusus platform yang punya data jam)
   function jamPanel(id) {
     if (id!=='google_ads') return '';
-    if (!extraSiap()) return `<div class="sec"><h4>Performa per jam</h4></div><div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
+    if (!extraSiap('hour')) return `<div class="sec"><h4>Performa per jam</h4></div><div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const baris = flt((D.extra&&D.extra.hour)||[]);
     if (!baris.length) return '';
     const total = agg(baris);
@@ -1534,7 +1538,7 @@
   }
 
   function pgLelang() {
-    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
+    if (!extraSiap('auction')) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const l = auctionAgg();
     if (!l.length) return `<div class="panel"><div class="empty">Data lelang hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const P = PLAT.google_ads;
@@ -1564,7 +1568,7 @@
   }
 
   function pgJam() {
-    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
+    if (!extraSiap('hour')) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const wd = jamAgg();
     if (!wd.length) return `<div class="panel"><div class="empty">Data per jam hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const best = wd.filter(x=>x.conv>0).slice().sort((a,b)=>a.cpa-b.cpa)[0];
@@ -1595,7 +1599,7 @@
   }
 
   function pgTerms() {
-    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
+    if (!extraSiap('terms')) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const all = termAgg();
     if (!all.length) return `<div class="panel"><div class="empty">Data kata kunci hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const boros = all.filter(t=>t.conversions===0 && t.spend>0).sort((a,b)=>b.spend-a.spend);
