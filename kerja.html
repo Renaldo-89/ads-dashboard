@@ -790,19 +790,36 @@
     return s > 0 ? s : 0;
   }
 
-  // ringkasan seluruh berkas cashback, bukan hanya periode yang sedang dilihat
+  // nama periode yang sedang aktif, untuk label kartu
+  function labelPeriode() {
+    const p = String(period||'');
+    if (p === 'today') return 'hari ini';
+    if (p === 'yesterday') return 'kemarin';
+    if (p.startsWith('m:')) {
+      const [th, bl] = p.slice(2).split('-');
+      return BLN[Number(bl)-1] + ' ' + th;
+    }
+    return p + ' hari terakhir';
+  }
+
+  // ringkasan cashback: mengikuti periode yang dipilih, dihitung dari tanggal mutasi
   function ringkasCashback() {
-    const C = D.cashback || [];
+    const semua = D.cashback || [];
+    const r = D._rentang && D._rentang.r;
+    const C = r ? semua.filter(x => x.tanggal && x.tanggal >= r.from && x.tanggal <= r.to) : semua;
     const jum = f => C.filter(f).reduce((a,x)=>a+(Number(x.jumlah)||0),0);
     const cair = C.filter(x=>x.status==='cair'), tunda = C.filter(x=>x.status==='tertunda');
     const telat = tunda.filter(x=>telatCair(x)>0);
+    const sel = s => semua.filter(x=>x.status===s).reduce((a,x)=>a+(Number(x.jumlah)||0),0);
     return {
-      ada: C.length > 0,
+      ada: semua.length > 0,
+      adaPeriode: C.length > 0,
       cair: jum(x=>x.status==='cair'), nCair: cair.length,
       tunda: jum(x=>x.status==='tertunda'), nTunda: tunda.length,
       telat: telat.reduce((a,x)=>a+(Number(x.jumlah)||0),0), nTelat: telat.length,
       terlama: telat.length ? Math.max(...telat.map(telatCair)) : 0,
       terbaru: cair.map(x=>x.tanggal).filter(Boolean).sort().pop() || null,
+      semuaCair: sel('cair'), semuaTunda: sel('tertunda'),   // seluruh berkas, sebagai pembanding
     };
   }
 
@@ -818,21 +835,26 @@
     const basi = umur !== null && umur >= 2;
     return `<div class="gmv">
         <div class="gcard terang">
-          <p class="k">CASHBACK SUDAH CAIR · SELURUH DATA</p>
+          <p class="k">CASHBACK CAIR · ${esc(labelPeriode().toUpperCase())}</p>
           <p class="v">${fC(c.cair)}</p>
-          <p class="s">${fN(c.nCair)} resi sudah masuk saldo${c.terbaru?' · terakhir '+sd(c.terbaru):''}</p>
+          <p class="s">${fN(c.nCair)} resi masuk saldo${c.terbaru?' · terakhir '+sd(c.terbaru):''}
+            · seluruh data ${fC(c.semuaCair)}</p>
         </div>
         <div class="gcard gelap">
-          <p class="k">BELUM CAIR · SELURUH DATA</p>
+          <p class="k">BELUM CAIR · ${esc(labelPeriode().toUpperCase())}</p>
           <p class="v">${fC(c.tunda)}</p>
-          <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}</p>
+          <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}
+            · seluruh data ${fC(c.semuaTunda)}</p>
         </div></div>
       ${c.nTelat ? `<div class="panel tight" style="border-color:#FBD5D5;background:#FEF6F6;margin-bottom:6px">
         <div class="li"><div class="ic" style="background:#FEECEC;color:#EF4444">${I.alert}</div>
         <div class="li-b"><p class="li-t" style="color:#B91C1C">${fN(c.nTelat)} cashback terlambat cair</p>
         <p class="li-s">Total ${fC(c.telat)} · paling lama ${c.terlama} hari lewat dari estimasi Everpro</p></div>
         </div></div>` : ''}
-      <div class="note" style="margin:2px 0 12px">Sumber: halaman My Balance Everpro${
+      ${!c.adaPeriode ? `<div class="note" style="margin:2px 0 0">
+        Tidak ada cashback yang tercatat pada ${esc(labelPeriode())}.
+        Seluruh data: ${fC(c.semuaCair)} cair, ${fC(c.semuaTunda)} belum cair.</div>` : ''}
+      <div class="note" style="margin:2px 0 12px">Dikelompokkan menurut tanggal cashback masuk saldo · sumber halaman My Balance Everpro${
         cashbackInfo && cashbackInfo.dari ? ' · '+cashbackInfo.dari+' s/d '+cashbackInfo.sampai : ''}${
         seg ? ' · diperbarui '+sd(seg) : ''}${
         basi ? ' <b style="color:#B45309">— data '+umur+' hari, jalankan ambil-cashback.js lagi</b>' : ''}</div>`;
@@ -1195,8 +1217,10 @@
       </div>
       <div class="note" style="margin:-6px 0 10px">
         Cair + tertunda + belum tercocokkan = ${fC(totalCb)}, seluruh cashback kiriman periode ini.
-        Kartu <b>Saldo cashback</b> di atas memakai dasar berbeda: seluruh isi berkas My Balance
-        (${esc(catatanCb)}), tanpa dibatasi periode, jadi angkanya memang tidak harus sama.</div>
+        Angka di sini dikelompokkan menurut <b>tanggal kiriman</b>, sedangkan kartu
+        <b>Saldo cashback</b> di atas menurut <b>tanggal cashback masuk saldo</b> —
+        cashback bisa cair beberapa hari setelah paket terkirim, jadi keduanya wajar berbeda.
+        Sumber: ${esc(catatanCb)}.</div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr>
           <th>Tanggal</th><th>Resi</th><th>Pembeli</th><th>Kurir</th>
