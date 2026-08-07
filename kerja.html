@@ -818,12 +818,12 @@
     const basi = umur !== null && umur >= 2;
     return `<div class="gmv">
         <div class="gcard terang">
-          <p class="k">CASHBACK SUDAH CAIR</p>
+          <p class="k">CASHBACK SUDAH CAIR · SELURUH DATA</p>
           <p class="v">${fC(c.cair)}</p>
           <p class="s">${fN(c.nCair)} resi sudah masuk saldo${c.terbaru?' · terakhir '+sd(c.terbaru):''}</p>
         </div>
         <div class="gcard gelap">
-          <p class="k">BELUM CAIR</p>
+          <p class="k">BELUM CAIR · SELURUH DATA</p>
           <p class="v">${fC(c.tunda)}</p>
           <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}</p>
         </div></div>
@@ -1150,9 +1150,13 @@
 
     const pb = petaPembeli();
     const cocok = K.filter(x=>cari(pb, kunciKirim(x))).length;
+    // hanya kiriman pada periode yang sedang dilihat, berbeda dasar dengan kartu Saldo cashback
     const jum = f => K.filter(f).reduce((a,x)=>a+(Number(x.cashback)||0),0);
+    const belumCocok = x => Number(x.cashback) > 0 && !cbCair(x) && !cbTunda(x);
     const cair = K.filter(cbCair).length, tunda = K.filter(cbTunda).length;
+    const belum = K.filter(belumCocok).length;
     const totalCb = jum(()=>true), cairCb = jum(cbCair), tundaCb = jum(cbTunda);
+    const belumCb = jum(belumCocok);
 
     const baris = K.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(x=>{
       const p = cari(pb, kunciKirim(x));
@@ -1185,11 +1189,14 @@
     return `<div class="sec"><h4>Daftar pengiriman</h4>
         <span class="note">${K.length} kiriman · ${cocok} cocok dengan Globemerce${batal?' · '+batal+' dibatalkan disembunyikan':''}</span></div>
       <div class="strip" style="margin-bottom:12px">
-        ${sc(I.money,'#10B981','#E6FBF4','Cashback cair',fC(cairCb)+' · '+fN(cair)+' kiriman')}
-        ${sc(I.money,'#F59E0B','#FEF6E7','Cashback tertunda',fC(tundaCb)+' · '+fN(tunda)+' kiriman')}
-        ${sc(I.money,'#6E6A8F','#F5F3FD','Total cashback periode ini',fC(totalCb))}
+        ${sc(I.money,'#10B981','#E6FBF4','Cair · kiriman periode ini',fC(cairCb)+' · '+fN(cair)+' kiriman')}
+        ${sc(I.money,'#F59E0B','#FEF6E7','Tertunda · kiriman periode ini',fC(tundaCb)+' · '+fN(tunda)+' kiriman')}
+        ${sc(I.money,'#6E6A8F','#F5F3FD','Belum tercocokkan',fC(belumCb)+' · '+fN(belum)+' kiriman')}
       </div>
-      <div class="note" style="margin:-6px 0 10px">Status pencairan: ${esc(catatanCb)}</div>
+      <div class="note" style="margin:-6px 0 10px">
+        Cair + tertunda + belum tercocokkan = ${fC(totalCb)}, seluruh cashback kiriman periode ini.
+        Kartu <b>Saldo cashback</b> di atas memakai dasar berbeda: seluruh isi berkas My Balance
+        (${esc(catatanCb)}), tanpa dibatasi periode, jadi angkanya memang tidak harus sama.</div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr>
           <th>Tanggal</th><th>Resi</th><th>Pembeli</th><th>Kurir</th>
