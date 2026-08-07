@@ -539,7 +539,7 @@
     // ditolak oleh perlindungan bot Everpro, jadi penarikannya dari komputer sendiri)
     const q = new URLSearchParams({ date_from:from, date_to:to });
     if (BUST) q.set('bust', BUST);
-    const res = await fetch(PROXY+'?sales='+src+'&'+q.toString());
+    const res = await ambil(PROXY+'?sales='+src+'&'+q.toString());
     if (!res.ok) throw new Error(String(res.status));
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
@@ -560,10 +560,70 @@
   const salesRows = () => SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
   const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
+  // ---------- kunci dashboard ----------
+  // Sandi disimpan di peramban ini saja, tidak pernah masuk ke repo.
+  // Worker menolak permintaan tanpa sandi yang benar.
+  let SANDI = '';
+  try { SANDI = localStorage.getItem('kunci') || ''; } catch (e) {}
+
+  function mintaSandi(pesan) {
+    return new Promise(resolve => {
+      const l = document.createElement('div');
+      l.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;'
+        + 'justify-content:center;background:var(--bg);padding:24px';
+      l.innerHTML = `<div style="max-width:340px;width:100%;text-align:center">
+        <div style="width:52px;height:52px;border-radius:17px;background:var(--grad);margin:0 auto 16px;
+          display:flex;align-items:center;justify-content:center;color:#fff">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><rect x="4" y="10.5" width="16" height="10" rx="3"/>
+            <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
+        <h2 style="font-size:17px;font-weight:700;margin:0 0 4px;letter-spacing:-.3px">Hiro Dashboard</h2>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 18px">${pesan || 'Masukkan sandi untuk membuka'}</p>
+        <input id="k-in" type="password" autocomplete="current-password" placeholder="Sandi"
+          style="width:100%;padding:12px 14px;border-radius:13px;border:1px solid var(--line);
+          background:var(--panel);color:var(--ink);font-size:14px;font-family:inherit;outline:none">
+        <button id="k-ok" style="width:100%;margin-top:10px;padding:12px;border-radius:13px;border:none;
+          background:var(--grad);color:#fff;font-size:14px;font-weight:600;font-family:inherit;
+          cursor:pointer">Buka</button></div>`;
+      document.body.appendChild(l);
+      const inp = l.querySelector('#k-in');
+      inp.focus();
+      const kirim = () => {
+        const v = inp.value.trim();
+        if (!v) { inp.focus(); return; }
+        l.remove(); resolve(v);
+      };
+      l.querySelector('#k-ok').addEventListener('click', kirim);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') kirim(); });
+    });
+  }
+
+  // Satu pintu untuk semua panggilan ke Worker: sandi selalu ikut,
+  // dan kalau ditolak, sandi lama dibuang lalu diminta ulang.
+  async function ambil(url) {
+    const res = await fetch(url, { headers: SANDI ? { 'X-Kunci': SANDI } : {} });
+    if (res.status === 401) {
+      try { localStorage.removeItem('kunci'); } catch (e) {}
+      SANDI = await mintaSandi('Sandi salah, coba lagi');
+      try { localStorage.setItem('kunci', SANDI); } catch (e) {}
+      return ambil(url);
+    }
+    return res;
+  }
+
+  // Sandi diminta lebih dulu kalau peramban ini belum pernah menyimpannya
+  async function mulai() {
+    if (!SANDI) {
+      SANDI = await mintaSandi();
+      try { localStorage.setItem('kunci', SANDI); } catch (e) {}
+    }
+    muat();
+  }
+
   async function tarik(connector, fields, from, to) {
     const q = new URLSearchParams({ connector, fields:fields.join(','), date_from:from, date_to:to });
     if (BUST) q.set('bust', BUST);
-    const res = await fetch(PROXY+'?'+q.toString());
+    const res = await ambil(PROXY+'?'+q.toString());
     if (!res.ok) throw new Error(String(res.status));
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
@@ -2094,7 +2154,7 @@
   document.getElementById('reload').addEventListener('click', ()=>{ BUST = String(Date.now()); D.extra = null; muat(); });
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
 
-  buildFilters(); buildNav(); muat();
+  buildFilters(); buildNav(); mulai();
 })();
 </script>
 </body>
