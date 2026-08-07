@@ -381,6 +381,7 @@
   const KAND_SHOP = [['date','revenue','orders'],['date','total_amount','order_id'],['date','gmv','orders'],['date','revenue']];
 
   const I = {
+    cs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-3.8 3.4-6 7.5-6s7.5 2.2 7.5 6"/></svg>',
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>',
     list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>',
     chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
@@ -411,6 +412,7 @@
     { g:1, id:'sales',    lbl:'Sales',       ic:I.cart,   t:'Penjualan' },
     { g:1, id:'globemerce', lbl:'Globemerce',ic:I.money,  t:'Globemerce', sales:'globemerce' },
     { g:1, id:'everpro',  lbl:'Everpro',     ic:I.plug,   t:'Everpro',    sales:'everpro' },
+    { g:1, id:'cs',       lbl:'Customer Service', ic:I.cs, t:'Performa Customer Service' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -936,6 +938,7 @@
     else if (page==='sales') el.innerHTML = pgSales();
     else if (m.sales) el.innerHTML = pgSumber(m.sales);
     else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
+    else if (page==='cs') el.innerHTML = pgCS();
     else if (page==='kampanye') el.innerHTML = pgKampanye();
     else if (page==='lelang') el.innerHTML = pgLelang();
     else if (page==='jam') el.innerHTML = pgJam();
@@ -1259,6 +1262,122 @@
           <th class="ctr">Bayar</th><th class="ctr">Status kirim</th>
           <th class="num">Nilai</th><th class="num">Cashback</th><th class="ctr">Status cashback</th>
         </tr></thead><tbody>${baris}</tbody></table></div></div>`;
+  }
+
+  // ---------- halaman Customer Service ----------
+  // Nama CS dibaca dari kolom Sender di Globemerce (medan "agen").
+  // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
+  let fCS = 'all';
+
+  function rekapCS() {
+    const pk = petaKirim();
+    const m = new Map();
+    for (const o of (D.pesanan || [])) {
+      const nama = (o.agen || '').trim() || '(tanpa nama)';
+      if (!m.has(nama)) m.set(nama, {
+        nama, order:0, omzet:0, baru:0, repeat:0, bermasalah:0, terkirim:0, dilacak:0, pesanan:[] });
+      const c = m.get(nama);
+      c.order++;
+      c.omzet += Number(o.omzet) || 0;
+      if (o.jenis_pembeli === 'repeat') c.repeat++; else c.baru++;
+      const kir = cari(pk, kunciPesanan(o));
+      if (kir) {
+        c.dilacak++;
+        if (/retur|hilang|gagal/i.test(kir.kelompok || '')) c.bermasalah++;
+        else if (/terkirim/i.test(kir.kelompok || '')) c.terkirim++;
+      }
+      c.pesanan.push({ ...o, _kirim: kir });
+    }
+    return [...m.values()].sort((a, b) => b.order - a.order);
+  }
+
+  function pgCS() {
+    const R = rekapCS();
+    if (!R.length) return `<div class="panel"><div class="empty">
+      <b>Belum ada data Customer Service</b><br>
+      Nama CS dibaca dari kolom <b>Sender</b> di Globemerce, dan belum ada pesanan di periode ini.</div></div>`;
+
+    const total = R.reduce((a, c) => ({
+      order: a.order + c.order, baru: a.baru + c.baru,
+      repeat: a.repeat + c.repeat, bermasalah: a.bermasalah + c.bermasalah,
+      dilacak: a.dilacak + c.dilacak,
+    }), { order:0, baru:0, repeat:0, bermasalah:0, dilacak:0 });
+
+    const rasio = c => c.dilacak ? c.bermasalah / c.dilacak * 100 : 0;
+    const maks = Math.max(...R.map(c => c.order), 1);
+
+    if (fCS !== 'all' && !R.some(c => c.nama === fCS)) fCS = 'all';
+
+    const chips = `<div class="chips" style="margin-bottom:14px">
+      <button class="${fCS==='all'?'on':''}" data-cs="all">Semua CS</button>
+      ${R.map(c => `<button class="${fCS===c.nama?'on':''}" data-cs="${esc(c.nama)}">${esc(c.nama)}
+        <span class="tag">${fN(c.order)}</span></button>`).join('')}</div>`;
+
+    const kartu = `<div class="kpis tiga">
+      ${kpi(I.cart,'#7C3AED','#F3EEFE','Total order',fN(total.order),'')}
+      ${kpi(I.cs,'#4F46E5','#EEF0FF','Jumlah CS aktif',fN(R.length),'')}
+      ${kpi(I.up,'#F59E0B','#FEF6E7','Pelanggan baru',fN(total.baru),'')}
+      ${kpi(I.up,'#06B6D4','#E6F9FD','Pelanggan repeat',fN(total.repeat),'')}
+      ${kpi(I.alert, total.bermasalah?'#EF4444':'#6E6A8F', total.bermasalah?'#FEECEC':'#F5F3FD',
+        'Pengiriman bermasalah', fN(total.bermasalah),'')}
+      ${kpi(I.eye,'#10B981','#E6FBF4','Order terlacak di Everpro',fN(total.dilacak),'')}
+    </div>`;
+
+    const peringkat = `<div class="sec"><h4>Perbandingan antar CS</h4>
+        <span class="note">diurutkan dari order terbanyak</span></div>
+      <div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
+        <thead><tr><th>Customer Service</th><th class="num">Order</th><th class="num">Omzet</th>
+          <th class="num">Baru</th><th class="num">Repeat</th><th class="ctr">% Repeat</th>
+          <th class="num">Bermasalah</th><th class="ctr">% Bermasalah</th></tr></thead>
+        <tbody>${R.map(c => {
+          const rp = c.order ? c.repeat / c.order * 100 : 0;
+          const rb = rasio(c);
+          const wb = rb >= 10 ? 'var(--red)' : rb > 0 ? 'var(--amber)' : 'var(--muted)';
+          return `<tr>
+            <td class="nama"><b>${esc(c.nama)}</b>
+              <div class="track" style="margin-top:6px"><i style="width:${(c.order/maks*100).toFixed(1)}%;background:var(--violet)"></i></div></td>
+            <td class="num">${fN(c.order)}</td>
+            <td class="num uang">${fC(c.omzet)}</td>
+            <td class="num">${fN(c.baru)}</td>
+            <td class="num">${fN(c.repeat)}</td>
+            <td class="ctr"><span class="pill2" style="background:var(--toska-soft);color:var(--toska)">${fP(rp)}</span></td>
+            <td class="num">${fN(c.bermasalah)}</td>
+            <td class="ctr"><span style="color:${wb};font-weight:600">${c.dilacak?fP(rb):'—'}</span></td>
+          </tr>`; }).join('')}</tbody></table></div></div>`;
+
+    const dipilih = fCS === 'all' ? R.flatMap(c => c.pesanan) : (R.find(c => c.nama === fCS) || {}).pesanan || [];
+    const urut = dipilih.slice().sort((a, b) =>
+      String(b.tanggal + (b.waktu||'')).localeCompare(String(a.tanggal + (a.waktu||''))));
+
+    const baris = urut.map(o => {
+      const k = o._kirim;
+      const [wc, ws] = k ? WARNA_KIRIM(k.status) : ['var(--muted)', 'var(--line-2)'];
+      const resi = o.resi && !/not\s*generated/i.test(String(o.resi)) ? o.resi : (k && k.resi) || null;
+      return `<tr>
+        <td class="tgl">${sd(o.tanggal)}<span>${o.waktu||''}</span></td>
+        <td class="no">#${esc(o.no)}</td>
+        <td class="nama">${esc(o.pembeli||'—')}
+          ${fCS==='all'?'<br><span style="font-size:10px;color:var(--faint)">'+esc(o.agen||'—')+'</span>':''}</td>
+        <td class="resi">${o.telepon ? esc(o.telepon) : '<span style="color:var(--faint)">—</span>'}</td>
+        <td class="nama">${esc(o.provinsi||'—')}</td>
+        <td class="resi">${resi ? esc(resi) : '<span style="color:var(--red)">belum ada resi</span>'}</td>
+        <td class="kurir">${esc(o.kurir||'—')}</td>
+        <td class="ctr">${k
+          ? '<span class="pill2" style="background:'+ws+';color:'+wc+'">'+esc(k.status||'—')+'</span>'
+          : '<span class="pill2" style="background:var(--line-2);color:var(--muted)">'+esc(o.status||'—')+'</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    const judul = fCS === 'all' ? 'Semua pelanggan' : 'Pelanggan ' + esc(fCS);
+    const tabel = `<div class="sec"><h4>${judul}</h4>
+        <span class="note">${fN(urut.length)} pesanan · status kirim dari Everpro</span></div>
+      ${chips}
+      <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
+        <thead><tr><th>Tanggal</th><th>No order</th><th>Pembeli</th><th>Telepon</th>
+          <th>Provinsi</th><th>Resi</th><th>Kurir</th><th class="ctr">Status kirim</th></tr></thead>
+        <tbody>${baris}</tbody></table></div></div>`;
+
+    return kartu + peringkat + tabel;
   }
 
   function pgSumber(id) {
@@ -1861,6 +1980,8 @@
     buildFilters(); render();
   });
   document.getElementById('content').addEventListener('click', e=>{
+    const c = e.target.closest('button[data-cs]');
+    if (c) { fCS = c.dataset.cs; render(); return; }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
     const k = b.dataset.metrik;
     if (pilih.includes(k)) { if (pilih.length>1) pilih = pilih.filter(x=>x!==k); }
