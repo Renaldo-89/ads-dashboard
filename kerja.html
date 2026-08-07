@@ -583,7 +583,13 @@
     for (const c of cashback) { const k = bersihResi(c.resi); if (k) petaCb.set(k, c); }
     if (petaCb.size) for (const x of kirim) {
       const c = petaCb.get(bersihResi(x.resi));
-      if (!c) { x.cashback_status = x.cashback ? 'belum tercatat' : ''; continue; }
+      if (!c) {
+        // bedakan "tidak punya cashback", "di luar rentang berkas", dan benar-benar hilang
+        if (!x.cashback) x.cashback_status = '';
+        else if (cbFile && cbFile.dari && x.tanggal < cbFile.dari) x.cashback_status = 'di luar rentang';
+        else x.cashback_status = 'belum tercatat';
+        continue;
+      }
       x.cashback_status = c.status;                       // cair | tertunda | batal
       x.cashback_cair   = c.status === 'cair' ? c.jumlah : 0;
       if (!x.cashback && c.jumlah) x.cashback = c.jumlah;  // lengkapi bila API kosong
@@ -769,6 +775,7 @@
     if (/cair|paid|success|disburse|selesai|done/.test(s)) return ['#047857','#E6FBF4','Cair'];
     if (/tertunda|pending|process|proses|waiting|on_?going/.test(s)) return ['#B45309','#FEF6E7','Tertunda'];
     if (/cancel|batal|reject|fail|gagal/.test(s)) return ['#B91C1C','#FEECEC','Dibatalkan'];
+    if (/di luar rentang/.test(s)) return ['#6E6A8F','#F5F3FD','Di luar rentang'];
     if (/belum tercatat/.test(s)) return ['#6E6A8F','#F5F3FD','Belum tercatat'];
     return ['#4F46E5','#EEF0FF', s];
   };
