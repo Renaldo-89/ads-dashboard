@@ -15,6 +15,7 @@ Pakai:
 
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -114,6 +115,31 @@ def cari_daftar(o, dalam=0):
     return None
 
 
+POLA_ORDER = re.compile(r"(?:no\.?\s*order|order)?\s*#\s*(\d{6,10})", re.I)
+
+
+def nomor_globemerce(o):
+    """
+    Nomor order Globemerce sering disisipkan ke nama penerima atau catatan alamat,
+    contoh: "IQBAL HABIB no order #2491113".
+    Hanya ANGKA-nya yang diambil; nama dan alamat tidak pernah disimpan.
+    """
+    rc = o.get("receiver") or {}
+    sh = o.get("shipment") or {}
+    pk = o.get("package") or {}
+    sumber = " ".join(str(x or "") for x in (
+        rc.get("name"), rc.get("address"), rc.get("address_detail"),
+        sh.get("note"), pk.get("description"),
+        o.get("client_order_no"), o.get("unique_reference_id"),
+    ))
+    m = POLA_ORDER.search(sumber)
+    if m:
+        return m.group(1)
+    # cadangan: angka 6-10 digit berdiri sendiri di catatan
+    m2 = re.search(r"\b(\d{7,9})\b", str(sh.get("note") or ""))
+    return m2.group(1) if m2 else ""
+
+
 def rapikan_order(o):
     """
     Ambil hanya yang tidak bersifat pribadi.
@@ -129,6 +155,7 @@ def rapikan_order(o):
         "no_order": o.get("shipment_order_no") or o.get("client_order_no") or "",
         "no_client": o.get("client_order_no") or "",
         "no_shipment": o.get("shipment_order_no") or "",
+        "no_globemerce": nomor_globemerce(o),
         "ref": o.get("unique_reference_id") or "",
         "ref_logistik": o.get("logistic_reference_number") or "",
         "tanggal": (o.get("created_at") or "")[:10],
@@ -211,7 +238,10 @@ def main():
     cair = sum(1 for o in orders if "cair" in (o["cashback_status"] or "").lower()
                or "paid" in (o["cashback_status"] or "").lower()
                or "success" in (o["cashback_status"] or "").lower())
-    print(f"Tersimpan: {jalur_o} ({len(orders)} pesanan, {cair} cashback tercatat cair)")
+    dgn_no = sum(1 for o in orders if o.get("no_globemerce"))
+    batal = sum(1 for o in orders if re.search(r"cancel|batal|void", o.get("status") or "", re.I))
+    print(f"Tersimpan: {jalur_o} ({len(orders)} pesanan, {dgn_no} punya nomor order Globemerce, "
+          f"{cair} cashback cair, {batal} dibatalkan)")
 
 
 if __name__ == "__main__":

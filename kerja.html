@@ -657,6 +657,8 @@
 
   function kunciKirim(x) {              // semua kemungkinan kunci dari sisi Everpro
     const k = [];
+    const g = angkaSaja(x.no_globemerce);        // nomor order yang disisipkan di catatan
+    if (g && g.length >= 6) k.push('O:'+g);
     const r = bersihResi(x.resi); if (r) k.push('R:'+r);
     for (const f of ['no_client','no_shipment','no_order','ref','ref_logistik']) {
       const n = angkaSaja(x[f]);
@@ -1023,7 +1025,8 @@
       const [cc, cs, ct] = WARNA_CASHBACK(x.cashback_status);
       return `<tr>
         <td class="tgl">${sd(x.tanggal)}</td>
-        <td class="resi">${x.resi ? esc(x.resi) : '<span style="color:var(--red)">belum ada resi</span>'}</td>
+        <td class="resi">${x.resi ? esc(x.resi) : '<span style="color:var(--red)">belum ada resi</span>'}
+          ${x.no_globemerce ? '<br><span style="font-size:10px;color:var(--faint)">order #'+esc(x.no_globemerce)+'</span>' : ''}</td>
         <td class="nama" title="${p?esc(p.pembeli||''):''}">${p
           ? esc(p.pembeli||'—') + '<br><span style="font-weight:500;color:var(--faint);font-size:11px">#'+esc(p.no)+'</span>'
           : '<span style="color:var(--faint)">tidak ada di Globemerce</span>'}</td>
