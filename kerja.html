@@ -415,6 +415,7 @@
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let everproInfo = null;
+  let BUST = '';
   const NAMA_AKUN = new Map();
   const namaAkun = id => NAMA_AKUN.get(String(id)) || String(id);
   let D = { iklan:{}, prev:{}, shop:{status:'off',rows:[],field:null}, extra:{}, sales:{}, prevSales:{} };
@@ -468,8 +469,9 @@
       if (!dalam.length) throw new Error('kosong');
       return dalam;
     }
-    const q = new URLSearchParams({ date_from:from, date_to:to, _:String(Date.now()) });
-    const res = await fetch(PROXY+'?sales='+src+'&'+q.toString(), { cache:'no-store' });
+    const q = new URLSearchParams({ date_from:from, date_to:to });
+    if (BUST) q.set('bust', BUST);
+    const res = await fetch(PROXY+'?sales='+src+'&'+q.toString());
     if (!res.ok) throw new Error(String(res.status));
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
@@ -491,8 +493,9 @@
   const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
   async function tarik(connector, fields, from, to) {
-    const q = new URLSearchParams({ connector, fields:fields.join(','), date_from:from, date_to:to, _:String(Date.now()) });
-    const res = await fetch(PROXY+'?'+q.toString(), { cache:'no-store' });
+    const q = new URLSearchParams({ connector, fields:fields.join(','), date_from:from, date_to:to });
+    if (BUST) q.set('bust', BUST);
+    const res = await fetch(PROXY+'?'+q.toString());
     if (!res.ok) throw new Error(String(res.status));
     const j = await res.json();
     if (j && j.error) throw new Error(j.error);
@@ -501,6 +504,27 @@
     return rows;
   }
   const FI = ['account_id','account_name','campaign','date','spend','clicks','impressions','conversions'];
+  const FI_PREV = ['account_id','account_name','campaign','date','spend','clicks','conversions'];
+  const F_JAM = ['account_id','account_name','campaign','date','hour','spend','clicks','impressions','conversions'];
+  const F_LELANG = ['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share',
+    'search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'];
+  const F_KATA = ['account_id','campaign','search_term','spend','clicks','impressions','conversions'];
+
+  // pesanan Globemerce ditarik SEKALI untuk periode ini + periode sebelumnya,
+  // lalu dipisah di sini. Rekap harian dihitung sendiri, tidak menarik ulang.
+  const rekapHarian = (orders) => {
+    const m = new Map();
+    for (const o of orders) { const d = o.tanggal; if (!d) continue;
+      if (!m.has(d)) m.set(d, { date:d, orders:0, units:0, revenue:0, cogs:0,
+        gross_profit:0, customers_new:0, customers_repeat:0 });
+      const a = m.get(d);
+      a.orders += 1; a.units += Number(o.unit)||0;
+      a.revenue += Number(o.omzet)||0; a.cogs += Number(o.modal)||0;
+      a.gross_profit += Number(o.profit)||0;
+      if (o.jenis_pembeli==='repeat') a.customers_repeat += 1; else a.customers_new += 1;
+    }
+    return Array.from(m.values()).sort((a,b)=>a.date.localeCompare(b.date));
+  };
 
   async function muat() {
     document.getElementById('loading').style.display='block';
@@ -508,49 +532,49 @@
     document.getElementById('reload').classList.add('spin');
     const r = rentang(period), pr = sebelum(r);
 
+    // --- semua permintaan inti berjalan bersamaan ---
+    const tugasIklan = IKLAN.flatMap(id => [
+      tarik(id, FI, r.from, r.to).then(rows=>['now',id,rows]).catch(()=>['now',id,null]),
+      tarik(id, FI_PREV, pr.from, pr.to).then(rows=>['prev',id,rows]).catch(()=>['prev',id,[]]),
+    ]);
+    const tugasShop = tarik('tiktok_shop', KAND_SHOP[0], r.from, r.to)
+      .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
+    const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to).catch(()=>[]);
+    const tugasGmv = tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
+    const tugasKirim = fetch('data/everpro-orders.json' + (BUST?('?t='+BUST):''))
+      .then(x=>x.ok?x.json():{data:[]}).then(j=>j.data||[]).catch(()=>[]);
+    const tugasEp = fetch('data/everpro.json' + (BUST?('?t='+BUST):''))
+      .then(x=>x.ok?x.json():null).catch(()=>null);
+
+    const [hasilIklan, shop, gmOrders, gmv, kirimSemua, epRekap] = await Promise.all([
+      Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv, tugasKirim, tugasEp,
+    ]);
+
     const iklan={}, prev={};
-    await Promise.all(IKLAN.map(async id => {
-      try { iklan[id] = { status:'ok', rows: await tarik(id, FI, r.from, r.to) }; }
-      catch(e) { iklan[id] = { status:'off', rows:[] }; }
-      try { prev[id] = await tarik(id, ['account_id','account_name','campaign','date','spend','clicks','conversions'], pr.from, pr.to); } catch(e) { prev[id]=[]; }
-    }));
-
-    let shop = { status:'off', rows:[], field:null, cnt:null };
-    for (const k of KAND_SHOP) {
-      try { const rows = await tarik('tiktok_shop', k, r.from, r.to);
-        shop = { status:'ok', rows, field:k.find(f=>['revenue','total_amount','gmv'].includes(f)),
-          cnt:k.find(f=>['orders','order_id'].includes(f))||null }; break; } catch(e) {}
+    for (const [jenis, id, rows] of hasilIklan) {
+      if (jenis==='now') iklan[id] = rows ? { status:'ok', rows } : { status:'off', rows:[] };
+      else prev[id] = rows || [];
     }
 
-    const extra = {};
-    if (iklan.google_ads.status==='ok') {
-      extra.hour = await tarik('google_ads',['account_id','account_name','campaign','date','hour','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
-      extra.auction = await tarik('google_ads',['account_id','campaign','date','search_impression_share','search_rank_lost_impression_share','search_budget_lost_impression_share','absolute_top_impression_percentage','top_impression_percentage','impressions'], r.from, r.to).catch(()=>[]);
-      extra.terms = await tarik('google_ads',['account_id','campaign','search_term','spend','clicks','impressions','conversions'], r.from, r.to).catch(()=>[]);
-    } else { extra.hour=[]; extra.auction=[]; extra.terms=[]; }
-
+    // pisahkan pesanan Globemerce menurut periode
+    const pesanan = gmOrders.filter(o => o.tanggal >= r.from && o.tanggal <= r.to);
+    const pesananLalu = gmOrders.filter(o => o.tanggal >= pr.from && o.tanggal <= pr.to);
     const sales = {}, prevSales = {};
-    await Promise.all(SALES.map(async s => {
-      try { sales[s.id] = { status:'ok', rows: await tarikSales(s.id, r.from, r.to) }; }
-      catch(e) { sales[s.id] = { status:'off', rows:[] }; }
-      try { prevSales[s.id] = await tarikSales(s.id, pr.from, pr.to); } catch(e) { prevSales[s.id]=[]; }
-    }));
+    sales.globemerce = pesanan.length ? { status:'ok', rows: rekapHarian(pesanan) } : { status:'off', rows:[] };
+    prevSales.globemerce = rekapHarian(pesananLalu);
 
-    let pesanan = [], gmv = [];
-    if (sales.globemerce && sales.globemerce.status==='ok') {
-      try { pesanan = await tarikSales('globemerce&detail=1', r.from, r.to); } catch(e) { pesanan = []; }
-      try { gmv = await tarikSales('globemerce&gmv=1', r.from, r.to); } catch(e) { gmv = []; }
-    }
+    // Everpro dari berkas hasil sinkronisasi lokal
+    const epBaris = epRekap && epRekap.data ? epRekap.data : [];
+    if (epRekap) everproInfo = { updated_at: epRekap.updated_at || null };
+    const epDalam = epBaris.filter(x => x.date >= r.from && x.date <= r.to);
+    sales.everpro = epDalam.length ? { status:'ok', rows: epDalam } : { status:'off', rows:[] };
+    prevSales.everpro = epBaris.filter(x => x.date >= pr.from && x.date <= pr.to);
 
-    // daftar pengiriman Everpro (tanpa data pribadi, dicocokkan lewat resi)
-    let kirim = [];
-    try {
-      const res = await fetch('data/everpro-orders.json?t='+Date.now(), { cache:'no-store' });
-      if (res.ok) { const j = await res.json();
-        kirim = (j.data||[]).filter(x => x.tanggal >= r.from && x.tanggal <= r.to); }
-    } catch(e) { kirim = []; }
+    const kirim = kirimSemua.filter(x => x.tanggal >= r.from && x.tanggal <= r.to);
 
-    D = { iklan, prev, shop, extra, sales, prevSales, pesanan, gmv, kirim };
+    D = { iklan, prev, shop, extra:null, sales, prevSales, pesanan, gmv, kirim,
+          _rentang:{ r, pr } };
+
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
     document.getElementById('live-txt').textContent = 'Segar ' + jam;
@@ -558,8 +582,28 @@
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     document.getElementById('reload').classList.remove('spin');
+    BUST = '';                       // penanda paksa-segar hanya berlaku sekali
     buildFilters(); buildNav(); render();
+    if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
   }
+
+  // ---------- data berat: lelang, per jam, kata kunci ----------
+  const butuhExtra = () => ['lelang','jam','katakunci','google_ads'].includes(page);
+
+  async function muatExtra() {
+    if (D.extra || !D.iklan.google_ads || D.iklan.google_ads.status!=='ok') return;
+    D.extra = { hour:[], auction:[], terms:[], memuat:true };
+    render();
+    const { r } = D._rentang;
+    const [hour, auction, terms] = await Promise.all([
+      tarik('google_ads', F_JAM, r.from, r.to).catch(()=>[]),
+      tarik('google_ads', F_LELANG, r.from, r.to).catch(()=>[]),
+      tarik('google_ads', F_KATA, r.from, r.to).catch(()=>[]),
+    ]);
+    D.extra = { hour, auction, terms, memuat:false };
+    render();
+  }
+  const extraSiap = () => D.extra && !D.extra.memuat;
 
   // ---------- agregasi ----------
   const rowsOf = id => (D.iklan[id] && D.iklan[id].status==='ok') ? flt(D.iklan[id].rows) : [];
@@ -947,7 +991,8 @@
   // panel per jam dengan metrik yang bisa diklik (khusus platform yang punya data jam)
   function jamPanel(id) {
     if (id!=='google_ads') return '';
-    const baris = flt(D.extra.hour||[]);
+    if (!extraSiap()) return `<div class="sec"><h4>Performa per jam</h4></div><div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
+    const baris = flt((D.extra&&D.extra.hour)||[]);
     if (!baris.length) return '';
     const total = agg(baris);
     const kartu = MK.map(k=>{
@@ -1317,7 +1362,7 @@
 
   function auctionAgg() {
     const m = new Map();
-    for (const r of flt(D.extra.auction||[])) {
+    for (const r of flt((D.extra&&D.extra.auction)||[])) {
       const k = r.campaign; if(!k) continue;
       if(!m.has(k)) m.set(k,{key:k,w:0,is:0,rank:0,bud:0,top:0,abs:0});
       const a=m.get(k), w=Number(r.impressions)||0; a.w+=w;
@@ -1333,6 +1378,7 @@
   }
 
   function pgLelang() {
+    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const l = auctionAgg();
     if (!l.length) return `<div class="panel"><div class="empty">Data lelang hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const P = PLAT.google_ads;
@@ -1356,12 +1402,13 @@
   }
 
   function jamAgg() {
-    const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
+    const m = grup(flt((D.extra&&D.extra.hour)||[]), r=>String(Number(r.hour)));
     return Array.from({length:24},(_,i)=>String(i)).filter(h=>m.has(h)).map(h=>{ const a=m.get(h);
       return { h, spend:a.spend, clicks:a.clicks, conv:a.conversions, cpa:a.conversions>0?a.spend/a.conversions:Infinity }; });
   }
 
   function pgJam() {
+    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const wd = jamAgg();
     if (!wd.length) return `<div class="panel"><div class="empty">Data per jam hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const best = wd.filter(x=>x.conv>0).slice().sort((a,b)=>a.cpa-b.cpa)[0];
@@ -1385,13 +1432,14 @@
   }
 
   function termAgg() {
-    const m = grup(flt(D.extra.terms||[]), r=>r.search_term||'(tidak diketahui)');
+    const m = grup(flt((D.extra&&D.extra.terms)||[]), r=>r.search_term||'(tidak diketahui)');
     return Array.from(m.values()).map(a=>({ term:a.key, spend:a.spend, clicks:a.clicks,
       impressions:a.impressions, conversions:a.conversions,
       cpa:a.conversions>0?a.spend/a.conversions:null, ctr:a.impressions>0?a.clicks/a.impressions*100:0 }));
   }
 
   function pgTerms() {
+    if (!extraSiap()) return `<div class="panel"><div class="empty"><div class="spinner"></div>Memuat data rinci&hellip;</div></div>`;
     const all = termAgg();
     if (!all.length) return `<div class="panel"><div class="empty">Data kata kunci hanya tersedia untuk Google Ads, dan belum ada di periode ini.</div></div>`;
     const boros = all.filter(t=>t.conversions===0 && t.spend>0).sort((a,b)=>b.spend-a.spend);
@@ -1559,7 +1607,7 @@
     }
 
     if (document.getElementById('c-jamplat')) {
-      const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
+      const m = grup(flt((D.extra&&D.extra.hour)||[]), r=>String(Number(r.hour)));
       const hrs = Array.from({length:24},(_,i)=>String(i));
       const kosongAgg = { spend:0, clicks:0, impressions:0, conversions:0 };
       const unit = u => u==='idr'?'yIDR':u==='pct'?'yPct':'yCount';
@@ -1601,7 +1649,7 @@
     }
 
     if (page==='jam') {
-      const m = grup(flt(D.extra.hour||[]), r=>String(Number(r.hour)));
+      const m = grup(flt((D.extra&&D.extra.hour)||[]), r=>String(Number(r.hour)));
       const hrs = Array.from({length:24},(_,i)=>String(i));
       mk('c-jam', { type:'line', data:{ labels:hrs.map(h=>h.padStart(2,'0')+':00'), datasets:[
           garis('Biaya', hrs.map(h=>m.has(h)?Math.round(m.get(h).spend):0), '#4F46E5', 'y', true),
@@ -1623,6 +1671,7 @@
   document.querySelector('aside').addEventListener('click', e=>{
     const b = e.target.closest('button[data-page]'); if(!b) return;
     page = b.dataset.page; buildNav(); render(); tutup(); window.scrollTo({top:0,behavior:'smooth'});
+    if (butuhExtra()) muatExtra();
   });
   document.getElementById('periods').addEventListener('click', e=>{
     const b = e.target.closest('button[data-p]'); if(!b) return;
@@ -1645,7 +1694,7 @@
     else { pilih = pilih.concat(k); if (pilih.length>4) pilih = pilih.slice(-4); }
     render();
   });
-  document.getElementById('reload').addEventListener('click', muat);
+  document.getElementById('reload').addEventListener('click', ()=>{ BUST = String(Date.now()); D.extra = null; muat(); });
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
 
   buildFilters(); buildNav(); muat();
