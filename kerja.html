@@ -415,6 +415,7 @@
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let everproInfo = null;
+  let cashbackInfo = null;
   let BUST = '';
   const NAMA_AKUN = new Map();
   const namaAkun = id => NAMA_AKUN.get(String(id)) || String(id);
@@ -541,9 +542,12 @@
       .then(rows=>({ sumber:'api', data:rows }))
       .catch(()=> fetch('data/everpro.json' + (BUST?('?t='+BUST):''))
         .then(x=>x.ok?x.json():null).catch(()=>null));
+    // status pencairan cashback dari halaman My Balance, dicocokkan lewat resi
+    const tugasCb = fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
+      .then(x=>x.ok?x.json():null).catch(()=>null);
 
-    const [hasilIklan, shop, gmOrders, gmv, kirimSemua, epRekap] = await Promise.all([
-      Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv, tugasKirim, tugasEp,
+    const [hasilIklan, shop, gmOrders, gmv, kirimSemua, epRekap, cbFile] = await Promise.all([
+      Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv, tugasKirim, tugasEp, tugasCb,
     ]);
 
     const iklan={}, prev={};
@@ -570,7 +574,25 @@
 
     const kirim = (kirimSemua.rows||kirimSemua||[]).filter(x => x.tanggal >= r.from && x.tanggal <= r.to);
 
-    D = { iklan, prev, shop, extra:null, sales, prevSales, pesanan, gmv, kirim,
+    // tempelkan status pencairan cashback ke tiap kiriman lewat resi
+    const cashback = (cbFile && cbFile.data) || [];
+    cashbackInfo = cbFile
+      ? { updated_at: cbFile.updated_at || null, jumlah: cashback.length,
+          dari: cbFile.dari || null, sampai: cbFile.sampai || null } : null;
+    const petaCb = new Map();
+    for (const c of cashback) { const k = bersihResi(c.resi); if (k) petaCb.set(k, c); }
+    if (petaCb.size) for (const x of kirim) {
+      const c = petaCb.get(bersihResi(x.resi));
+      if (!c) { x.cashback_status = x.cashback ? 'belum tercatat' : ''; continue; }
+      x.cashback_status = c.status;                       // cair | tertunda | batal
+      x.cashback_cair   = c.status === 'cair' ? c.jumlah : 0;
+      if (!x.cashback && c.jumlah) x.cashback = c.jumlah;  // lengkapi bila API kosong
+      x.cashback_tgl    = c.tanggal;
+      x.cashback_est    = c.est || null;
+      x.cashback_telat  = telatCair(c);
+    }
+
+    D = { iklan, prev, shop, extra:null, sales, prevSales, pesanan, gmv, kirim, cashback,
           _rentang:{ r, pr } };
 
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
@@ -744,11 +766,70 @@
   const WARNA_CASHBACK = t => {
     const s = String(t||'').toLowerCase();
     if (!s) return ['#6E6A8F','#F5F3FD','—'];
-    if (/cair|paid|success|disburse|selesai|done/.test(s)) return ['#047857','#E6FBF4', s];
-    if (/pending|process|proses|waiting|on_?going/.test(s)) return ['#B45309','#FEF6E7', s];
-    if (/cancel|batal|reject|fail|gagal/.test(s)) return ['#B91C1C','#FEECEC', s];
+    if (/cair|paid|success|disburse|selesai|done/.test(s)) return ['#047857','#E6FBF4','Cair'];
+    if (/tertunda|pending|process|proses|waiting|on_?going/.test(s)) return ['#B45309','#FEF6E7','Tertunda'];
+    if (/cancel|batal|reject|fail|gagal/.test(s)) return ['#B91C1C','#FEECEC','Dibatalkan'];
+    if (/belum tercatat/.test(s)) return ['#6E6A8F','#F5F3FD','Belum tercatat'];
     return ['#4F46E5','#EEF0FF', s];
   };
+  const cbCair = x => /^cair$/i.test(String(x.cashback_status||''));
+  const cbTunda = x => /tertunda|pending|proses/i.test(String(x.cashback_status||''));
+
+  // cashback tertunda yang estimasi pencairannya sudah lewat
+  const hariIni = () => new Date().toISOString().slice(0,10);
+  function telatCair(c) {
+    if (!c || c.status !== 'tertunda' || !c.est) return 0;
+    const s = Math.floor((Date.parse(hariIni()) - Date.parse(c.est)) / 864e5);
+    return s > 0 ? s : 0;
+  }
+
+  // ringkasan seluruh berkas cashback, bukan hanya periode yang sedang dilihat
+  function ringkasCashback() {
+    const C = D.cashback || [];
+    const jum = f => C.filter(f).reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+    const cair = C.filter(x=>x.status==='cair'), tunda = C.filter(x=>x.status==='tertunda');
+    const telat = tunda.filter(x=>telatCair(x)>0);
+    return {
+      ada: C.length > 0,
+      cair: jum(x=>x.status==='cair'), nCair: cair.length,
+      tunda: jum(x=>x.status==='tertunda'), nTunda: tunda.length,
+      telat: telat.reduce((a,x)=>a+(Number(x.jumlah)||0),0), nTelat: telat.length,
+      terlama: telat.length ? Math.max(...telat.map(telatCair)) : 0,
+      terbaru: cair.map(x=>x.tanggal).filter(Boolean).sort().pop() || null,
+    };
+  }
+
+  // kartu besar status pencairan cashback, dipasang di atas halaman Everpro
+  function heroCashback() {
+    const c = ringkasCashback();
+    if (!c.ada) return `<div class="panel"><div class="empty" style="padding:18px 16px">
+      <b>Status pencairan cashback belum tersedia</b><br>
+      Jalankan <code>ambil-cashback.js</code> di halaman My Balance Everpro,
+      lalu simpan hasilnya sebagai <code>data/everpro-cashback.json</code>.</div></div>`;
+    const seg = String(cashbackInfo && cashbackInfo.updated_at || '').slice(0,10);
+    const umur = seg ? Math.floor((Date.parse(hariIni()) - Date.parse(seg)) / 864e5) : null;
+    const basi = umur !== null && umur >= 2;
+    return `<div class="gmv">
+        <div class="gcard terang">
+          <p class="k">CASHBACK SUDAH CAIR</p>
+          <p class="v">${fC(c.cair)}</p>
+          <p class="s">${fN(c.nCair)} resi sudah masuk saldo${c.terbaru?' · terakhir '+sd(c.terbaru):''}</p>
+        </div>
+        <div class="gcard gelap">
+          <p class="k">BELUM CAIR</p>
+          <p class="v">${fC(c.tunda)}</p>
+          <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}</p>
+        </div></div>
+      ${c.nTelat ? `<div class="panel tight" style="border-color:#FBD5D5;background:#FEF6F6;margin-bottom:6px">
+        <div class="li"><div class="ic" style="background:#FEECEC;color:#EF4444">${I.alert}</div>
+        <div class="li-b"><p class="li-t" style="color:#B91C1C">${fN(c.nTelat)} cashback terlambat cair</p>
+        <p class="li-s">Total ${fC(c.telat)} · paling lama ${c.terlama} hari lewat dari estimasi Everpro</p></div>
+        </div></div>` : ''}
+      <div class="note" style="margin:2px 0 12px">Sumber: halaman My Balance Everpro${
+        cashbackInfo && cashbackInfo.dari ? ' · '+cashbackInfo.dari+' s/d '+cashbackInfo.sampai : ''}${
+        seg ? ' · diperbarui '+sd(seg) : ''}${
+        basi ? ' <b style="color:#B45309">— data '+umur+' hari, jalankan ambil-cashback.js lagi</b>' : ''}</div>`;
+  }
 
   // ---------- navigasi ----------
   function buildNav() {
@@ -1062,10 +1143,9 @@
 
     const pb = petaPembeli();
     const cocok = K.filter(x=>cari(pb, kunciKirim(x))).length;
-    const cair = K.filter(x=>/cair|paid|success|disburse/i.test(x.cashback_status||'')).length;
-    const totalCb = K.reduce((a,x)=>a+(Number(x.cashback)||0),0);
-    const cairCb = K.filter(x=>/cair|paid|success|disburse/i.test(x.cashback_status||''))
-                    .reduce((a,x)=>a+(Number(x.cashback)||0),0);
+    const jum = f => K.filter(f).reduce((a,x)=>a+(Number(x.cashback)||0),0);
+    const cair = K.filter(cbCair).length, tunda = K.filter(cbTunda).length;
+    const totalCb = jum(()=>true), cairCb = jum(cbCair), tundaCb = jum(cbTunda);
 
     const baris = K.slice().sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal))).map(x=>{
       const p = cari(pb, kunciKirim(x));
@@ -1084,16 +1164,25 @@
         <td class="ctr"><span class="pill2" style="background:${ws};color:${wc}">${esc(x.status||'—')}</span></td>
         <td class="num uang">${fC(x.harga)}</td>
         <td class="num uang">${x.cashback?fC(x.cashback):'—'}</td>
-        <td class="ctr"><span class="pill2" style="background:${cs};color:${cc}">${esc(ct||'—')}</span></td>
+        <td class="ctr"><span class="pill2" style="background:${x.cashback_telat?'#FEECEC':cs};color:${x.cashback_telat?'#B91C1C':cc}">${
+            x.cashback_telat ? 'Telat '+x.cashback_telat+' hari' : esc(ct||'—')}</span>
+          ${x.cashback_telat ? '<br><span style="font-size:10px;color:var(--faint)">est '+esc(x.cashback_est)+'</span>'
+            : (x.cashback_tgl?'<br><span style="font-size:10px;color:var(--faint)">'+esc(x.cashback_tgl)+'</span>':'')}</td>
       </tr>`;
     }).join('');
+
+    const catatanCb = cashbackInfo
+      ? cashbackInfo.jumlah + ' resi dari My Balance · ' + String(cashbackInfo.updated_at||'').slice(0,10)
+      : 'jalankan ambil-cashback.js untuk mengisi status pencairan';
 
     return `<div class="sec"><h4>Daftar pengiriman</h4>
         <span class="note">${K.length} kiriman · ${cocok} cocok dengan Globemerce${batal?' · '+batal+' dibatalkan disembunyikan':''}</span></div>
       <div class="strip" style="margin-bottom:12px">
         ${sc(I.money,'#10B981','#E6FBF4','Cashback cair',fC(cairCb)+' · '+fN(cair)+' kiriman')}
-        ${sc(I.money,'#F59E0B','#FEF6E7','Cashback belum cair',fC(totalCb-cairCb))}
+        ${sc(I.money,'#F59E0B','#FEF6E7','Cashback tertunda',fC(tundaCb)+' · '+fN(tunda)+' kiriman')}
+        ${sc(I.money,'#6E6A8F','#F5F3FD','Total cashback periode ini',fC(totalCb))}
       </div>
+      <div class="note" style="margin:-6px 0 10px">Status pencairan: ${esc(catatanCb)}</div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr>
           <th>Tanggal</th><th>Resi</th><th>Pembeli</th><th>Kurir</th>
@@ -1135,7 +1224,12 @@
       ].filter(x=>x[1]>0);
       const maxB = bagian.length ? Math.max(...bagian.map(x=>x[1])) : 1;
 
-      return `<div class="gmv">
+      return `<div class="sec" style="margin-top:0"><h4>Saldo cashback</h4>
+          <span class="note">dari halaman My Balance, dicocokkan lewat resi</span></div>
+        ${heroCashback()}
+
+        <div class="sec"><h4>Pengiriman</h4></div>
+        <div class="gmv">
           <div class="gcard terang">
             <p class="k">PAKET TERKIRIM</p>
             <p class="v">${fN(kirim)}<span class="u">paket</span></p>
@@ -1281,13 +1375,13 @@
         let selKirim = '';
         if (adaKirim) {
           if (kir) { const [c,s] = WARNA_KIRIM(kir.status);
-            const cb = /cair|paid|success|disburse/i.test(kir.cashback_status||'');
+            const [ccb,,tcb] = WARNA_CASHBACK(kir.cashback_status);
             const resiEp = kosongResi(o.resi) && kir.resi ? kir.resi : null;
             selKirim = '<td class="ctr"><span class="pill2" style="background:'+s+';color:'+c+'">'
               + esc(kir.status||'—') + '</span>'
               + (resiEp ? '<br><span style="font-size:10px;color:var(--muted)">'+esc(resiEp)+'</span>' : '')
-              + (kir.cashback ? '<br><span style="font-size:10px;color:'+(cb?'#047857':'#B45309')+'">cashback '
-                  + (cb?'cair':'proses') + '</span>' : '') + '</td>';
+              + (kir.cashback ? '<br><span style="font-size:10px;color:'+ccb+'">cashback '
+                  + esc(String(tcb).toLowerCase()) + '</span>' : '') + '</td>';
           } else selKirim = '<td class="ctr"><span style="color:var(--faint);font-size:11px">—</span></td>';
         }
         return `<tr>

@@ -1,0 +1,26 @@
+{
+ "updated_at": "2026-08-07T00:00:00.000Z",
+ "dari": "2026-07-30",
+ "sampai": "2026-08-07",
+ "catatan": "Data awal hasil pembacaan halaman My Balance Everpro. Jalankan ambil-cashback.js untuk menarik rentang penuh.",
+ "jumlah": 16,
+ "data": [
+  { "resi": "0137492600820331", "status": "cair", "jumlah": 1800, "tanggal": "2026-08-07", "est": null, "ref": "CB-260806084802975112852", "order_id": "TRD2026080600839" },
+  { "resi": "C2IHZBCC", "status": "cair", "jumlah": 4500, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805125420964287823", "order_id": "TRD2026080508692" },
+  { "resi": "C2BZUTXD", "status": "cair", "jumlah": 3829, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805141239167909033", "order_id": "TRD2026080511619" },
+  { "resi": "0137492600817006", "status": "cair", "jumlah": 2000, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805104112873402730", "order_id": "TRD2026080505325" },
+  { "resi": "JO0326052128", "status": "cair", "jumlah": 11550, "tanggal": "2026-08-06", "est": null, "ref": "CB-260728130502581074633", "order_id": "TRD2026072808116" },
+  { "resi": "0137492600816966", "status": "cair", "jumlah": 1800, "tanggal": "2026-08-06", "est": null, "ref": "CB-260805103620683819195", "order_id": "TRD2026080504764" },
+  { "resi": "C2MSZNPY", "status": "cair", "jumlah": 23850, "tanggal": "2026-08-06", "est": null, "ref": "CB-260803094806526306893", "order_id": "TRD2026080302411" },
+  { "resi": "0137492600805670", "status": "cair", "jumlah": 5600, "tanggal": "2026-08-05", "est": null, "ref": "CB-260801134727266265286", "order_id": "TRD2026080108828" },
+
+  { "resi": "0137222600900365", "status": "tertunda", "jumlah": 6200, "tanggal": "2026-08-07", "est": "2026-08-07", "ref": "CB-260807114248860731648", "order_id": "TRD2026080707409" },
+  { "resi": "0137222600900092", "status": "tertunda", "jumlah": 2200, "tanggal": "2026-08-07", "est": "2026-08-07", "ref": "CB-260807111009272546294", "order_id": "TRD2026080706269" },
+  { "resi": "0137222600897843", "status": "tertunda", "jumlah": 7800, "tanggal": "2026-08-06", "est": "2026-08-06", "ref": "CB-26080615595022623778", "order_id": "TRD2026080613830" },
+  { "resi": "0137492600820299", "status": "tertunda", "jumlah": 1000, "tanggal": "2026-08-06", "est": "2026-08-06", "ref": "CB-260806083613292547256", "order_id": "TRD2026080600778" },
+  { "resi": "0137222600888677", "status": "tertunda", "jumlah": 9800, "tanggal": "2026-08-05", "est": "2026-08-05", "ref": "CB-260805103155402005206", "order_id": "TRD2026080504653" },
+  { "resi": "0137222600877688", "status": "tertunda", "jumlah": 5100, "tanggal": "2026-08-03", "est": "2026-08-03", "ref": "CB-260803114827141299721", "order_id": "TRD2026080311492" },
+  { "resi": "0137222600860262", "status": "tertunda", "jumlah": 10500, "tanggal": "2026-07-30", "est": "2026-07-30", "ref": "CB-260730112232819957724", "order_id": "TRD2026073006189" },
+  { "resi": "0137222600859868", "status": "tertunda", "jumlah": 12500, "tanggal": "2026-07-30", "est": "2026-07-30", "ref": "CB-260730105835801016821", "order_id": "TRD2026073005066" }
+ ]
+}
