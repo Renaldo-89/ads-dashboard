@@ -1102,7 +1102,10 @@
     if (meta) meta.setAttribute('content', t === 'gelap' ? '#141417' : '#FFFFFF');
     const bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     if (bar) bar.setAttribute('content', t === 'gelap' ? 'black-translucent' : 'default');
-    try { renderAll(); } catch (e) {}      // grafik digambar ulang dengan warna tema baru
+    // digambar ulang hanya kalau datanya sudah ada, dan kegagalan tetap dicatat
+    if (RAW && RAW.daily && RAW.daily.length) {
+      try { renderAll(); } catch (e) { console.warn('gagal gambar ulang', e); }
+    }
   }
   document.getElementById('tema-btn').addEventListener('click', () =>
     pakaiTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap'));

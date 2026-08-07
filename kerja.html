@@ -1869,7 +1869,8 @@
     b.title = t === 'gelap' ? 'Pindah ke mode terang' : 'Pindah ke mode gelap';
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', t === 'gelap' ? '#0F0E24' : '#FFFFFF');
-    if (D && D.iklan) render();          // grafik digambar ulang dengan warna tema baru
+    // digambar ulang hanya kalau data sudah lengkap; _rentang baru ada setelah muat() selesai
+    if (D && D._rentang) { try { render(); } catch (e) { console.warn('gagal gambar ulang', e); } }
   }
   document.getElementById('tema').addEventListener('click', () =>
     pakaiTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap'));
