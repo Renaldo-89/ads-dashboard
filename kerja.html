@@ -32,7 +32,7 @@
     --bayang-2:0 10px 34px rgba(79,70,229,.12);
     --kaca:rgba(255,255,255,.86); --kaca-2:rgba(255,255,255,.22);
     --lembut:linear-gradient(140deg,#FBFAFF,#F6F3FE);
-    --hover:#FBFAFF; --scroll:#DED9F5; --kaca-top:rgba(251,250,255,.82); --titik:#D6D9DE;
+    --hover:#FBFAFF; --scroll:#DED9F5; --kilau:rgba(255,255,255,.85); --kaca-top:rgba(251,250,255,.82); --titik:#D6D9DE;
     --sapa:linear-gradient(120deg,#EEF0FF 0%,#F5EEFE 55%,#FDEEFE 100%); --kartu-gelap:linear-gradient(150deg,#211E42 0%,#1A1836 60%,#141229 100%);
     --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.14), transparent 62%),
       radial-gradient(680px 420px at 4% 8%,  rgba(79,70,229,.10),  transparent 60%),
@@ -55,7 +55,7 @@
     --bayang-2:0 10px 34px rgba(0,0,0,.46);
     --kaca:rgba(26,24,54,.86); --kaca-2:rgba(255,255,255,.16);
     --lembut:linear-gradient(140deg,#232041,#1C1A3A);
-    --hover:#221F45; --scroll:#3A3566; --kaca-top:rgba(15,14,36,.86); --titik:#3F3A6B;
+    --hover:#221F45; --scroll:#3A3566; --kilau:rgba(255,255,255,.06); --kaca-top:rgba(15,14,36,.86); --titik:#3F3A6B;
     --sapa:linear-gradient(120deg,#232052 0%,#2A2150 55%,#331F4E 100%);
     --kartu-gelap:linear-gradient(150deg,#2B2758 0%,#221F45 60%,#1B1938 100%);
     --latar:radial-gradient(760px 460px at 88% -8%, rgba(124,58,237,.26), transparent 62%),
@@ -70,6 +70,28 @@
     background:var(--latar); }
   ::-webkit-scrollbar { width:8px; height:8px; }
   ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
+
+  /* ---------- layar memuat ---------- */
+  .memuat { padding:8px 0 40px; }
+  .memuat-atas { display:flex; align-items:center; gap:14px; margin-bottom:22px; }
+  .memuat-tanda { width:46px; height:46px; border-radius:15px; background:var(--grad); color:#fff;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    animation:denyut 1.6s ease-in-out infinite; box-shadow:0 8px 22px rgba(124,58,237,.3); }
+  .memuat-tanda svg { width:24px; height:24px; }
+  .memuat-t { font-size:15px; font-weight:600; margin:0; letter-spacing:-.2px; }
+  .memuat-s { font-size:12.5px; color:var(--muted); margin:2px 0 0; font-weight:500; }
+  .rangka { border-radius:16px; background:var(--line-2); position:relative; overflow:hidden; }
+  .rangka::after { content:''; position:absolute; inset:0; transform:translateX(-100%);
+    background:linear-gradient(90deg,transparent,var(--kilau),transparent);
+    animation:kilau 1.4s ease-in-out infinite; }
+  .rangka-baris { display:grid; gap:12px; margin-bottom:12px; }
+  .rangka-baris.dua { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+  .rangka-baris.tiga { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+  @keyframes kilau { 0% { transform:translateX(-100%); } 60%,100% { transform:translateX(100%); } }
+  @keyframes denyut { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(.9); opacity:.72; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rangka::after { animation:none; } .memuat-tanda { animation:none; }
+  }
 
   /* ---------- kartu laba bersih, penutup ringkasan pendapatan ---------- */
   .laba { display:flex; align-items:center; gap:16px; padding:20px 22px; border-radius:20px;
@@ -420,7 +442,23 @@
   </div>
 
   <div class="body">
-    <div id="loading" class="empty"><div class="spinner"></div>Memuat data&hellip;</div>
+    <div id="loading" class="memuat">
+      <div class="memuat-atas">
+        <div class="memuat-tanda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 19V9"/><path d="M18 15V5"/><path d="M6 16.5 18 8.5"/></svg></div>
+        <div><p class="memuat-t">Menarik data</p>
+          <p class="memuat-s" id="memuat-s">Iklan, penjualan, dan pengiriman&hellip;</p></div>
+      </div>
+      <div class="rangka-baris dua"><div class="rangka" style="height:120px"></div>
+        <div class="rangka" style="height:120px"></div></div>
+      <div class="rangka-baris tiga"><div class="rangka" style="height:96px"></div>
+        <div class="rangka" style="height:96px"></div><div class="rangka" style="height:96px"></div></div>
+      <div class="rangka-baris tiga"><div class="rangka" style="height:96px"></div>
+        <div class="rangka" style="height:96px"></div><div class="rangka" style="height:96px"></div></div>
+      <div class="rangka-baris"><div class="rangka" style="height:112px"></div></div>
+      <div class="rangka-baris"><div class="rangka" style="height:260px"></div></div>
+    </div>
     <div id="content" style="display:none;"></div>
   </div>
 </main>
@@ -513,6 +551,7 @@
   let period='30', page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let everproInfo = null;
+  let gantiTema = false;
   let cashbackInfo = null;
   let BUST = '';
   const NAMA_AKUN = new Map();
@@ -1063,6 +1102,7 @@
     else if (page==='katakunci') el.innerHTML = pgTerms();
     else el.innerHTML = pgInsight();
     afterRender();
+    if (!gantiTema) jalankanAngka(el);
   }
 
   // ---------- halaman ----------
@@ -2009,6 +2049,50 @@
       backgroundColor: isi ? (k=>grad(k.chart.ctx, k.chart.chartArea, c)) : c };
   };
 
+  // ---------- angka berjalan dari nol ----------
+  // Nilai sudah terlanjur jadi teks berformat ("Rp4,6jt", "51,1%", "22,13x").
+  // Jadi bagian angkanya dipotong, dihitung ulang tiap frame, lalu ditempel
+  // kembali di antara awalan dan akhiran aslinya. Format apa pun ikut terjaga.
+  const SASARAN_ANGKA = '.kpi .v, .gcard .v, .laba .v, .sc .v, .pod .gmv';
+  const kurangGerak = () => window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function jalankanAngka(induk) {
+    if (kurangGerak()) return;
+    const el = (induk || document).querySelectorAll(SASARAN_ANGKA);
+    let urutan = 0;
+    el.forEach(e => {
+      if (e.dataset.jalan) return;
+      const teks = e.textContent;
+      const m = /\d[\d.]*(?:,\d+)?/.exec(teks);
+      if (!m) return;                                  // "—", "belum terhubung"
+      const asli = m[0];
+      const bagian = asli.split(',');
+      const desimal = bagian[1] ? bagian[1].length : 0;
+      const tujuan = Number(bagian[0].replace(/\./g, '') + (bagian[1] ? '.' + bagian[1] : ''));
+      if (!Number.isFinite(tujuan) || tujuan === 0) return;
+      const pakaiPemisah = asli.includes('.');
+      const awalan = teks.slice(0, m.index);
+      const akhiran = teks.slice(m.index + asli.length);
+      const bentuk = new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: desimal, maximumFractionDigits: desimal,
+        useGrouping: pakaiPemisah });
+
+      e.dataset.jalan = '1';
+      const lama = 850, tunda = Math.min(urutan++ * 45, 320), mulai = performance.now() + tunda;
+      e.textContent = awalan + bentuk.format(0) + akhiran;
+      const langkah = now => {
+        const t = (now - mulai) / lama;
+        if (t < 0) { requestAnimationFrame(langkah); return; }
+        const p = t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);   // melambat di ujung
+        e.textContent = awalan + bentuk.format(tujuan * p) + akhiran;
+        if (t < 1) requestAnimationFrame(langkah);
+        else { e.textContent = teks; delete e.dataset.jalan; }
+      };
+      requestAnimationFrame(langkah);
+    });
+  }
+
   function afterRender() {
     if (page==='overview') {
       const m = perTanggal(), keys = Array.from(m.keys()).sort();
@@ -2193,7 +2277,11 @@
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', t === 'gelap' ? '#0F0E24' : '#FFFFFF');
     // digambar ulang hanya kalau data sudah lengkap; _rentang baru ada setelah muat() selesai
-    if (D && D._rentang) { try { render(); } catch (e) { console.warn('gagal gambar ulang', e); } }
+    if (D && D._rentang) {
+      gantiTema = true;                  // angka tidak perlu berjalan ulang saat tema diganti
+      try { render(); } catch (e) { console.warn('gagal gambar ulang', e); }
+      gantiTema = false;
+    }
   }
   document.getElementById('tema').addEventListener('click', () =>
     pakaiTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap'));
