@@ -71,6 +71,27 @@
   ::-webkit-scrollbar { width:8px; height:8px; }
   ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
 
+  /* ---------- kartu laba bersih, penutup ringkasan pendapatan ---------- */
+  .laba { display:flex; align-items:center; gap:16px; padding:20px 22px; border-radius:20px;
+    margin-top:12px; border:1px solid transparent; position:relative; overflow:hidden; }
+  .laba::after { content:''; position:absolute; right:-50px; top:-70px; width:190px; height:190px;
+    border-radius:50%; background:rgba(255,255,255,.13); pointer-events:none; }
+  .laba.untung { background:linear-gradient(135deg,#0F9B6C 0%,#10B981 55%,#34D399 100%); color:#fff;
+    box-shadow:0 12px 30px rgba(16,185,129,.28); }
+  .laba.rugi { background:linear-gradient(135deg,#B91C1C 0%,#EF4444 60%,#F87171 100%); color:#fff;
+    box-shadow:0 12px 30px rgba(239,68,68,.28); }
+  .laba-ic { width:50px; height:50px; border-radius:16px; flex-shrink:0;
+    background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; }
+  .laba-ic svg { width:24px; height:24px; }
+  .laba-b { min-width:0; flex:1; }
+  .laba .k { font-size:11px; font-weight:700; letter-spacing:1px; margin:0 0 5px; opacity:.9; }
+  .laba .v { font-size:32px; font-weight:700; letter-spacing:-1.2px; margin:0; line-height:1.05; }
+  .laba .s { font-size:12px; margin:6px 0 0; opacity:.88; font-weight:500; }
+  .laba-d { flex-shrink:0; }
+  .laba-d .d { background:rgba(255,255,255,.22); color:#fff; }
+  @media (max-width:560px) { .laba { padding:16px; gap:12px; } .laba .v { font-size:25px; }
+    .laba-ic { width:42px; height:42px; } .laba .s { font-size:11px; } }
+
   /* ---------- podium peringkat CS ---------- */
   .podium { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:14px; align-items:end;
     margin-bottom:16px; }
@@ -1045,104 +1066,149 @@
   }
 
   // ---------- halaman ----------
+  // ---- GMV personal & grup, dipakai di Overview dan halaman Globemerce ----
+  const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
+  function heroGMV() {
+    if (!(D.gmv||[]).length) return '';
+    const g = D.gmv.reduce((a,x)=>({
+      personal: a.personal + (Number(x.gmv_personal)||0),
+      group: a.group + (Number(x.gmv_group)||0),
+      tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
+      tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
+    }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
+    return `<div class="gmv">
+      <div class="gcard terang">
+        <p class="k">GMV PERSONAL</p>
+        <p class="v">${fGMV(g.personal)}<span class="u">GMV</span></p>
+        <p class="s">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
+      </div>
+      <div class="gcard gelap">
+        <p class="k">GMV GROUP</p>
+        <p class="v">${fGMV(g.group)}<span class="u">GMV</span></p>
+        <p class="s">${g.tinggiG?('Tertinggi '+fGMV(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
+      </div></div>`;
+  }
+
+  // rincian iklan per akun dan per kampanye, dipakai di Overview
+  function rincianIklan() {
+    const baris = allRows();
+    if (!baris.length) return '';
+    const akun = Array.from(grup(baris, r=>r.account_id).values()).sort((x,y)=>y.spend-x.spend);
+    const kmp = Array.from(grup(baris, r=>r.campaign||'(tanpa nama)').values())
+      .sort((x,y)=>y.spend-x.spend).slice(0, 10);
+    const maxA = Math.max.apply(null, akun.map(x=>x.spend).concat([1]));
+    const maxK = Math.max.apply(null, kmp.map(x=>x.spend).concat([1]));
+    const P = PLAT.google_ads;
+    const satu = (x, maks) => {
+      const c = x.conversions>0 ? x.spend/x.conversions : 0;
+      const ct = x.impressions>0 ? x.clicks/x.impressions*100 : 0;
+      return li(P, x.key===undefined||x.key===null ? '(tanpa nama)' : String(x.key),
+        fN(x.clicks)+' klik · CTR '+fP(ct)+' · '+fN(x.conversions)+' konv',
+        fC(x.spend), 'Biaya/konv. '+(c?fC(c):'—'), x.spend/maks*100);
+    };
+    let html = '';
+    if (akun.length) html += `<div class="sec"><h4>Rincian per akun</h4>
+        <span class="note">${fN(akun.length)} akun</span></div>
+      <div class="panel tight">${akun.map(x =>
+        satu({ ...x, key: namaAkun(x.key) }, maxA)).join('')}</div>`;
+    if (kmp.length) html += `<div class="sec"><h4>Rincian per kampanye</h4>
+        <span class="note">${kmp.length===10?'10 kampanye dengan biaya terbesar':fN(kmp.length)+' kampanye'}</span></div>
+      <div class="panel tight">${kmp.map(x => satu(x, maxK)).join('')}</div>`;
+    return html;
+  }
+
   function pgOverview() {
     const t = agg(allRows()), p = aggPrev(), om = omzet();
-    const now = new Date(), h = now.getHours();
-    const sapa = h<11?'Selamat pagi':h<15?'Selamat siang':h<19?'Selamat sore':'Selamat malam';
-    const tgl = HARI[now.getDay()]+', '+now.getDate()+' '+BLN[now.getMonth()]+' '+now.getFullYear();
-    const roas = t.spend>0 && om>0 ? om/t.spend : null;
     const cpa = t.conversions>0 ? t.spend/t.conversions : 0;
     const ctr = t.impressions>0 ? t.clicks/t.impressions*100 : 0;
     const cpc = t.clicks>0 ? t.spend/t.clicks : 0;
-    const aktif = IKLAN.filter(id=>D.iklan[id].status==='ok');
 
-    return `
-    <div class="hello">
-      <div class="sun">${I.sun}</div>
-      <div><h3>${sapa}, Renald</h3><p>${tgl} · ${aktif.length} dari ${IKLAN.length} platform iklan aktif</p></div>
-    </div>
+    return heroGMV()
+      + blokPendapatan(t, p)
+      + `<div class="sec"><h4>Iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
+      <div class="kpis">
+        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total biaya iklan',fC(t.spend),delta(t.spend,p.spend,false))}
+        ${kpi(I.money,'var(--amber)','var(--amber-soft)','Biaya/konversi',cpa?fC(cpa):'—','')}
+        ${kpi(I.click,'var(--violet)','var(--violet-soft)','Total klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
+        ${kpi(I.eye,'var(--red)','var(--red-soft)','CTR',fP(ctr),'')}
+        ${kpi(I.money,'var(--toska)','var(--toska-soft)','Biaya per klik',cpc?fC(cpc):'—','')}
+      </div>
 
-    <div class="strip">
-      ${sc(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend))}
-      ${sc(I.cart,'var(--green)','var(--green-soft)','Omzet', adaSales()?fC(aggSales(salesRows()).revenue):(D.shop.status==='ok'?fC(om):'belum terhubung'))}
-      ${sc(I.target,'var(--amber)','var(--amber-soft)','Konversi',fN(t.conversions))}
-      ${sc(I.up,'var(--violet)','var(--violet-soft)','ROAS', roasGabungan()||'—')}
-    </div>
+      ${rincianIklan()}
 
-    ${blokPenjualan(t)}
+      <div class="sec"><h4>Tren harian</h4><span class="note">biaya iklan${D.shop.status==='ok'?' vs omzet':''}</span></div>
+      <div class="panel">
+        <div class="wrap"><canvas id="c-tren"></canvas></div>
+        <div class="lg"><span><i style="background:var(--blue)"></i>Biaya iklan</span>
+          ${D.shop.status==='ok'?'<span><i style="background:var(--green)"></i>Omzet</span>':''}
+          <span><i style="background:var(--amber)"></i>Konversi</span></div>
+      </div>
 
-    <div class="sec"><h4>Metrik iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
-    <div class="kpis">
-      ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total biaya',fC(t.spend),delta(t.spend,p.spend,false))}
-      ${kpi(I.target,'var(--green)','var(--green-soft)','Konversi',fN(t.conversions),delta(t.conversions,p.conversions,false))}
-      ${kpi(I.money,'var(--amber)','var(--amber-soft)','Biaya/konv.',cpa?fC(cpa):'—','')}
-      ${kpi(I.click,'var(--violet)','var(--violet-soft)','Klik',fN(t.clicks),delta(t.clicks,p.clicks,false))}
-      ${kpi(I.eye,'var(--red)','var(--red-soft)','CTR',fP(ctr),'')}
-      ${kpi(I.money,'var(--toska)','var(--toska-soft)','Biaya/klik',cpc?fC(cpc):'—','')}
-    </div>
+      <div class="sec"><h4>Ringkas per platform</h4></div>
+      <div class="panel tight">${listPlatform()}</div>
 
-    <div class="sec"><h4>Tren harian</h4><span class="note">biaya iklan${D.shop.status==='ok'?' vs omzet':''}</span></div>
-    <div class="panel">
-      <div class="wrap"><canvas id="c-tren"></canvas></div>
-      <div class="lg"><span><i style="background:var(--blue)"></i>Biaya iklan</span>
-        ${D.shop.status==='ok'?'<span><i style="background:var(--green)"></i>Omzet</span>':''}
-        <span><i style="background:var(--amber)"></i>Konversi</span></div>
-    </div>
+      <div class="sec"><h4>Rincian harian</h4></div>
+      <div class="panel tight"><div class="scroll-y scroll-x">
+        <table class="dt"><thead><tr><th>Tanggal</th><th>Biaya</th>${D.shop.status==='ok'?'<th>Omzet</th><th>ROAS</th>':''}<th>Klik</th><th>Konv</th><th>Biaya/konv.</th></tr></thead>
+        <tbody>${barisHarian()}</tbody></table></div></div>`;
+  }
 
-    <div class="sec"><h4>Ringkas per platform</h4></div>
-    <div class="panel tight">${listPlatform()}</div>
+  // Ringkasan pendapatan: gabungan penjualan dan iklan, ditutup dengan laba bersih
+  function blokPendapatan(t, p) {
+    if (!adaSales()) {
+      return `<div class="sec"><h4>Ringkasan pendapatan</h4><span class="note">belum terhubung</span></div>
+        <div class="panel"><div class="empty">
+          <div class="big">${I.cart}</div>
+          <b>Globemerce dan Everpro belum terhubung</b><br>
+          Setelah tersambung, di sini muncul omzet, produk terjual, gross profit,
+          pelanggan baru, pelanggan repeat, dan laba setelah biaya iklan.</div></div>`;
+    }
+    const s = aggSales(salesRows());
+    const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
+    const laba = s.gross - t.spend;
+    const labaLalu = sp.gross - (p.spend||0);
+    const bulanan = salesRows().some(r=>r.granularity==='monthly');
+    const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
+    const roas = t.spend>0 && s.revenue>0 ? s.revenue/t.spend : 0;
+    const totalPel = s.baru + s.repeat;
+    const pctRepeat = totalPel>0 ? s.repeat/totalPel*100 : 0;
+    const unit = s.units || s.orders;
 
-    <div class="sec"><h4>Rincian harian</h4></div>
-    <div class="panel tight"><div class="scroll-y scroll-x">
-      <table class="dt"><thead><tr><th>Tanggal</th><th>Biaya</th>${D.shop.status==='ok'?'<th>Omzet</th><th>ROAS</th>':''}<th>Klik</th><th>Konv</th><th>Biaya/konv.</th></tr></thead>
-      <tbody>${barisHarian()}</tbody></table></div></div>`;
+    return `<div class="sec"><h4>Ringkasan pendapatan</h4>
+        <span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
+      ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
+      <div class="kpis">
+        ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet',fC(s.revenue),delta(s.revenue,sp.revenue,false))}
+        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Produk terjual',fN(unit),delta(unit,sp.units||sp.orders,false))}
+        ${kpi(I.list,'var(--pink)','var(--pink-soft)','Total transaksi',fN(s.orders),delta(s.orders,sp.orders,false))}
+        ${kpi(I.money,'var(--green)','var(--green-soft)','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
+        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),delta(t.spend,p.spend,false))}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
+        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
+        ${kpi(I.up,'var(--violet)','var(--violet-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
+      </div>
+
+      <div class="laba ${laba>=0?'untung':'rugi'}">
+        <div class="laba-ic">${I.up}</div>
+        <div class="laba-b">
+          <p class="k">LABA SETELAH IKLAN</p>
+          <p class="v">${fC(laba)}</p>
+          <p class="s">Gross profit ${fC(s.gross)} dikurangi biaya iklan ${fC(t.spend)}</p>
+        </div>
+        <div class="laba-d">${delta(laba, labaLalu, false) || ''}</div>
+      </div>
+
+      <div class="panel tight" style="margin-top:11px">
+        ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
+        ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
+          unit>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
+          unit>0?fC(t.spend/unit):'—','',0)}
+      </div>`;
   }
 
   const sc = (ic,c,s,k,v) => `<div class="sc"><div class="ic" style="background:${s};color:${c}">${ic}</div>
     <div style="min-width:0"><p class="k">${k}</p><p class="v">${v}</p></div></div>`;
 
-  function roasGabungan() {
-    const t = agg(allRows());
-    if (!t.spend) return null;
-    const rev = adaSales() ? aggSales(salesRows()).revenue : omzet();
-    if (!rev) return null;
-    return (rev/t.spend).toFixed(2).replace('.',',')+'×';
-  }
-
-  // ringkasan gabungan penjualan + iklan, inti dari Overview
-  function blokPenjualan(t) {
-    if (!adaSales()) {
-      return `<div class="sec"><h4>Penjualan</h4><span class="note">belum terhubung</span></div>
-        <div class="panel"><div class="empty">
-          <div class="big">${I.cart}</div>
-          <b>Globemerce dan Everpro belum terhubung</b><br>
-          Setelah tersambung, di sini muncul total produk terjual, gross profit, pelanggan baru,
-          pelanggan repeat, dan laba setelah biaya iklan.</div></div>`;
-    }
-    const s = aggSales(salesRows());
-    const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
-    const laba = s.gross - t.spend;
-    const bulanan = salesRows().some(r=>r.granularity==='monthly');
-    const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
-    const totalPel = s.baru + s.repeat;
-    const pctRepeat = totalPel>0 ? s.repeat/totalPel*100 : 0;
-    return `<div class="sec"><h4>Penjualan</h4><span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
-      ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
-      <div class="kpis">
-        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Produk terjual',fN(s.units||s.orders),delta(s.units||s.orders,sp.units||sp.orders,false))}
-        ${kpi(I.money,'var(--green)','var(--green-soft)','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
-        ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),'')}
-        ${kpi(I.up, laba>=0?'var(--green)':'var(--red)', laba>=0?'var(--green-soft)':'var(--red-soft)','Laba setelah iklan',fC(laba),'')}
-        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
-        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
-      </div>
-      <div class="panel tight" style="margin-top:11px">
-        ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
-        ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
-          (s.units||s.orders)>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
-          (s.units||s.orders)>0?fC(t.spend/(s.units||s.orders)):'—','',0)}
-      </div>`;
-  }
   const kpi = (ic,c,s,k,v,d) => `<div class="kpi"><div class="top">
       <div class="ic" style="background:${s};color:${c}">${ic}</div>${d}</div>
     <p class="k">${k}</p><p class="v">${v}</p></div>`;
@@ -1667,25 +1733,7 @@
         <div class="li-r"><div class="li-v">${fC(x.omzet)}</div><div class="li-vs">omzet</div></div></div>`;
     }).join('');
 
-    // ---- GMV personal & grup, dua kartu utama di paling atas ----
-    const g = (D.gmv||[]).reduce((a,x)=>({
-      personal: a.personal + (Number(x.gmv_personal)||0),
-      group: a.group + (Number(x.gmv_group)||0),
-      tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
-      tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
-    }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
-    const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
-    const gmvHero = (D.gmv||[]).length ? `<div class="gmv">
-      <div class="gcard terang">
-        <p class="k">GMV PERSONAL</p>
-        <p class="v">${fGMV(g.personal)}<span class="u">GMV</span></p>
-        <p class="s">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
-      </div>
-      <div class="gcard gelap">
-        <p class="k">GMV GROUP</p>
-        <p class="v">${fGMV(g.group)}<span class="u">GMV</span></p>
-        <p class="s">${g.tinggiG?('Tertinggi '+fGMV(g.tinggiG)+' GMV'):'Termasuk seluruh jaringan di bawahmu'}</p>
-      </div></div>` : '';
+    const gmvHero = heroGMV();
 
     // ---- daftar pesanan dalam bentuk tabel ----
     const pil = (t,c,s) => `<span class="pill2" style="background:${s};color:${c}">${t}</span>`;
