@@ -1,26 +1,4688 @@
 {
- "updated_at": "2026-08-07T00:00:00.000Z",
- "dari": "2026-07-30",
+ "updated_at": "2026-08-07T16:39:09.924Z",
+ "dari": "2026-02-08",
  "sampai": "2026-08-07",
- "catatan": "Data awal hasil pembacaan halaman My Balance Everpro. Jalankan ambil-cashback.js untuk menarik rentang penuh.",
- "jumlah": 16,
+ "jumlah": 520,
  "data": [
-  { "resi": "0137492600820331", "status": "cair", "jumlah": 1800, "tanggal": "2026-08-07", "est": null, "ref": "CB-260806084802975112852", "order_id": "TRD2026080600839" },
-  { "resi": "C2IHZBCC", "status": "cair", "jumlah": 4500, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805125420964287823", "order_id": "TRD2026080508692" },
-  { "resi": "C2BZUTXD", "status": "cair", "jumlah": 3829, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805141239167909033", "order_id": "TRD2026080511619" },
-  { "resi": "0137492600817006", "status": "cair", "jumlah": 2000, "tanggal": "2026-08-07", "est": null, "ref": "CB-260805104112873402730", "order_id": "TRD2026080505325" },
-  { "resi": "JO0326052128", "status": "cair", "jumlah": 11550, "tanggal": "2026-08-06", "est": null, "ref": "CB-260728130502581074633", "order_id": "TRD2026072808116" },
-  { "resi": "0137492600816966", "status": "cair", "jumlah": 1800, "tanggal": "2026-08-06", "est": null, "ref": "CB-260805103620683819195", "order_id": "TRD2026080504764" },
-  { "resi": "C2MSZNPY", "status": "cair", "jumlah": 23850, "tanggal": "2026-08-06", "est": null, "ref": "CB-260803094806526306893", "order_id": "TRD2026080302411" },
-  { "resi": "0137492600805670", "status": "cair", "jumlah": 5600, "tanggal": "2026-08-05", "est": null, "ref": "CB-260801134727266265286", "order_id": "TRD2026080108828" },
-
-  { "resi": "0137222600900365", "status": "tertunda", "jumlah": 6200, "tanggal": "2026-08-07", "est": "2026-08-07", "ref": "CB-260807114248860731648", "order_id": "TRD2026080707409" },
-  { "resi": "0137222600900092", "status": "tertunda", "jumlah": 2200, "tanggal": "2026-08-07", "est": "2026-08-07", "ref": "CB-260807111009272546294", "order_id": "TRD2026080706269" },
-  { "resi": "0137222600897843", "status": "tertunda", "jumlah": 7800, "tanggal": "2026-08-06", "est": "2026-08-06", "ref": "CB-26080615595022623778", "order_id": "TRD2026080613830" },
-  { "resi": "0137492600820299", "status": "tertunda", "jumlah": 1000, "tanggal": "2026-08-06", "est": "2026-08-06", "ref": "CB-260806083613292547256", "order_id": "TRD2026080600778" },
-  { "resi": "0137222600888677", "status": "tertunda", "jumlah": 9800, "tanggal": "2026-08-05", "est": "2026-08-05", "ref": "CB-260805103155402005206", "order_id": "TRD2026080504653" },
-  { "resi": "0137222600877688", "status": "tertunda", "jumlah": 5100, "tanggal": "2026-08-03", "est": "2026-08-03", "ref": "CB-260803114827141299721", "order_id": "TRD2026080311492" },
-  { "resi": "0137222600860262", "status": "tertunda", "jumlah": 10500, "tanggal": "2026-07-30", "est": "2026-07-30", "ref": "CB-260730112232819957724", "order_id": "TRD2026073006189" },
-  { "resi": "0137222600859868", "status": "tertunda", "jumlah": 12500, "tanggal": "2026-07-30", "est": "2026-07-30", "ref": "CB-260730105835801016821", "order_id": "TRD2026073005066" }
+  {
+   "resi": "0137222600900365",
+   "status": "tertunda",
+   "jumlah": 6200,
+   "tanggal": "2026-08-07",
+   "est": "2026-08-07",
+   "ref": "CB-260807114248860731648",
+   "order_id": "TRD2026080707409"
+  },
+  {
+   "resi": "0137222600900092",
+   "status": "tertunda",
+   "jumlah": 2200,
+   "tanggal": "2026-08-07",
+   "est": "2026-08-07",
+   "ref": "CB-260807111009272546294",
+   "order_id": "TRD2026080706269"
+  },
+  {
+   "resi": "0137492600820299",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-08-07",
+   "est": null,
+   "ref": "CB-260806083613292547256",
+   "order_id": "TRD2026080600778"
+  },
+  {
+   "resi": "0137492600820331",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-08-07",
+   "est": null,
+   "ref": "CB-260806084802975112852",
+   "order_id": "TRD2026080600839"
+  },
+  {
+   "resi": "C2IHZBCC",
+   "status": "cair",
+   "jumlah": 4500,
+   "tanggal": "2026-08-07",
+   "est": null,
+   "ref": "CB-260805125420964287823",
+   "order_id": "TRD2026080508692"
+  },
+  {
+   "resi": "C2BZUTXD",
+   "status": "cair",
+   "jumlah": 3829,
+   "tanggal": "2026-08-07",
+   "est": null,
+   "ref": "CB-260805141239167909033",
+   "order_id": "TRD2026080511619"
+  },
+  {
+   "resi": "0137492600817006",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-08-07",
+   "est": null,
+   "ref": "CB-260805104112873402730",
+   "order_id": "TRD2026080505325"
+  },
+  {
+   "resi": "0137222600897843",
+   "status": "tertunda",
+   "jumlah": 7800,
+   "tanggal": "2026-08-06",
+   "est": "2026-08-06",
+   "ref": "CB-26080615595022623778",
+   "order_id": "TRD2026080613830"
+  },
+  {
+   "resi": "JO0326052128",
+   "status": "cair",
+   "jumlah": 11550,
+   "tanggal": "2026-08-06",
+   "est": null,
+   "ref": "CB-260728130502581074633",
+   "order_id": "TRD2026072808116"
+  },
+  {
+   "resi": "0137492600816966",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-08-06",
+   "est": null,
+   "ref": "CB-260805103620683819195",
+   "order_id": "TRD2026080504764"
+  },
+  {
+   "resi": "C2MSZNPY",
+   "status": "cair",
+   "jumlah": 23850,
+   "tanggal": "2026-08-06",
+   "est": null,
+   "ref": "CB-260803094806526306893",
+   "order_id": "TRD2026080302411"
+  },
+  {
+   "resi": "0137222600888677",
+   "status": "tertunda",
+   "jumlah": 9800,
+   "tanggal": "2026-08-05",
+   "est": "2026-08-05",
+   "ref": "CB-260805103155402005206",
+   "order_id": "TRD2026080504653"
+  },
+  {
+   "resi": "0137492600805670",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-08-05",
+   "est": null,
+   "ref": "CB-260801134727266265286",
+   "order_id": "TRD2026080108828"
+  },
+  {
+   "resi": "C2ZRNTHO",
+   "status": "cair",
+   "jumlah": 1400,
+   "tanggal": "2026-08-05",
+   "est": null,
+   "ref": "CB-260802205952549314289",
+   "order_id": "TRD2026080203147"
+  },
+  {
+   "resi": "0137492600807023",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-08-05",
+   "est": null,
+   "ref": "CB-260803085935231300812",
+   "order_id": "TRD2026080302314"
+  },
+  {
+   "resi": "0137222600862334",
+   "status": "cair",
+   "jumlah": 7700,
+   "tanggal": "2026-08-05",
+   "est": null,
+   "ref": "CB-26073014182047139940",
+   "order_id": "TRD2026073010870"
+  },
+  {
+   "resi": "0137222600888784",
+   "status": "batal",
+   "jumlah": 2000,
+   "tanggal": "2026-08-05",
+   "est": null,
+   "ref": "CB-260805104021571113547",
+   "order_id": "TRD2026080504883"
+  },
+  {
+   "resi": "0137222600873091",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-08-04",
+   "est": null,
+   "ref": "CB-260802210327921281904",
+   "order_id": "TRD2026080203157"
+  },
+  {
+   "resi": "0137492600807072",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-08-04",
+   "est": null,
+   "ref": "CB-260803090510588974573",
+   "order_id": "TRD2026080302370"
+  },
+  {
+   "resi": "0137222600836916",
+   "status": "cair",
+   "jumlah": 7200,
+   "tanggal": "2026-08-04",
+   "est": null,
+   "ref": "CB-260725112519116027874",
+   "order_id": "TRD2026072507670"
+  },
+  {
+   "resi": "0137222600873067",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-08-04",
+   "est": null,
+   "ref": "CB-26080220534297768551",
+   "order_id": "TRD2026080203136"
+  },
+  {
+   "resi": "0137222600877688",
+   "status": "tertunda",
+   "jumlah": 5100,
+   "tanggal": "2026-08-03",
+   "est": "2026-08-03",
+   "ref": "CB-260803114827141299721",
+   "order_id": "TRD2026080311492"
+  },
+  {
+   "resi": "0137222600863266",
+   "status": "cair",
+   "jumlah": 3900,
+   "tanggal": "2026-08-03",
+   "est": null,
+   "ref": "CB-26073107231330930231",
+   "order_id": "TRD2026073100222"
+  },
+  {
+   "resi": "0137222600877597",
+   "status": "batal",
+   "jumlah": 5100,
+   "tanggal": "2026-08-03",
+   "est": null,
+   "ref": "CB-260803114159782782251",
+   "order_id": "TRD2026080311165"
+  },
+  {
+   "resi": "0137222600853143",
+   "status": "cair",
+   "jumlah": 8500,
+   "tanggal": "2026-08-01",
+   "est": null,
+   "ref": "CB-260729084845715628502",
+   "order_id": "TRD2026072901460"
+  },
+  {
+   "resi": "0137492600799444",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-08-01",
+   "est": null,
+   "ref": "CB-26073107164036484347",
+   "order_id": "TRD2026073100216"
+  },
+  {
+   "resi": "1431122600035132",
+   "status": "cair",
+   "jumlah": 18700,
+   "tanggal": "2026-08-01",
+   "est": null,
+   "ref": "CB-260728100319782500957",
+   "order_id": "TRD2026072803176"
+  },
+  {
+   "resi": "0137222600833236",
+   "status": "cair",
+   "jumlah": 9600,
+   "tanggal": "2026-07-31",
+   "est": null,
+   "ref": "CB-260724134214885964791",
+   "order_id": "TRD2026072411363"
+  },
+  {
+   "resi": "0137222600860262",
+   "status": "tertunda",
+   "jumlah": 10500,
+   "tanggal": "2026-07-30",
+   "est": "2026-07-30",
+   "ref": "CB-260730112232819957724",
+   "order_id": "TRD2026073006189"
+  },
+  {
+   "resi": "0137222600859868",
+   "status": "tertunda",
+   "jumlah": 12500,
+   "tanggal": "2026-07-30",
+   "est": "2026-07-30",
+   "ref": "CB-260730105835801016821",
+   "order_id": "TRD2026073005066"
+  },
+  {
+   "resi": "0137222600853150",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-30",
+   "est": null,
+   "ref": "CB-260729085217318999592",
+   "order_id": "TRD2026072901534"
+  },
+  {
+   "resi": "0137492600785021",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-07-30",
+   "est": null,
+   "ref": "CB-260727125118578295143",
+   "order_id": "TRD2026072712322"
+  },
+  {
+   "resi": "0137222600815712",
+   "status": "batal",
+   "jumlah": 10500,
+   "tanggal": "2026-07-30",
+   "est": null,
+   "ref": "CB-260721105757471171806",
+   "order_id": "TRD2026072105603"
+  },
+  {
+   "resi": "0137492600786441",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-07-29",
+   "est": null,
+   "ref": "CB-26072713541371700595",
+   "order_id": "TRD2026072713966"
+  },
+  {
+   "resi": "0137492600782135",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-07-29",
+   "est": null,
+   "ref": "CB-260727075135538496637",
+   "order_id": "TRD2026072701038"
+  },
+  {
+   "resi": "0137492600789528",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-07-29",
+   "est": null,
+   "ref": "CB-260728125921290166403",
+   "order_id": "TRD2026072805581"
+  },
+  {
+   "resi": "0137222600840645",
+   "status": "tertunda",
+   "jumlah": 4000,
+   "tanggal": "2026-07-27",
+   "est": "2026-07-27",
+   "ref": "CB-260727075854452869808",
+   "order_id": "TRD2026072701111"
+  },
+  {
+   "resi": "0137492600778448",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-07-26",
+   "est": null,
+   "ref": "CB-26072509143231161333",
+   "order_id": "TRD2026072502391"
+  },
+  {
+   "resi": "0137492600774496",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-07-26",
+   "est": null,
+   "ref": "CB-260724090855508027645",
+   "order_id": "TRD2026072401231"
+  },
+  {
+   "resi": "0137492600771146",
+   "status": "cair",
+   "jumlah": 2900,
+   "tanggal": "2026-07-25",
+   "est": null,
+   "ref": "CB-260722155422944062971",
+   "order_id": "TRD2026072214196"
+  },
+  {
+   "resi": "0137492600774512",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-25",
+   "est": null,
+   "ref": "CB-260724091150377161858",
+   "order_id": "TRD2026072401291"
+  },
+  {
+   "resi": "JO0325435106",
+   "status": "cair",
+   "jumlah": 11550,
+   "tanggal": "2026-07-25",
+   "est": null,
+   "ref": "CB-26070910080661536050",
+   "order_id": "TRD2026070903352"
+  },
+  {
+   "resi": "0137222600837419",
+   "status": "batal",
+   "jumlah": 1500,
+   "tanggal": "2026-07-25",
+   "est": null,
+   "ref": "CB-26072512032154622166",
+   "order_id": "TRD2026072509073"
+  },
+  {
+   "resi": "0137222600827188",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-24",
+   "est": null,
+   "ref": "CB-260723115931853570113",
+   "order_id": "TRD2026072308685"
+  },
+  {
+   "resi": "0137492600767938",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-07-24",
+   "est": null,
+   "ref": "CB-260722083517745264849",
+   "order_id": "TRD2026072200809"
+  },
+  {
+   "resi": "0137222600819219",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-07-24",
+   "est": null,
+   "ref": "CB-260721153436339561153",
+   "order_id": "TRD2026072114540"
+  },
+  {
+   "resi": "0137492600769652",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-07-23",
+   "est": null,
+   "ref": "CB-260722122448946921785",
+   "order_id": "TRD2026072208910"
+  },
+  {
+   "resi": "0137492600769645",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-23",
+   "est": null,
+   "ref": "CB-260722122448937395629",
+   "order_id": "TRD2026072208909"
+  },
+  {
+   "resi": "0137222600817643",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-07-23",
+   "est": null,
+   "ref": "CB-260721125653124954122",
+   "order_id": "TRD2026072109216"
+  },
+  {
+   "resi": "0137492600767912",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-23",
+   "est": null,
+   "ref": "CB-260722081316553748427",
+   "order_id": "TRD2026072200492"
+  },
+  {
+   "resi": "0137492600771666",
+   "status": "batal",
+   "jumlah": 1800,
+   "tanggal": "2026-07-23",
+   "est": null,
+   "ref": "CB-260723093503771901544",
+   "order_id": "TRD2026072302170"
+  },
+  {
+   "resi": "0137492600760198",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-07-22",
+   "est": null,
+   "ref": "CB-26072008205158756430",
+   "order_id": "TRD2026072002666"
+  },
+  {
+   "resi": "0137222600802686",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-07-21",
+   "est": null,
+   "ref": "CB-260718085449150886613",
+   "order_id": "TRD2026071801555"
+  },
+  {
+   "resi": "0137222600815688",
+   "status": "batal",
+   "jumlah": 10500,
+   "tanggal": "2026-07-21",
+   "est": null,
+   "ref": "CB-260721105651461553709",
+   "order_id": "TRD2026072105590"
+  },
+  {
+   "resi": "0137222600815605",
+   "status": "batal",
+   "jumlah": 10500,
+   "tanggal": "2026-07-21",
+   "est": null,
+   "ref": "CB-260721105218217229756",
+   "order_id": "TRD2026072105405"
+  },
+  {
+   "resi": "0137222600802132",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-07-20",
+   "est": null,
+   "ref": "CB-260717161101523376538",
+   "order_id": "TRD2026071713996"
+  },
+  {
+   "resi": "0137222600799049",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-07-20",
+   "est": null,
+   "ref": "CB-260717105524212109793",
+   "order_id": "TRD2026071705172"
+  },
+  {
+   "resi": "0137492600750355",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-07-19",
+   "est": null,
+   "ref": "CB-260716125017556757872",
+   "order_id": "TRD2026071611093"
+  },
+  {
+   "resi": "0137492600754548",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-07-18",
+   "est": null,
+   "ref": "CB-260717142258918607957",
+   "order_id": "TRD2026071711449"
+  },
+  {
+   "resi": "0137492600753391",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-18",
+   "est": null,
+   "ref": "CB-26071711141589683333",
+   "order_id": "TRD2026071706423"
+  },
+  {
+   "resi": "0137492600744952",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-07-17",
+   "est": null,
+   "ref": "CB-260715085933871059197",
+   "order_id": "TRD2026071501706"
+  },
+  {
+   "resi": "0137222600786764",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-17",
+   "est": null,
+   "ref": "CB-260715092048729069231",
+   "order_id": "TRD2026071501974"
+  },
+  {
+   "resi": "0137492600746544",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-16",
+   "est": null,
+   "ref": "CB-260715113755780552796",
+   "order_id": "TRD2026071507936"
+  },
+  {
+   "resi": "0137492600746585",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-07-16",
+   "est": null,
+   "ref": "CB-260715114033741362460",
+   "order_id": "TRD2026071507989"
+  },
+  {
+   "resi": "0137492600746718",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-16",
+   "est": null,
+   "ref": "CB-260715125359371343103",
+   "order_id": "TRD2026071509550"
+  },
+  {
+   "resi": "0137222600758169",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-07-16",
+   "est": null,
+   "ref": "CB-260709090224623966639",
+   "order_id": "TRD2026070901876"
+  },
+  {
+   "resi": "0137492600741529",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-07-16",
+   "est": null,
+   "ref": "CB-260714091247910061751",
+   "order_id": "TRD2026071401913"
+  },
+  {
+   "resi": "0137222600773333",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-07-15",
+   "est": null,
+   "ref": "CB-260713083537359389906",
+   "order_id": "TRD2026071301898"
+  },
+  {
+   "resi": "0137222600775791",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-15",
+   "est": null,
+   "ref": "CB-260713111633584223531",
+   "order_id": "TRD2026071308460"
+  },
+  {
+   "resi": "0137222600779355",
+   "status": "cair",
+   "jumlah": 1500,
+   "tanggal": "2026-07-15",
+   "est": null,
+   "ref": "CB-260713144733930518891",
+   "order_id": "TRD2026071318574"
+  },
+  {
+   "resi": "0137492600743707",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-15",
+   "est": null,
+   "ref": "CB-260714140049929029896",
+   "order_id": "TRD2026071412846"
+  },
+  {
+   "resi": "C2OKNDDR",
+   "status": "cair",
+   "jumlah": 18450,
+   "tanggal": "2026-07-15",
+   "est": null,
+   "ref": "CB-260713084151591256324",
+   "order_id": "TRD2026071301977"
+  },
+  {
+   "resi": "0137492600740075",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-14",
+   "est": null,
+   "ref": "CB-260713134316248935159",
+   "order_id": "TRD2026071316428"
+  },
+  {
+   "resi": "0137222600767897",
+   "status": "cair",
+   "jumlah": 5800,
+   "tanggal": "2026-07-14",
+   "est": null,
+   "ref": "CB-260711091620932556625",
+   "order_id": "TRD2026071102171"
+  },
+  {
+   "resi": "0137492600736040",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-07-14",
+   "est": null,
+   "ref": "CB-260713084548839605447",
+   "order_id": "TRD2026071302063"
+  },
+  {
+   "resi": "0137222600766691",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-07-12",
+   "est": null,
+   "ref": "CB-260710145243810523985",
+   "order_id": "TRD2026071012966"
+  },
+  {
+   "resi": "0137222600759951",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-07-12",
+   "est": null,
+   "ref": "CB-260709113531428670974",
+   "order_id": "TRD2026070907152"
+  },
+  {
+   "resi": "0137492600732692",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-12",
+   "est": null,
+   "ref": "CB-260711091941230209746",
+   "order_id": "TRD2026071102218"
+  },
+  {
+   "resi": "0137222600752683",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-07-11",
+   "est": null,
+   "ref": "CB-260708085505300126543",
+   "order_id": "TRD2026070801246"
+  },
+  {
+   "resi": "0137222600747444",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-07-10",
+   "est": null,
+   "ref": "CB-260707085701118975474",
+   "order_id": "TRD2026070701228"
+  },
+  {
+   "resi": "0137492600708684",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-07-10",
+   "est": null,
+   "ref": "CB-26070609054560027092",
+   "order_id": "TRD2026070601745"
+  },
+  {
+   "resi": "0137222600740712",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-07-09",
+   "est": null,
+   "ref": "CB-260706090002781593200",
+   "order_id": "TRD2026070601606"
+  },
+  {
+   "resi": "0137222600758789",
+   "status": "batal",
+   "jumlah": 12800,
+   "tanggal": "2026-07-09",
+   "est": null,
+   "ref": "CB-260709100537538969994",
+   "order_id": "TRD2026070902981"
+  },
+  {
+   "resi": "0137492600691518",
+   "status": "cair",
+   "jumlah": 18300,
+   "tanggal": "2026-07-08",
+   "est": null,
+   "ref": "CB-260701104953245751876",
+   "order_id": "TRD2026070104452"
+  },
+  {
+   "resi": "0137492600717693",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-07-08",
+   "est": null,
+   "ref": "CB-260707131015228563137",
+   "order_id": "TRD2026070708909"
+  },
+  {
+   "resi": "0137222600737049",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-07-08",
+   "est": null,
+   "ref": "CB-260704131112322810623",
+   "order_id": "TRD2026070409223"
+  },
+  {
+   "resi": "0137492600690163",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-07-07",
+   "est": null,
+   "ref": "CB-260630204130369446384",
+   "order_id": "TRD2026063014706"
+  },
+  {
+   "resi": "0137492600690023",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-07-06",
+   "est": null,
+   "ref": "CB-260630200048200705477",
+   "order_id": "TRD2026063014412"
+  },
+  {
+   "resi": "JO0325400826",
+   "status": "cair",
+   "jumlah": 12150,
+   "tanggal": "2026-07-04",
+   "est": null,
+   "ref": "CB-260630091028753312390",
+   "order_id": "TRD2026063001325"
+  },
+  {
+   "resi": "0137222600721597",
+   "status": "cair",
+   "jumlah": 7800,
+   "tanggal": "2026-07-04",
+   "est": null,
+   "ref": "CB-260701144753342394047",
+   "order_id": "TRD2026070111347"
+  },
+  {
+   "resi": "0137492600695121",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-260702083842253729734",
+   "order_id": "TRD2026070200787"
+  },
+  {
+   "resi": "0137492600689702",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-260630165140387449801",
+   "order_id": "TRD2026063012347"
+  },
+  {
+   "resi": "0137492600690064",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-26063020190464327140",
+   "order_id": "TRD2026063014449"
+  },
+  {
+   "resi": "0137492600684828",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-260629152831354958862",
+   "order_id": "TRD2026062918290"
+  },
+  {
+   "resi": "0137492600690114",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-260630203501286827657",
+   "order_id": "TRD2026063014671"
+  },
+  {
+   "resi": "0137492600690205",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-07-03",
+   "est": null,
+   "ref": "CB-26063020495254973489",
+   "order_id": "TRD2026063014841"
+  },
+  {
+   "resi": "0137492600681790",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-07-01",
+   "est": null,
+   "ref": "CB-260629112205583888573",
+   "order_id": "TRD2026062909010"
+  },
+  {
+   "resi": "0137222600715748",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-07-01",
+   "est": null,
+   "ref": "CB-260630145615926932389",
+   "order_id": "TRD2026063011312"
+  },
+  {
+   "resi": "0137222600698977",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-07-01",
+   "est": null,
+   "ref": "CB-260627090345305579341",
+   "order_id": "TRD2026062701768"
+  },
+  {
+   "resi": "0137222600699058",
+   "status": "cair",
+   "jumlah": 8900,
+   "tanggal": "2026-06-30",
+   "est": null,
+   "ref": "CB-260627090913274144690",
+   "order_id": "TRD2026062701870"
+  },
+  {
+   "resi": "0137492600671262",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-06-29",
+   "est": null,
+   "ref": "CB-260626091043510896594",
+   "order_id": "TRD2026062602167"
+  },
+  {
+   "resi": "0137492600663269",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-06-27",
+   "est": null,
+   "ref": "CB-260624090113371868250",
+   "order_id": "TRD2026062401368"
+  },
+  {
+   "resi": "0137492600669167",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-27",
+   "est": null,
+   "ref": "CB-260625130532146274163",
+   "order_id": "TRD2026062508835"
+  },
+  {
+   "resi": "0137222600681627",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-06-25",
+   "est": null,
+   "ref": "CB-260623134838614404682",
+   "order_id": "TRD2026062309689"
+  },
+  {
+   "resi": "0137222600631515",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-06-25",
+   "est": null,
+   "ref": "CB-260612130800574192911",
+   "order_id": "TRD2026061208854"
+  },
+  {
+   "resi": "JO0324594337",
+   "status": "cair",
+   "jumlah": 11550,
+   "tanggal": "2026-06-24",
+   "est": null,
+   "ref": "CB-260615094224254391144",
+   "order_id": "TRD2026061503956"
+  },
+  {
+   "resi": "0137492600653989",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-06-24",
+   "est": null,
+   "ref": "CB-260622090316436937314",
+   "order_id": "TRD2026062202329"
+  },
+  {
+   "resi": "0137222600661009",
+   "status": "cair",
+   "jumlah": 5300,
+   "tanggal": "2026-06-21",
+   "est": null,
+   "ref": "CB-26061909232399977673",
+   "order_id": "TRD2026061902703"
+  },
+  {
+   "resi": "0137222600654764",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-06-20",
+   "est": null,
+   "ref": "CB-260617152403667717980",
+   "order_id": "TRD2026061715035"
+  },
+  {
+   "resi": "0137492600635424",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-06-20",
+   "est": null,
+   "ref": "CB-260617081942945664474",
+   "order_id": "TRD2026061700734"
+  },
+  {
+   "resi": "0137492600640150",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-06-19",
+   "est": null,
+   "ref": "CB-260617154650847005672",
+   "order_id": "TRD2026061715684"
+  },
+  {
+   "resi": "0137492600635440",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-06-19",
+   "est": null,
+   "ref": "CB-260617082342210511295",
+   "order_id": "TRD2026061700770"
+  },
+  {
+   "resi": "0137492600620384",
+   "status": "cair",
+   "jumlah": 18300,
+   "tanggal": "2026-06-18",
+   "est": null,
+   "ref": "CB-260612083830267458475",
+   "order_id": "TRD2026061200687"
+  },
+  {
+   "resi": "JO0324976726",
+   "status": "cair",
+   "jumlah": 8250,
+   "tanggal": "2026-06-18",
+   "est": null,
+   "ref": "CB-260613112509351484000",
+   "order_id": "TRD2026061306240"
+  },
+  {
+   "resi": "0137222600636563",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-06-17",
+   "est": null,
+   "ref": "CB-260613131937949689689",
+   "order_id": "TRD2026061308968"
+  },
+  {
+   "resi": "0137492600632702",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-06-16",
+   "est": null,
+   "ref": "CB-260615142659924377373",
+   "order_id": "TRD2026061517871"
+  },
+  {
+   "resi": "0137222600615336",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-06-14",
+   "est": null,
+   "ref": "CB-260609101657499015603",
+   "order_id": "TRD2026060903316"
+  },
+  {
+   "resi": "0137222600622241",
+   "status": "cair",
+   "jumlah": 9600,
+   "tanggal": "2026-06-14",
+   "est": null,
+   "ref": "CB-260610130019735296840",
+   "order_id": "TRD2026061008871"
+  },
+  {
+   "resi": "0137492600619907",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-06-13",
+   "est": null,
+   "ref": "CB-260611154654946786878",
+   "order_id": "TRD2026061113757"
+  },
+  {
+   "resi": "0137492600617513",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-06-12",
+   "est": null,
+   "ref": "CB-260611105534489248948",
+   "order_id": "TRD2026061105148"
+  },
+  {
+   "resi": "0137492600602630",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-11",
+   "est": null,
+   "ref": "CB-260608084942881751017",
+   "order_id": "TRD2026060801852"
+  },
+  {
+   "resi": "0137222600611624",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-11",
+   "est": null,
+   "ref": "CB-260608130222649675219",
+   "order_id": "TRD2026060811778"
+  },
+  {
+   "resi": "0137492600604990",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-10",
+   "est": null,
+   "ref": "CB-260608130627617395973",
+   "order_id": "TRD2026060811807"
+  },
+  {
+   "resi": "0137222600622233",
+   "status": "batal",
+   "jumlah": 9600,
+   "tanggal": "2026-06-10",
+   "est": null,
+   "ref": "CB-260610125847513871885",
+   "order_id": "TRD2026061008831"
+  },
+  {
+   "resi": "0137222600600098",
+   "status": "cair",
+   "jumlah": 9800,
+   "tanggal": "2026-06-09",
+   "est": null,
+   "ref": "CB-260605145139459161166",
+   "order_id": "TRD2026060511411"
+  },
+  {
+   "resi": "0137492600609734",
+   "status": "batal",
+   "jumlah": 5600,
+   "tanggal": "2026-06-09",
+   "est": null,
+   "ref": "CB-260609114622959050407",
+   "order_id": "TRD2026060907307"
+  },
+  {
+   "resi": "0137222600572636",
+   "status": "cair",
+   "jumlah": 9300,
+   "tanggal": "2026-06-08",
+   "est": null,
+   "ref": "CB-260531153534838294530",
+   "order_id": "TRD2026053102043"
+  },
+  {
+   "resi": "0137492600590488",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-06-08",
+   "est": null,
+   "ref": "CB-260604104213380818720",
+   "order_id": "TRD2026060404526"
+  },
+  {
+   "resi": "0137492600596295",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-06-08",
+   "est": null,
+   "ref": "CB-260605131319381152528",
+   "order_id": "TRD2026060508456"
+  },
+  {
+   "resi": "0137222600585554",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-06-08",
+   "est": null,
+   "ref": "CB-260603085304226890743",
+   "order_id": "TRD2026060300843"
+  },
+  {
+   "resi": "0137222600600106",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-06-07",
+   "est": null,
+   "ref": "CB-260605145408841695642",
+   "order_id": "TRD2026060511535"
+  },
+  {
+   "resi": "0137222600592378",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-06-07",
+   "est": null,
+   "ref": "CB-260604104557401498525",
+   "order_id": "TRD2026060404571"
+  },
+  {
+   "resi": "0137222600601633",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-06-07",
+   "est": null,
+   "ref": "CB-260606092454625541477",
+   "order_id": "TRD2026060602223"
+  },
+  {
+   "resi": "0137222600588533",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-06-06",
+   "est": null,
+   "ref": "CB-260603125948586949157",
+   "order_id": "TRD2026060309687"
+  },
+  {
+   "resi": "0137222600584631",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-06-06",
+   "est": null,
+   "ref": "CB-260602153214181840181",
+   "order_id": "TRD2026060217361"
+  },
+  {
+   "resi": "0137222600584680",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-06-05",
+   "est": null,
+   "ref": "CB-260602153707290514185",
+   "order_id": "TRD2026060217426"
+  },
+  {
+   "resi": "0137492600589613",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-06-05",
+   "est": null,
+   "ref": "CB-260604090007346363255",
+   "order_id": "TRD2026060400943"
+  },
+  {
+   "resi": "0137222600578260",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-05",
+   "est": null,
+   "ref": "CB-26060209165864659471",
+   "order_id": "TRD2026060202222"
+  },
+  {
+   "resi": "0137492600574607",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-06-05",
+   "est": null,
+   "ref": "CB-260531154810151439902",
+   "order_id": "TRD2026053102071"
+  },
+  {
+   "resi": "0137222600600049",
+   "status": "batal",
+   "jumlah": 9800,
+   "tanggal": "2026-06-05",
+   "est": null,
+   "ref": "CB-260605144902562859146",
+   "order_id": "TRD2026060511267"
+  },
+  {
+   "resi": "0137492600575109",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-06-04",
+   "est": null,
+   "ref": "CB-260531193129321957937",
+   "order_id": "TRD2026053102917"
+  },
+  {
+   "resi": "0137492600575240",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-06-04",
+   "est": null,
+   "ref": "CB-260531200354380459689",
+   "order_id": "TRD2026053103008"
+  },
+  {
+   "resi": "0137492600575158",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-06-04",
+   "est": null,
+   "ref": "CB-260531194457991773960",
+   "order_id": "TRD2026053102946"
+  },
+  {
+   "resi": "0137492600577402",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-06-04",
+   "est": null,
+   "ref": "CB-260602091206128378477",
+   "order_id": "TRD2026060201773"
+  },
+  {
+   "resi": "0137492600575174",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-06-04",
+   "est": null,
+   "ref": "CB-260531195048938049067",
+   "order_id": "TRD2026053102959"
+  },
+  {
+   "resi": "0137492600574581",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-06-03",
+   "est": null,
+   "ref": "CB-260531154443571730488",
+   "order_id": "TRD2026053102061"
+  },
+  {
+   "resi": "0137222600558239",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-06-02",
+   "est": null,
+   "ref": "CB-260528081546364867589",
+   "order_id": "TRD2026052800392"
+  },
+  {
+   "resi": "0137222600564351",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-06-02",
+   "est": null,
+   "ref": "CB-260529092515642848777",
+   "order_id": "TRD2026052902022"
+  },
+  {
+   "resi": "C2FTDVRC",
+   "status": "cair",
+   "jumlah": 14850,
+   "tanggal": "2026-06-01",
+   "est": null,
+   "ref": "CB-260525083017243996386",
+   "order_id": "TRD2026052501129"
+  },
+  {
+   "resi": "0137492600569615",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-31",
+   "est": null,
+   "ref": "CB-260529150714701541560",
+   "order_id": "TRD2026052913307"
+  },
+  {
+   "resi": "0137492600567395",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-260529094357604388331",
+   "order_id": "TRD2026052902924"
+  },
+  {
+   "resi": "0137492600567288",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-260529093311672538365",
+   "order_id": "TRD2026052902365"
+  },
+  {
+   "resi": "0137492600569078",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-26052913191343488277",
+   "order_id": "TRD2026052909717"
+  },
+  {
+   "resi": "0137492600567361",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-26052909383499092179",
+   "order_id": "TRD2026052902519"
+  },
+  {
+   "resi": "0137222600566638",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-260529132147254635755",
+   "order_id": "TRD2026052909803"
+  },
+  {
+   "resi": "0137492600567221",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-260529092952851297106",
+   "order_id": "TRD2026052902169"
+  },
+  {
+   "resi": "0137222600564534",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-30",
+   "est": null,
+   "ref": "CB-260529094125680723433",
+   "order_id": "TRD2026052902801"
+  },
+  {
+   "resi": "JO0324197660",
+   "status": "cair",
+   "jumlah": 11550,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260518145029886818037",
+   "order_id": "TRD2026051815454"
+  },
+  {
+   "resi": "1431122600022114",
+   "status": "cair",
+   "jumlah": 4100,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260526084545185971634",
+   "order_id": "TRD2026052600901"
+  },
+  {
+   "resi": "0137222600537670",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260522095440653882474",
+   "order_id": "TRD2026052202573"
+  },
+  {
+   "resi": "0137492600562222",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260528082131159693608",
+   "order_id": "TRD2026052800423"
+  },
+  {
+   "resi": "0137222600546952",
+   "status": "cair",
+   "jumlah": 3900,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260525081507267098611",
+   "order_id": "TRD2026052500953"
+  },
+  {
+   "resi": "0137492600562511",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260528090735217170074",
+   "order_id": "TRD2026052802080"
+  },
+  {
+   "resi": "0137222600508473",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-05-29",
+   "est": null,
+   "ref": "CB-260516100710939092465",
+   "order_id": "TRD2026051604135"
+  },
+  {
+   "resi": "0137492600535731",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-28",
+   "est": null,
+   "ref": "CB-26052009153554210034",
+   "order_id": "TRD2026052001142"
+  },
+  {
+   "resi": "0137492600552041",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-05-28",
+   "est": null,
+   "ref": "CB-260525094042771619467",
+   "order_id": "TRD2026052503033"
+  },
+  {
+   "resi": "0137222600544072",
+   "status": "cair",
+   "jumlah": 8500,
+   "tanggal": "2026-05-26",
+   "est": null,
+   "ref": "CB-26052311265655327112",
+   "order_id": "TRD2026052305703"
+  },
+  {
+   "resi": "0137222600546960",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-26",
+   "est": null,
+   "ref": "CB-260525081728615786767",
+   "order_id": "TRD2026052500984"
+  },
+  {
+   "resi": "JO0324167583",
+   "status": "cair",
+   "jumlah": 10800,
+   "tanggal": "2026-05-25",
+   "est": null,
+   "ref": "CB-260521111351810567445",
+   "order_id": "TRD2026052104790"
+  },
+  {
+   "resi": "0137222600463711",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-05-25",
+   "est": null,
+   "ref": "CB-26050612372129146029",
+   "order_id": "TRD2026050609305"
+  },
+  {
+   "resi": "0137222600528281",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-24",
+   "est": null,
+   "ref": "CB-260520093859499910017",
+   "order_id": "TRD2026052002035"
+  },
+  {
+   "resi": "0137492600507516",
+   "status": "cair",
+   "jumlah": 18300,
+   "tanggal": "2026-05-23",
+   "est": null,
+   "ref": "CB-260512104140376193615",
+   "order_id": "TRD2026051204185"
+  },
+  {
+   "resi": "0137222600531079",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-05-23",
+   "est": null,
+   "ref": "CB-260520140925394152515",
+   "order_id": "TRD2026052009971"
+  },
+  {
+   "resi": "0137222600535831",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-05-23",
+   "est": null,
+   "ref": "CB-260521144112711977063",
+   "order_id": "TRD2026052111081"
+  },
+  {
+   "resi": "0137492600539741",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-05-23",
+   "est": null,
+   "ref": "CB-260521081533698118507",
+   "order_id": "TRD2026052100358"
+  },
+  {
+   "resi": "0137492600540954",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-05-22",
+   "est": null,
+   "ref": "CB-260521110742988587568",
+   "order_id": "TRD2026052104516"
+  },
+  {
+   "resi": "0137222600530345",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-05-22",
+   "est": null,
+   "ref": "CB-260520125101912177565",
+   "order_id": "TRD2026052007183"
+  },
+  {
+   "resi": "0137492600535707",
+   "status": "cair",
+   "jumlah": 7000,
+   "tanggal": "2026-05-22",
+   "est": null,
+   "ref": "CB-260520091234297320823",
+   "order_id": "TRD2026052001101"
+  },
+  {
+   "resi": "0137222600522300",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-05-22",
+   "est": null,
+   "ref": "CB-260519093338477531743",
+   "order_id": "TRD2026051901549"
+  },
+  {
+   "resi": "0137222600510206",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-05-20",
+   "est": null,
+   "ref": "CB-260516130944302067835",
+   "order_id": "TRD2026051609373"
+  },
+  {
+   "resi": "0137492600524677",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-19",
+   "est": null,
+   "ref": "CB-260518084029132170564",
+   "order_id": "TRD2026051800914"
+  },
+  {
+   "resi": "0137222600499582",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-19",
+   "est": null,
+   "ref": "CB-260515082406934076289",
+   "order_id": "TRD2026051500690"
+  },
+  {
+   "resi": "0137222600500504",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-05-19",
+   "est": null,
+   "ref": "CB-260515094136489318863",
+   "order_id": "TRD2026051503630"
+  },
+  {
+   "resi": "0137492600515279",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-05-18",
+   "est": null,
+   "ref": "CB-260515082023988268600",
+   "order_id": "TRD2026051500554"
+  },
+  {
+   "resi": "0137222600445619",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-05-18",
+   "est": null,
+   "ref": "CB-260502121415334137675",
+   "order_id": "TRD2026050210630"
+  },
+  {
+   "resi": "0137222600499541",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-05-17",
+   "est": null,
+   "ref": "CB-260515082005326657053",
+   "order_id": "TRD2026051500597"
+  },
+  {
+   "resi": "0137222600496539",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-05-17",
+   "est": null,
+   "ref": "CB-260513143833942831693",
+   "order_id": "TRD2026051312684"
+  },
+  {
+   "resi": "0137492600511427",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-05-16",
+   "est": null,
+   "ref": "CB-260513114914521602641",
+   "order_id": "TRD2026051306964"
+  },
+  {
+   "resi": "JO0323152933",
+   "status": "cair",
+   "jumlah": 12150,
+   "tanggal": "2026-05-15",
+   "est": null,
+   "ref": "CB-260506140859871262891",
+   "order_id": "TRD2026050611494"
+  },
+  {
+   "resi": "0137222600478776",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-05-15",
+   "est": null,
+   "ref": "CB-260509131149653518467",
+   "order_id": "TRD2026050910740"
+  },
+  {
+   "resi": "0137492600508860",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-05-15",
+   "est": null,
+   "ref": "CB-260512133526324413848",
+   "order_id": "TRD2026051209357"
+  },
+  {
+   "resi": "JO0323979881",
+   "status": "cair",
+   "jumlah": 8250,
+   "tanggal": "2026-05-15",
+   "est": null,
+   "ref": "CB-260512145831724494015",
+   "order_id": "TRD2026051211981"
+  },
+  {
+   "resi": "0137492600511344",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-14",
+   "est": null,
+   "ref": "CB-260513113401508336453",
+   "order_id": "TRD2026051306232"
+  },
+  {
+   "resi": "0137222600492249",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-14",
+   "est": null,
+   "ref": "CB-260512143548538201867",
+   "order_id": "TRD2026051211311"
+  },
+  {
+   "resi": "0137222600491563",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-14",
+   "est": null,
+   "ref": "CB-260512125253623871878",
+   "order_id": "TRD2026051208484"
+  },
+  {
+   "resi": "0137492600508712",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-13",
+   "est": null,
+   "ref": "CB-260512125711915121062",
+   "order_id": "TRD2026051208541"
+  },
+  {
+   "resi": "0137492600499599",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-13",
+   "est": null,
+   "ref": "CB-260511091337412693708",
+   "order_id": "TRD2026051102342"
+  },
+  {
+   "resi": "0137492600499326",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-12",
+   "est": null,
+   "ref": "CB-260511083750281370722",
+   "order_id": "TRD2026051101377"
+  },
+  {
+   "resi": "0137492600497825",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-12",
+   "est": null,
+   "ref": "CB-260509131326548657552",
+   "order_id": "TRD2026050910746"
+  },
+  {
+   "resi": "0137492600499334",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-05-12",
+   "est": null,
+   "ref": "CB-260511083752262776215",
+   "order_id": "TRD2026051101376"
+  },
+  {
+   "resi": "0137492600497817",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-12",
+   "est": null,
+   "ref": "CB-260509131326552391176",
+   "order_id": "TRD2026050910747"
+  },
+  {
+   "resi": "1431062600003559",
+   "status": "cair",
+   "jumlah": 1600,
+   "tanggal": "2026-05-10",
+   "est": null,
+   "ref": "CB-260508083728432349897",
+   "order_id": "TRD2026050800538"
+  },
+  {
+   "resi": "0137222600458307",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-05-09",
+   "est": null,
+   "ref": "CB-260505114627219392497",
+   "order_id": "TRD2026050506158"
+  },
+  {
+   "resi": "1431122600018674",
+   "status": "cair",
+   "jumlah": 1500,
+   "tanggal": "2026-05-08",
+   "est": null,
+   "ref": "CB-26050710425813125077",
+   "order_id": "TRD2026050706840"
+  },
+  {
+   "resi": "1431122600018161",
+   "status": "cair",
+   "jumlah": 4200,
+   "tanggal": "2026-05-07",
+   "est": null,
+   "ref": "CB-260505114438641939394",
+   "order_id": "TRD2026050506117"
+  },
+  {
+   "resi": "JO0323354675",
+   "status": "cair",
+   "jumlah": 4050,
+   "tanggal": "2026-05-07",
+   "est": null,
+   "ref": "CB-260504132357366600204",
+   "order_id": "TRD2026050412461"
+  },
+  {
+   "resi": "0137492600487180",
+   "status": "batal",
+   "jumlah": 3500,
+   "tanggal": "2026-05-07",
+   "est": null,
+   "ref": "CB-260507103904571307801",
+   "order_id": "TRD2026050706609"
+  },
+  {
+   "resi": "0137222600449769",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-05-06",
+   "est": null,
+   "ref": "CB-260504034907701478289",
+   "order_id": "TRD2026050400129"
+  },
+  {
+   "resi": "0137222600452177",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-05-06",
+   "est": null,
+   "ref": "CB-260504104958371669250",
+   "order_id": "TRD2026050406119"
+  },
+  {
+   "resi": "0137492600470145",
+   "status": "cair",
+   "jumlah": 5200,
+   "tanggal": "2026-05-06",
+   "est": null,
+   "ref": "CB-260504105534236540759",
+   "order_id": "TRD2026050406521"
+  },
+  {
+   "resi": "JO0322472820",
+   "status": "cair",
+   "jumlah": 8550,
+   "tanggal": "2026-05-06",
+   "est": null,
+   "ref": "CB-260502081124403560715",
+   "order_id": "TRD2026050200791"
+  },
+  {
+   "resi": "0137222600453605",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-05-06",
+   "est": null,
+   "ref": "CB-260504125554362533519",
+   "order_id": "TRD2026050411649"
+  },
+  {
+   "resi": "0137222600439364",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-05-05",
+   "est": null,
+   "ref": "CB-260430170838877336243",
+   "order_id": "TRD2026043013130"
+  },
+  {
+   "resi": "0137492600454032",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-05",
+   "est": null,
+   "ref": "CB-260430080736107909294",
+   "order_id": "TRD2026043000469"
+  },
+  {
+   "resi": "0137492600458157",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-05",
+   "est": null,
+   "ref": "CB-260430195712782001454",
+   "order_id": "TRD2026043013712"
+  },
+  {
+   "resi": "0137222600445510",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-05-05",
+   "est": null,
+   "ref": "CB-260502120242578199211",
+   "order_id": "TRD2026050210386"
+  },
+  {
+   "resi": "0137492600476910",
+   "status": "batal",
+   "jumlah": 2400,
+   "tanggal": "2026-05-05",
+   "est": null,
+   "ref": "CB-260505113736221217894",
+   "order_id": "TRD2026050505980"
+  },
+  {
+   "resi": "0137492600458165",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-05-04",
+   "est": null,
+   "ref": "CB-260430195713750207034",
+   "order_id": "TRD2026043013711"
+  },
+  {
+   "resi": "0137222600436196",
+   "status": "cair",
+   "jumlah": 7800,
+   "tanggal": "2026-05-04",
+   "est": null,
+   "ref": "CB-260430102333324354873",
+   "order_id": "TRD2026043003627"
+  },
+  {
+   "resi": "JO0323164455",
+   "status": "cair",
+   "jumlah": 9450,
+   "tanggal": "2026-05-04",
+   "est": null,
+   "ref": "CB-260429081417220732117",
+   "order_id": "TRD2026042900578"
+  },
+  {
+   "resi": "0137492600454578",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-05-04",
+   "est": null,
+   "ref": "CB-260430100828326134568",
+   "order_id": "TRD2026043003121"
+  },
+  {
+   "resi": "0137222600214817",
+   "status": "batal",
+   "jumlah": 4100,
+   "tanggal": "2026-05-04",
+   "est": null,
+   "ref": "CB-260228130806438375070",
+   "order_id": "TRD2026022811020"
+  },
+  {
+   "resi": "0137492600465236",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-05-03",
+   "est": null,
+   "ref": "CB-260502123449727709179",
+   "order_id": "TRD2026050211119"
+  },
+  {
+   "resi": "0137222600397489",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-05-02",
+   "est": null,
+   "ref": "CB-260420150111950584882",
+   "order_id": "TRD2026042014531"
+  },
+  {
+   "resi": "0137222600419762",
+   "status": "cair",
+   "jumlah": 9300,
+   "tanggal": "2026-05-02",
+   "est": null,
+   "ref": "CB-260426220553630348309",
+   "order_id": "TRD2026042604304"
+  },
+  {
+   "resi": "JO0321993048",
+   "status": "cair",
+   "jumlah": 17550,
+   "tanggal": "2026-05-01",
+   "est": null,
+   "ref": "CB-260415094756773994816",
+   "order_id": "TRD2026041502914"
+  },
+  {
+   "resi": "0137222600425496",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-30",
+   "est": null,
+   "ref": "CB-260427152952431238695",
+   "order_id": "TRD2026042715613"
+  },
+  {
+   "resi": "0137492600440080",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-04-30",
+   "est": null,
+   "ref": "CB-260426220222223778056",
+   "order_id": "TRD2026042604272"
+  },
+  {
+   "resi": "0137222600429829",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-04-30",
+   "est": null,
+   "ref": "CB-260428135654479606367",
+   "order_id": "TRD2026042809826"
+  },
+  {
+   "resi": "0137222600435180",
+   "status": "batal",
+   "jumlah": 7800,
+   "tanggal": "2026-04-30",
+   "est": null,
+   "ref": "CB-260430090240162142788",
+   "order_id": "TRD2026043000988"
+  },
+  {
+   "resi": "0137222600428177",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-29",
+   "est": null,
+   "ref": "CB-260428110541315412798",
+   "order_id": "TRD2026042806076"
+  },
+  {
+   "resi": "0137222600422733",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-04-29",
+   "est": null,
+   "ref": "CB-260427110322389351551",
+   "order_id": "TRD2026042706061"
+  },
+  {
+   "resi": "0137492600444637",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-04-29",
+   "est": null,
+   "ref": "CB-260427143352776901097",
+   "order_id": "TRD2026042713148"
+  },
+  {
+   "resi": "0137492600441419",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-04-29",
+   "est": null,
+   "ref": "CB-260427101119211820178",
+   "order_id": "TRD2026042703416"
+  },
+  {
+   "resi": "0137492600440312",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-28",
+   "est": null,
+   "ref": "CB-260427082637332435927",
+   "order_id": "TRD2026042604303"
+  },
+  {
+   "resi": "0137222600411769",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-04-28",
+   "est": null,
+   "ref": "CB-260424092305812806159",
+   "order_id": "TRD2026042402749"
+  },
+  {
+   "resi": "0137492600444462",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-28",
+   "est": null,
+   "ref": "CB-260427142158790289029",
+   "order_id": "TRD2026042712753"
+  },
+  {
+   "resi": "0137222600410944",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-27",
+   "est": null,
+   "ref": "CB-260423153336198663739",
+   "order_id": "TRD2026042314387"
+  },
+  {
+   "resi": "0137222600415976",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-04-27",
+   "est": null,
+   "ref": "CB-260425092007685209828",
+   "order_id": "TRD2026042501724"
+  },
+  {
+   "resi": "0137492600432897",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-04-26",
+   "est": null,
+   "ref": "CB-260424080115886561960",
+   "order_id": "TRD2026042400652"
+  },
+  {
+   "resi": "0137222600411777",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-25",
+   "est": null,
+   "ref": "CB-260424092305822339594",
+   "order_id": "TRD2026042402750"
+  },
+  {
+   "resi": "0137222600415836",
+   "status": "batal",
+   "jumlah": 2000,
+   "tanggal": "2026-04-25",
+   "est": null,
+   "ref": "CB-26042509055926596641",
+   "order_id": "TRD2026042501226"
+  },
+  {
+   "resi": "0137492600430958",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-24",
+   "est": null,
+   "ref": "CB-260423114840401968888",
+   "order_id": "TRD2026042306859"
+  },
+  {
+   "resi": "0137492600427939",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-24",
+   "est": null,
+   "ref": "CB-260422133030599350956",
+   "order_id": "TRD2026042208803"
+  },
+  {
+   "resi": "0137222600410886",
+   "status": "batal",
+   "jumlah": 5600,
+   "tanggal": "2026-04-24",
+   "est": null,
+   "ref": "CB-260423152207346145099",
+   "order_id": "TRD2026042314230"
+  },
+  {
+   "resi": "0137492600421023",
+   "status": "cair",
+   "jumlah": 5300,
+   "tanggal": "2026-04-23",
+   "est": null,
+   "ref": "CB-260421085308385493962",
+   "order_id": "TRD2026042101053"
+  },
+  {
+   "resi": "0137222600396705",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-04-23",
+   "est": null,
+   "ref": "CB-260420135142389016630",
+   "order_id": "TRD2026042011675"
+  },
+  {
+   "resi": "0137222600357558",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-23",
+   "est": null,
+   "ref": "CB-260410081047679191369",
+   "order_id": "TRD2026041001841"
+  },
+  {
+   "resi": "0137222600397208",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-23",
+   "est": null,
+   "ref": "CB-260420143707127479061",
+   "order_id": "TRD2026042013873"
+  },
+  {
+   "resi": "0137492600432541",
+   "status": "batal",
+   "jumlah": 1200,
+   "tanggal": "2026-04-23",
+   "est": null,
+   "ref": "CB-26042315240947745399",
+   "order_id": "TRD2026042314241"
+  },
+  {
+   "resi": "0137222600392613",
+   "status": "cair",
+   "jumlah": 9800,
+   "tanggal": "2026-04-22",
+   "est": null,
+   "ref": "CB-260420082459747837841",
+   "order_id": "TRD2026042001607"
+  },
+  {
+   "resi": "0137222600352245",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-04-22",
+   "est": null,
+   "ref": "CB-260408134933413927400",
+   "order_id": "TRD2026040811927"
+  },
+  {
+   "resi": "0137492600415553",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-22",
+   "est": null,
+   "ref": "CB-260420082649828780985",
+   "order_id": "TRD2026042001616"
+  },
+  {
+   "resi": "0137222600397612",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-22",
+   "est": null,
+   "ref": "CB-260420152812521027593",
+   "order_id": "TRD2026042015578"
+  },
+  {
+   "resi": "0137492600414259",
+   "status": "cair",
+   "jumlah": 7000,
+   "tanggal": "2026-04-22",
+   "est": null,
+   "ref": "CB-260418131204721302738",
+   "order_id": "TRD2026041808420"
+  },
+  {
+   "resi": "0137492600415561",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-21",
+   "est": null,
+   "ref": "CB-260420082650831717751",
+   "order_id": "TRD2026042001617"
+  },
+  {
+   "resi": "0137222600379933",
+   "status": "cair",
+   "jumlah": 5100,
+   "tanggal": "2026-04-21",
+   "est": null,
+   "ref": "CB-260416075857242804733",
+   "order_id": "TRD2026041600454"
+  },
+  {
+   "resi": "1431122600014434",
+   "status": "cair",
+   "jumlah": 9200,
+   "tanggal": "2026-04-20",
+   "est": null,
+   "ref": "CB-26041609224822473370",
+   "order_id": "TRD2026041601887"
+  },
+  {
+   "resi": "0137222600387092",
+   "status": "cair",
+   "jumlah": 7800,
+   "tanggal": "2026-04-20",
+   "est": null,
+   "ref": "CB-260417143407947713585",
+   "order_id": "TRD2026041710331"
+  },
+  {
+   "resi": "0137222600379925",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-04-18",
+   "est": null,
+   "ref": "CB-260416075857207239273",
+   "order_id": "TRD2026041600452"
+  },
+  {
+   "resi": "0137222600379941",
+   "status": "cair",
+   "jumlah": 2200,
+   "tanggal": "2026-04-18",
+   "est": null,
+   "ref": "CB-260416075857236793261",
+   "order_id": "TRD2026041600453"
+  },
+  {
+   "resi": "0137492600407527",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-04-18",
+   "est": null,
+   "ref": "CB-260416142020701228016",
+   "order_id": "TRD2026041610801"
+  },
+  {
+   "resi": "1431122600014277",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-17",
+   "est": null,
+   "ref": "CB-260415152520156709409",
+   "order_id": "TRD2026041513583"
+  },
+  {
+   "resi": "0137492600394444",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-04-17",
+   "est": null,
+   "ref": "CB-260413111542882274279",
+   "order_id": "TRD2026041309004"
+  },
+  {
+   "resi": "0137492600401512",
+   "status": "cair",
+   "jumlah": 5800,
+   "tanggal": "2026-04-17",
+   "est": null,
+   "ref": "CB-260415090344216642339",
+   "order_id": "TRD2026041501851"
+  },
+  {
+   "resi": "0137492600403039",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-04-16",
+   "est": null,
+   "ref": "CB-260415112954519444283",
+   "order_id": "TRD2026041506453"
+  },
+  {
+   "resi": "0137492600401397",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-04-16",
+   "est": null,
+   "ref": "CB-260415085210439925810",
+   "order_id": "TRD2026041501291"
+  },
+  {
+   "resi": "0137222600357541",
+   "status": "cair",
+   "jumlah": 6400,
+   "tanggal": "2026-04-16",
+   "est": null,
+   "ref": "CB-260410081047706478191",
+   "order_id": "TRD2026041001842"
+  },
+  {
+   "resi": "0137222600366385",
+   "status": "cair",
+   "jumlah": 7800,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260413035650311518778",
+   "order_id": "TRD2026041300615"
+  },
+  {
+   "resi": "0137492600393461",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260413103015315496075",
+   "order_id": "TRD2026041306752"
+  },
+  {
+   "resi": "0137222600366369",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260413035650335856833",
+   "order_id": "TRD2026041300617"
+  },
+  {
+   "resi": "0137222600366377",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260413035650326813449",
+   "order_id": "TRD2026041300616"
+  },
+  {
+   "resi": "C2CVWXHS",
+   "status": "batal",
+   "jumlah": 23200,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260415093717145386980",
+   "order_id": "TRD2026041502633"
+  },
+  {
+   "resi": "0137222600376046",
+   "status": "batal",
+   "jumlah": 5800,
+   "tanggal": "2026-04-15",
+   "est": null,
+   "ref": "CB-260415090223301085820",
+   "order_id": "TRD2026041501836"
+  },
+  {
+   "resi": "0137222600359083",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-14",
+   "est": null,
+   "ref": "CB-2604101049171934293",
+   "order_id": "TRD2026041006824"
+  },
+  {
+   "resi": "0137222600367599",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-04-14",
+   "est": null,
+   "ref": "CB-260413094722235879347",
+   "order_id": "TRD2026041304273"
+  },
+  {
+   "resi": "0137222600349050",
+   "status": "cair",
+   "jumlah": 6700,
+   "tanggal": "2026-04-14",
+   "est": null,
+   "ref": "CB-260407142252389468759",
+   "order_id": "TRD2026040714181"
+  },
+  {
+   "resi": "1431062600001645",
+   "status": "cair",
+   "jumlah": 18700,
+   "tanggal": "2026-04-14",
+   "est": null,
+   "ref": "CB-260406114851744902222",
+   "order_id": "TRD2026040618189"
+  },
+  {
+   "resi": "0137492600391630",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-04-14",
+   "est": null,
+   "ref": "CB-260413035801427882596",
+   "order_id": "TRD2026041300618"
+  },
+  {
+   "resi": "0137222600347146",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-13",
+   "est": null,
+   "ref": "CB-260407104247859832843",
+   "order_id": "TRD2026040705780"
+  },
+  {
+   "resi": "0137492600389568",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-04-12",
+   "est": null,
+   "ref": "CB-260411115832841396491",
+   "order_id": "TRD2026041108015"
+  },
+  {
+   "resi": "0137492600383793",
+   "status": "cair",
+   "jumlah": 5700,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-260410081234949053772",
+   "order_id": "TRD2026041001857"
+  },
+  {
+   "resi": "0137222600345553",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-260407082316990438087",
+   "order_id": "TRD2026040701564"
+  },
+  {
+   "resi": "0137492600386317",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-260410134307624519575",
+   "order_id": "TRD2026041012449"
+  },
+  {
+   "resi": "0137492600376367",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-260408101226680570397",
+   "order_id": "TRD2026040804832"
+  },
+  {
+   "resi": "0137492600375518",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-26040809063223097284",
+   "order_id": "TRD2026040803070"
+  },
+  {
+   "resi": "0137222600318386",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-26033015252122793200",
+   "order_id": "TRD2026033019274"
+  },
+  {
+   "resi": "0137222600362251",
+   "status": "batal",
+   "jumlah": 3000,
+   "tanggal": "2026-04-11",
+   "est": null,
+   "ref": "CB-260411084952100757322",
+   "order_id": "TRD2026041101970"
+  },
+  {
+   "resi": "JO0322703493",
+   "status": "cair",
+   "jumlah": 8550,
+   "tanggal": "2026-04-10",
+   "est": null,
+   "ref": "CB-260406144739588746444",
+   "order_id": "TRD2026040627025"
+  },
+  {
+   "resi": "0137222600349555",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-04-10",
+   "est": null,
+   "ref": "CB-260407154834161133457",
+   "order_id": "TRD2026040716034"
+  },
+  {
+   "resi": "0137492600373000",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-04-10",
+   "est": null,
+   "ref": "CB-260407114748634324381",
+   "order_id": "TRD2026040709151"
+  },
+  {
+   "resi": "0137492600381136",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-10",
+   "est": null,
+   "ref": "CB-260409112322788495491",
+   "order_id": "TRD2026040907887"
+  },
+  {
+   "resi": "0137222600342923",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-09",
+   "est": null,
+   "ref": "CB-260406120124505903274",
+   "order_id": "TRD2026040619535"
+  },
+  {
+   "resi": "0137492600368091",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260406130513560338896",
+   "order_id": "TRD2026040622535"
+  },
+  {
+   "resi": "0137492600363563",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260405211934293984176",
+   "order_id": "TRD2026040504083"
+  },
+  {
+   "resi": "0137492600368240",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260406131504986020766",
+   "order_id": "TRD2026040622709"
+  },
+  {
+   "resi": "0137222600311225",
+   "status": "cair",
+   "jumlah": 6400,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260328120631416528032",
+   "order_id": "TRD2026032807482"
+  },
+  {
+   "resi": "0137222600338277",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-26040521250522112858",
+   "order_id": "TRD2026040504094"
+  },
+  {
+   "resi": "0137492600357334",
+   "status": "cair",
+   "jumlah": 5200,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260403231415892381875",
+   "order_id": "TRD2026040312942"
+  },
+  {
+   "resi": "0137222600333559",
+   "status": "cair",
+   "jumlah": 2900,
+   "tanggal": "2026-04-08",
+   "est": null,
+   "ref": "CB-260403231647615433096",
+   "order_id": "TRD2026040312950"
+  },
+  {
+   "resi": "0137222600334417",
+   "status": "cair",
+   "jumlah": 5500,
+   "tanggal": "2026-04-07",
+   "est": null,
+   "ref": "CB-260404082917564259601",
+   "order_id": "TRD2026040401479"
+  },
+  {
+   "resi": "0137492600357300",
+   "status": "cair",
+   "jumlah": 5800,
+   "tanggal": "2026-04-07",
+   "est": null,
+   "ref": "CB-260403231414875974065",
+   "order_id": "TRD2026040312940"
+  },
+  {
+   "resi": "JO0322022860",
+   "status": "cair",
+   "jumlah": 4200,
+   "tanggal": "2026-04-07",
+   "est": null,
+   "ref": "CB-26040216214226760013",
+   "order_id": "TRD2026040223185"
+  },
+  {
+   "resi": "0137492600357318",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-04-06",
+   "est": null,
+   "ref": "CB-26040323141584156485",
+   "order_id": "TRD2026040312939"
+  },
+  {
+   "resi": "0137222600275420",
+   "status": "cair",
+   "jumlah": 7200,
+   "tanggal": "2026-04-06",
+   "est": null,
+   "ref": "CB-260316080518262909939",
+   "order_id": "TRD2026031602715"
+  },
+  {
+   "resi": "0137222600333542",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-04-06",
+   "est": null,
+   "ref": "CB-260403231647645070881",
+   "order_id": "TRD2026040312949"
+  },
+  {
+   "resi": "0137492600260504",
+   "status": "batal",
+   "jumlah": 2900,
+   "tanggal": "2026-04-06",
+   "est": null,
+   "ref": "CB-260306145222540006510",
+   "order_id": "TRD2026030614871"
+  },
+  {
+   "resi": "0137492600358472",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-05",
+   "est": null,
+   "ref": "CB-260404082840355476048",
+   "order_id": "TRD2026040401473"
+  },
+  {
+   "resi": "0137492600357326",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-05",
+   "est": null,
+   "ref": "CB-260403231415303359442",
+   "order_id": "TRD2026040312941"
+  },
+  {
+   "resi": "0137492600346733",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-04-05",
+   "est": null,
+   "ref": "CB-260331185540113245570",
+   "order_id": "TRD2026033116810"
+  },
+  {
+   "resi": "0137222600323063",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-04-04",
+   "est": null,
+   "ref": "CB-260331162112287113660",
+   "order_id": "TRD2026033115636"
+  },
+  {
+   "resi": "0137222600323238",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-04-04",
+   "est": null,
+   "ref": "CB-260331193330161114610",
+   "order_id": "TRD2026033116905"
+  },
+  {
+   "resi": "0137492600347178",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-04-04",
+   "est": null,
+   "ref": "CB-260401083942979241702",
+   "order_id": "TRD2026040101211"
+  },
+  {
+   "resi": "0137492600355577",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260402150012487177372",
+   "order_id": "TRD2026040221445"
+  },
+  {
+   "resi": "C2FCSOMT",
+   "status": "cair",
+   "jumlah": 12167,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-26032611124318097973",
+   "order_id": "TRD2026032605753"
+  },
+  {
+   "resi": "0137222600314393",
+   "status": "cair",
+   "jumlah": 6400,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260330103133532367058",
+   "order_id": "TRD2026033007253"
+  },
+  {
+   "resi": "0137492600348044",
+   "status": "cair",
+   "jumlah": 2900,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260401104807361119326",
+   "order_id": "TRD2026040106340"
+  },
+  {
+   "resi": "0137492600346766",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260331190400792710813",
+   "order_id": "TRD2026033116832"
+  },
+  {
+   "resi": "C2ZOWGFS",
+   "status": "cair",
+   "jumlah": 6500,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260331192901229743308",
+   "order_id": "TRD2026033116887"
+  },
+  {
+   "resi": "0137492600342781",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-04-03",
+   "est": null,
+   "ref": "CB-260331093425928249413",
+   "order_id": "TRD2026033104307"
+  },
+  {
+   "resi": "JO0322358805",
+   "status": "cair",
+   "jumlah": 1350,
+   "tanggal": "2026-04-02",
+   "est": null,
+   "ref": "CB-260401103257774454798",
+   "order_id": "TRD2026040105925"
+  },
+  {
+   "resi": "0137492600345743",
+   "status": "cair",
+   "jumlah": 4600,
+   "tanggal": "2026-04-02",
+   "est": null,
+   "ref": "CB-260331145018409681990",
+   "order_id": "TRD2026033113506"
+  },
+  {
+   "resi": "C2EGWLMR",
+   "status": "cair",
+   "jumlah": 8200,
+   "tanggal": "2026-04-02",
+   "est": null,
+   "ref": "CB-260331120521572822895",
+   "order_id": "TRD2026033109367"
+  },
+  {
+   "resi": "0137492600355924",
+   "status": "batal",
+   "jumlah": 2900,
+   "tanggal": "2026-04-02",
+   "est": null,
+   "ref": "CB-260402162017477774575",
+   "order_id": "TRD2026040223180"
+  },
+  {
+   "resi": "0137222600313759",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-04-01",
+   "est": null,
+   "ref": "CB-260330094724147809430",
+   "order_id": "TRD2026033005660"
+  },
+  {
+   "resi": "0137222600316273",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-04-01",
+   "est": null,
+   "ref": "CB-260330123054603370118",
+   "order_id": "TRD2026033011052"
+  },
+  {
+   "resi": "0137492600336247",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-01",
+   "est": null,
+   "ref": "CB-260330080144608969035",
+   "order_id": "TRD2026033001779"
+  },
+  {
+   "resi": "C2DEXUJL",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-04-01",
+   "est": null,
+   "ref": "CB-260330083735813027806",
+   "order_id": "TRD2026033003468"
+  },
+  {
+   "resi": "0137492600336221",
+   "status": "cair",
+   "jumlah": 7000,
+   "tanggal": "2026-04-01",
+   "est": null,
+   "ref": "CB-260330080143520922677",
+   "order_id": "TRD2026033001781"
+  },
+  {
+   "resi": "0137222600312819",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260330052708515338890",
+   "order_id": "TRD2026033001782"
+  },
+  {
+   "resi": "0137492600335041",
+   "status": "cair",
+   "jumlah": 2200,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260328132841308798325",
+   "order_id": "TRD2026032808764"
+  },
+  {
+   "resi": "0137492600336239",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260330080143685608674",
+   "order_id": "TRD2026033001778"
+  },
+  {
+   "resi": "0137492600329226",
+   "status": "cair",
+   "jumlah": 2200,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260327084919322513876",
+   "order_id": "TRD2026032702311"
+  },
+  {
+   "resi": "0137222600299974",
+   "status": "cair",
+   "jumlah": 9300,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260325112554991361733",
+   "order_id": "TRD2026032504065"
+  },
+  {
+   "resi": "0137492600342740",
+   "status": "batal",
+   "jumlah": 3200,
+   "tanggal": "2026-03-31",
+   "est": null,
+   "ref": "CB-260331093141435987824",
+   "order_id": "TRD2026033104166"
+  },
+  {
+   "resi": "0137492600329234",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-30",
+   "est": null,
+   "ref": "CB-260327085716251398728",
+   "order_id": "TRD2026032702448"
+  },
+  {
+   "resi": "C2IKOUNK",
+   "status": "batal",
+   "jumlah": 5600,
+   "tanggal": "2026-03-30",
+   "est": null,
+   "ref": "CB-260330080144362168397",
+   "order_id": "TRD2026033001780"
+  },
+  {
+   "resi": "0137492600329200",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-03-29",
+   "est": null,
+   "ref": "CB-260327084919304555730",
+   "order_id": "TRD2026032702312"
+  },
+  {
+   "resi": "0137222600292763",
+   "status": "cair",
+   "jumlah": 8500,
+   "tanggal": "2026-03-29",
+   "est": null,
+   "ref": "CB-26032311380719194805",
+   "order_id": "TRD2026032302042"
+  },
+  {
+   "resi": "0137222600284760",
+   "status": "cair",
+   "jumlah": 7600,
+   "tanggal": "2026-03-29",
+   "est": null,
+   "ref": "CB-260318102835515622463",
+   "order_id": "TRD2026031802031"
+  },
+  {
+   "resi": "JO0322157150",
+   "status": "cair",
+   "jumlah": 9450,
+   "tanggal": "2026-03-28",
+   "est": null,
+   "ref": "CB-260321054834768029375",
+   "order_id": "TRD2026032100021"
+  },
+  {
+   "resi": "0137492600331586",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-28",
+   "est": null,
+   "ref": "CB-260327141641115357128",
+   "order_id": "TRD2026032713688"
+  },
+  {
+   "resi": "0137492600329218",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-03-28",
+   "est": null,
+   "ref": "CB-260327084919310833546",
+   "order_id": "TRD2026032702310"
+  },
+  {
+   "resi": "0137222600299388",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-28",
+   "est": null,
+   "ref": "CB-260325102723911057622",
+   "order_id": "TRD2026032502764"
+  },
+  {
+   "resi": "0137492600325125",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-27",
+   "est": null,
+   "ref": "CB-260326084818615926532",
+   "order_id": "TRD2026032600824"
+  },
+  {
+   "resi": "0137222600263921",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-27",
+   "est": null,
+   "ref": "CB-260312081340260346658",
+   "order_id": "TRD2026031201288"
+  },
+  {
+   "resi": "0137492600323179",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-03-27",
+   "est": null,
+   "ref": "CB-260325113103743727494",
+   "order_id": "TRD2026032504186"
+  },
+  {
+   "resi": "C2ZMZCYH",
+   "status": "cair",
+   "jumlah": 2200,
+   "tanggal": "2026-03-27",
+   "est": null,
+   "ref": "CB-260326082416142507521",
+   "order_id": "TRD2026032600567"
+  },
+  {
+   "resi": "C2XYIRET",
+   "status": "cair",
+   "jumlah": 14051,
+   "tanggal": "2026-03-26",
+   "est": null,
+   "ref": "CB-260307080931886391304",
+   "order_id": "TRD2026030701725"
+  },
+  {
+   "resi": "0137222600286906",
+   "status": "cair",
+   "jumlah": 5900,
+   "tanggal": "2026-03-26",
+   "est": null,
+   "ref": "CB-260321054346858598789",
+   "order_id": "TRD2026032100018"
+  },
+  {
+   "resi": "0137492600322429",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-26",
+   "est": null,
+   "ref": "CB-260325095358630817334",
+   "order_id": "TRD2026032501718"
+  },
+  {
+   "resi": "0137222600293613",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-26",
+   "est": null,
+   "ref": "CB-260323131343263078156",
+   "order_id": "TRD2026032303809"
+  },
+  {
+   "resi": "0137492600316561",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-03-26",
+   "est": null,
+   "ref": "CB-260323123257599332161",
+   "order_id": "TRD2026032302380"
+  },
+  {
+   "resi": "0137222600286914",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-03-25",
+   "est": null,
+   "ref": "CB-260321054346826264113",
+   "order_id": "TRD2026032100019"
+  },
+  {
+   "resi": "0137222600289561",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-24",
+   "est": null,
+   "ref": "CB-260323000836974963767",
+   "order_id": "TRD2026032300015"
+  },
+  {
+   "resi": "0137222600285239",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-24",
+   "est": null,
+   "ref": "CB-260318114322681966748",
+   "order_id": "TRD2026031803053"
+  },
+  {
+   "resi": "0137492600312032",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-24",
+   "est": null,
+   "ref": "CB-260321054835753804864",
+   "order_id": "TRD2026032100020"
+  },
+  {
+   "resi": "0137492600319227",
+   "status": "batal",
+   "jumlah": 1800,
+   "tanggal": "2026-03-24",
+   "est": null,
+   "ref": "CB-260324101102170205851",
+   "order_id": "TRD2026032403438"
+  },
+  {
+   "resi": "0137492600301399",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-03-21",
+   "est": null,
+   "ref": "CB-260316110601289212722",
+   "order_id": "TRD2026031606750"
+  },
+  {
+   "resi": "0137222600275438",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-03-19",
+   "est": null,
+   "ref": "CB-260316081037634520907",
+   "order_id": "TRD2026031602784"
+  },
+  {
+   "resi": "0137492600307925",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-18",
+   "est": null,
+   "ref": "CB-260317140217584978652",
+   "order_id": "TRD2026031705308"
+  },
+  {
+   "resi": "0137222600276253",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-03-18",
+   "est": null,
+   "ref": "CB-260316094617915730078",
+   "order_id": "TRD2026031604287"
+  },
+  {
+   "resi": "0137222600277368",
+   "status": "cair",
+   "jumlah": 3200,
+   "tanggal": "2026-03-18",
+   "est": null,
+   "ref": "CB-260316105658349620971",
+   "order_id": "TRD2026031606086"
+  },
+  {
+   "resi": "0137492600299296",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-17",
+   "est": null,
+   "ref": "CB-260316080814798909213",
+   "order_id": "TRD2026031602722"
+  },
+  {
+   "resi": "0137492600295286",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-17",
+   "est": null,
+   "ref": "CB-260314100445988572678",
+   "order_id": "TRD2026031404265"
+  },
+  {
+   "resi": "0137222600268490",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-03-16",
+   "est": null,
+   "ref": "CB-260313091700265340277",
+   "order_id": "TRD2026031303258"
+  },
+  {
+   "resi": "0137222600267948",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-03-16",
+   "est": null,
+   "ref": "CB-260313082105940443030",
+   "order_id": "TRD2026031302567"
+  },
+  {
+   "resi": "0137222600224287",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-03-16",
+   "est": null,
+   "ref": "CB-26030213295253837639",
+   "order_id": "TRD2026030218734"
+  },
+  {
+   "resi": "0137222600267914",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-03-15",
+   "est": null,
+   "ref": "CB-260313081556445056740",
+   "order_id": "TRD2026031302550"
+  },
+  {
+   "resi": "0137222600261081",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-14",
+   "est": null,
+   "ref": "CB-260311102016209400734",
+   "order_id": "TRD2026031106048"
+  },
+  {
+   "resi": "0137492600289396",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-03-14",
+   "est": null,
+   "ref": "CB-260312145206399572004",
+   "order_id": "TRD2026031214150"
+  },
+  {
+   "resi": "0137492600263045",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-03-14",
+   "est": null,
+   "ref": "CB-260307100812119196515",
+   "order_id": "TRD2026030705274"
+  },
+  {
+   "resi": "0137492600280684",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-03-13",
+   "est": null,
+   "ref": "CB-260311080403592223996",
+   "order_id": "TRD2026031101374"
+  },
+  {
+   "resi": "0137492600274968",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-03-13",
+   "est": null,
+   "ref": "CB-260309154338163370059",
+   "order_id": "TRD2026030925388"
+  },
+  {
+   "resi": "0137222600247049",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-13",
+   "est": null,
+   "ref": "CB-260307133050354829521",
+   "order_id": "TRD2026030712643"
+  },
+  {
+   "resi": "0137492600280700",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260311081321962346773",
+   "order_id": "TRD2026031101401"
+  },
+  {
+   "resi": "0137492600280718",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260311081645947180285",
+   "order_id": "TRD2026031101417"
+  },
+  {
+   "resi": "0137492600266915",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260308204915690115625",
+   "order_id": "TRD2026030807863"
+  },
+  {
+   "resi": "0137222600254250",
+   "status": "cair",
+   "jumlah": 5300,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-2603091338076456232",
+   "order_id": "TRD2026030919704"
+  },
+  {
+   "resi": "0137492600280692",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260311080937304711424",
+   "order_id": "TRD2026031101387"
+  },
+  {
+   "resi": "0137492600275817",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260310083137647050006",
+   "order_id": "TRD2026031001784"
+  },
+  {
+   "resi": "0137492600278357",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260310121815762816221",
+   "order_id": "TRD2026031011109"
+  },
+  {
+   "resi": "0137492600281542",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260311101634964107304",
+   "order_id": "TRD2026031105842"
+  },
+  {
+   "resi": "0137222600258384",
+   "status": "cair",
+   "jumlah": 8600,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260310123845693060331",
+   "order_id": "TRD2026031011371"
+  },
+  {
+   "resi": "0137492600266923",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-03-12",
+   "est": null,
+   "ref": "CB-260308205355266062403",
+   "order_id": "TRD2026030807910"
+  },
+  {
+   "resi": "0137492600275825",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-11",
+   "est": null,
+   "ref": "CB-260310083620373459960",
+   "order_id": "TRD2026031001811"
+  },
+  {
+   "resi": "0137492600275866",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-11",
+   "est": null,
+   "ref": "CB-260310083847950854996",
+   "order_id": "TRD2026031001827"
+  },
+  {
+   "resi": "0137492600267749",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-03-11",
+   "est": null,
+   "ref": "CB-26030908522855038442",
+   "order_id": "TRD2026030903459"
+  },
+  {
+   "resi": "0137222600253971",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-11",
+   "est": null,
+   "ref": "CB-260309131717107587009",
+   "order_id": "TRD2026030918875"
+  },
+  {
+   "resi": "0137492600268333",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-03-10",
+   "est": null,
+   "ref": "CB-260309091829200096501",
+   "order_id": "TRD2026030905039"
+  },
+  {
+   "resi": "0137222600241422",
+   "status": "cair",
+   "jumlah": 9300,
+   "tanggal": "2026-03-10",
+   "est": null,
+   "ref": "CB-260306110344995148883",
+   "order_id": "TRD2026030606834"
+  },
+  {
+   "resi": "0137222600232405",
+   "status": "cair",
+   "jumlah": 5100,
+   "tanggal": "2026-03-10",
+   "est": null,
+   "ref": "CB-260304102430117404042",
+   "order_id": "TRD2026030404897"
+  },
+  {
+   "resi": "0137492600269109",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-10",
+   "est": null,
+   "ref": "CB-260309094753268903985",
+   "order_id": "TRD2026030907258"
+  },
+  {
+   "resi": "0137222600243881",
+   "status": "cair",
+   "jumlah": 4000,
+   "tanggal": "2026-03-10",
+   "est": null,
+   "ref": "CB-260306153844499167564",
+   "order_id": "TRD2026030616048"
+  },
+  {
+   "resi": "0137222600241406",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-03-09",
+   "est": null,
+   "ref": "CB-260306110344981573769",
+   "order_id": "TRD2026030606833"
+  },
+  {
+   "resi": "C2MBGJNB",
+   "status": "batal",
+   "jumlah": 11600,
+   "tanggal": "2026-03-09",
+   "est": null,
+   "ref": "CB-260216163015898817623",
+   "order_id": "TRD2026021617532"
+  },
+  {
+   "resi": "0137222600244137",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-08",
+   "est": null,
+   "ref": "CB-26030708153151039630",
+   "order_id": "TRD2026030701779"
+  },
+  {
+   "resi": "0137222600244202",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-08",
+   "est": null,
+   "ref": "CB-260307084222325631671",
+   "order_id": "TRD2026030702072"
+  },
+  {
+   "resi": "0137222600241414",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-03-08",
+   "est": null,
+   "ref": "CB-2603061103458151541",
+   "order_id": "TRD2026030606835"
+  },
+  {
+   "resi": "0137222600247999",
+   "status": "batal",
+   "jumlah": 2300,
+   "tanggal": "2026-03-08",
+   "est": null,
+   "ref": "CB-260308204248539083089",
+   "order_id": "TRD2026030807741"
+  },
+  {
+   "resi": "0137492600246198",
+   "status": "cair",
+   "jumlah": 5500,
+   "tanggal": "2026-03-07",
+   "est": null,
+   "ref": "CB-260304084920841524491",
+   "order_id": "TRD2026030402037"
+  },
+  {
+   "resi": "0137222600245555",
+   "status": "batal",
+   "jumlah": 1000,
+   "tanggal": "2026-03-07",
+   "est": null,
+   "ref": "CB-260307101127110233781",
+   "order_id": "TRD2026030705451"
+  },
+  {
+   "resi": "0137222600230946",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-03-06",
+   "est": null,
+   "ref": "CB-26030408210779156098",
+   "order_id": "TRD2026030401633"
+  },
+  {
+   "resi": "0137492600254887",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-06",
+   "est": null,
+   "ref": "CB-260305140157481137226",
+   "order_id": "TRD2026030513026"
+  },
+  {
+   "resi": "JO0319880069",
+   "status": "cair",
+   "jumlah": 8250,
+   "tanggal": "2026-03-06",
+   "est": null,
+   "ref": "CB-260302080215925661288",
+   "order_id": "TRD2026030202870"
+  },
+  {
+   "resi": "0137492600241975",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-03-06",
+   "est": null,
+   "ref": "CB-260303114126630552077",
+   "order_id": "TRD2026030307774"
+  },
+  {
+   "resi": "0137492600244722",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-03-06",
+   "est": null,
+   "ref": "CB-260303155438532535389",
+   "order_id": "TRD2026030317034"
+  },
+  {
+   "resi": "0137492600248681",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-03-05",
+   "est": null,
+   "ref": "CB-260304124659582746556",
+   "order_id": "TRD2026030410616"
+  },
+  {
+   "resi": "0137222600218800",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-03-05",
+   "est": null,
+   "ref": "CB-260302080215912868618",
+   "order_id": "TRD2026030202871"
+  },
+  {
+   "resi": "0137492600231620",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-03-05",
+   "est": null,
+   "ref": "CB-260302080630735073210",
+   "order_id": "TRD2026030202893"
+  },
+  {
+   "resi": "0137222600229021",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-03-05",
+   "est": null,
+   "ref": "CB-260303131032978307412",
+   "order_id": "TRD2026030310767"
+  },
+  {
+   "resi": "0137222600215400",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260228220511858977534",
+   "order_id": "TRD2026022817536"
+  },
+  {
+   "resi": "0137492600236116",
+   "status": "cair",
+   "jumlah": 4400,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260302133247746083788",
+   "order_id": "TRD2026030218944"
+  },
+  {
+   "resi": "0137492600239623",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260303082132607390107",
+   "order_id": "TRD2026030302192"
+  },
+  {
+   "resi": "0137222600226217",
+   "status": "cair",
+   "jumlah": 1200,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260303082431657789503",
+   "order_id": "TRD2026030302209"
+  },
+  {
+   "resi": "0137222600226589",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260303091022106419685",
+   "order_id": "TRD2026030302931"
+  },
+  {
+   "resi": "0137492600231646",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260302080630753919680",
+   "order_id": "TRD2026030202890"
+  },
+  {
+   "resi": "0137492600243021",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260303131605373131137",
+   "order_id": "TRD2026030310875"
+  },
+  {
+   "resi": "0137222600230904",
+   "status": "batal",
+   "jumlah": 5500,
+   "tanggal": "2026-03-04",
+   "est": null,
+   "ref": "CB-260304081633752381729",
+   "order_id": "TRD2026030401615"
+  },
+  {
+   "resi": "0137492600227909",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-03",
+   "est": null,
+   "ref": "CB-260228143304832172768",
+   "order_id": "TRD2026022813684"
+  },
+  {
+   "resi": "0137492600234210",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-03",
+   "est": null,
+   "ref": "CB-260302104630818394339",
+   "order_id": "TRD2026030209997"
+  },
+  {
+   "resi": "0137492600231638",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-03",
+   "est": null,
+   "ref": "CB-260302080630775292330",
+   "order_id": "TRD2026030202892"
+  },
+  {
+   "resi": "0137492600243013",
+   "status": "batal",
+   "jumlah": 1000,
+   "tanggal": "2026-03-03",
+   "est": null,
+   "ref": "CB-260303131424919305731",
+   "order_id": "TRD2026030310863"
+  },
+  {
+   "resi": "0137222600214825",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-02",
+   "est": null,
+   "ref": "CB-26022813123757909198",
+   "order_id": "TRD2026022811054"
+  },
+  {
+   "resi": "0137222600207449",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-03-02",
+   "est": null,
+   "ref": "CB-260226154558693705295",
+   "order_id": "TRD2026022616341"
+  },
+  {
+   "resi": "0137222600192369",
+   "status": "cair",
+   "jumlah": 4100,
+   "tanggal": "2026-03-02",
+   "est": null,
+   "ref": "CB-260223121719304702002",
+   "order_id": "TRD2026022315202"
+  },
+  {
+   "resi": "0137222600207597",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-03-02",
+   "est": null,
+   "ref": "CB-2602270810133656001",
+   "order_id": "TRD2026022701682"
+  },
+  {
+   "resi": "JO0320871418",
+   "status": "cair",
+   "jumlah": 11700,
+   "tanggal": "2026-03-02",
+   "est": null,
+   "ref": "CB-260211093313111962798",
+   "order_id": "TRD2026021102569"
+  },
+  {
+   "resi": "C2LDISGS",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-03-01",
+   "est": null,
+   "ref": "CB-260228081425408387510",
+   "order_id": "TRD2026022801656"
+  },
+  {
+   "resi": "0137492600226380",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-03-01",
+   "est": null,
+   "ref": "CB-260228103726782191058",
+   "order_id": "TRD2026022805332"
+  },
+  {
+   "resi": "C2YLHMVN",
+   "status": "cair",
+   "jumlah": 10800,
+   "tanggal": "2026-03-01",
+   "est": null,
+   "ref": "CB-260225120332863500062",
+   "order_id": "TRD2026022510512"
+  },
+  {
+   "resi": "C2AVTBDM",
+   "status": "cair",
+   "jumlah": 8832,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260226081333973833875",
+   "order_id": "TRD2026022601498"
+  },
+  {
+   "resi": "1431122600006919",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260226120317893187143",
+   "order_id": "TRD2026022609253"
+  },
+  {
+   "resi": "0137492600229368",
+   "status": "batal",
+   "jumlah": 4400,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228221000709362621",
+   "order_id": "TRD2026022817544"
+  },
+  {
+   "resi": "0137492600229392",
+   "status": "batal",
+   "jumlah": 4400,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228221536236145073",
+   "order_id": "TRD2026022817550"
+  },
+  {
+   "resi": "0137492600229418",
+   "status": "batal",
+   "jumlah": 1000,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228222236108314072",
+   "order_id": "TRD2026022817568"
+  },
+  {
+   "resi": "0137492600229426",
+   "status": "batal",
+   "jumlah": 1000,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228222237108900397",
+   "order_id": "TRD2026022817569"
+  },
+  {
+   "resi": "0137492600229483",
+   "status": "batal",
+   "jumlah": 3200,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228223612460854316",
+   "order_id": "TRD2026022817692"
+  },
+  {
+   "resi": "0137492600229517",
+   "status": "batal",
+   "jumlah": 4400,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228225149184440450",
+   "order_id": "TRD2026022817722"
+  },
+  {
+   "resi": "0137492600229525",
+   "status": "batal",
+   "jumlah": 4400,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228230102407674319",
+   "order_id": "TRD2026022817736"
+  },
+  {
+   "resi": "0137492600229533",
+   "status": "batal",
+   "jumlah": 1900,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228230102470777297",
+   "order_id": "TRD2026022817737"
+  },
+  {
+   "resi": "0137492600229459",
+   "status": "batal",
+   "jumlah": 2200,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228222912316258890",
+   "order_id": "TRD2026022817579"
+  },
+  {
+   "resi": "0137492600229350",
+   "status": "batal",
+   "jumlah": 1800,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-260228221000623616287",
+   "order_id": "TRD2026022817543"
+  },
+  {
+   "resi": "0137222600214858",
+   "status": "batal",
+   "jumlah": 1000,
+   "tanggal": "2026-02-28",
+   "est": null,
+   "ref": "CB-26022813415298084598",
+   "order_id": "TRD2026022812023"
+  },
+  {
+   "resi": "0137222600200030",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-02-27",
+   "est": null,
+   "ref": "CB-260225095250112086248",
+   "order_id": "TRD2026022504400"
+  },
+  {
+   "resi": "0137492600214055",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-02-27",
+   "est": null,
+   "ref": "CB-260225090757805635843",
+   "order_id": "TRD2026022503060"
+  },
+  {
+   "resi": "0137492600220458",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-27",
+   "est": null,
+   "ref": "CB-260226143124819156596",
+   "order_id": "TRD2026022614637"
+  },
+  {
+   "resi": "0137222600194506",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-02-27",
+   "est": null,
+   "ref": "CB-260224080648636080470",
+   "order_id": "TRD2026022401770"
+  },
+  {
+   "resi": "0137222600186494",
+   "status": "cair",
+   "jumlah": 2900,
+   "tanggal": "2026-02-26",
+   "est": null,
+   "ref": "CB-260221125309954009631",
+   "order_id": "TRD2026022112579"
+  },
+  {
+   "resi": "0137222600196956",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260224111549238508032",
+   "order_id": "TRD2026022407785"
+  },
+  {
+   "resi": "0137492600213008",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260224142216565654520",
+   "order_id": "TRD2026022414203"
+  },
+  {
+   "resi": "0137492600203132",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260221150525300912369",
+   "order_id": "TRD2026022116068"
+  },
+  {
+   "resi": "0137222600177451",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260219100410321859761",
+   "order_id": "TRD2026021903553"
+  },
+  {
+   "resi": "0137492600199306",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260220153321253038502",
+   "order_id": "TRD2026022015361"
+  },
+  {
+   "resi": "0137492600202266",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260221123033771270197",
+   "order_id": "TRD2026022112273"
+  },
+  {
+   "resi": "0137222600184044",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-02-25",
+   "est": null,
+   "ref": "CB-260221082131652188240",
+   "order_id": "TRD2026022102795"
+  },
+  {
+   "resi": "4431582600000036",
+   "status": "cair",
+   "jumlah": 4800,
+   "tanggal": "2026-02-24",
+   "est": null,
+   "ref": "CB-26022115544657427645",
+   "order_id": "TRD2026022117161"
+  },
+  {
+   "resi": "0137492600208842",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-24",
+   "est": null,
+   "ref": "CB-260223141935280934878",
+   "order_id": "TRD2026022320453"
+  },
+  {
+   "resi": "0137492600204395",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-24",
+   "est": null,
+   "ref": "CB-260222195734291713597",
+   "order_id": "TRD2026022205065"
+  },
+  {
+   "resi": "0137222600191452",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-24",
+   "est": null,
+   "ref": "CB-26022311200481075983",
+   "order_id": "TRD2026022312806"
+  },
+  {
+   "resi": "0137492600189695",
+   "status": "cair",
+   "jumlah": 18300,
+   "tanggal": "2026-02-23",
+   "est": null,
+   "ref": "CB-260218090821289139815",
+   "order_id": "TRD2026021802586"
+  },
+  {
+   "resi": "0137222600178202",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-02-23",
+   "est": null,
+   "ref": "CB-260219114050111953967",
+   "order_id": "TRD2026021905963"
+  },
+  {
+   "resi": "0137492600198258",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-23",
+   "est": null,
+   "ref": "CB-260220130254437288854",
+   "order_id": "TRD2026022009888"
+  },
+  {
+   "resi": "0137492600200773",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-02-23",
+   "est": null,
+   "ref": "CB-260221101625340195674",
+   "order_id": "TRD2026022105792"
+  },
+  {
+   "resi": "0137492600199314",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-02-22",
+   "est": null,
+   "ref": "CB-26022015345491014819",
+   "order_id": "TRD2026022015379"
+  },
+  {
+   "resi": "0137492600200732",
+   "status": "cair",
+   "jumlah": 1900,
+   "tanggal": "2026-02-22",
+   "est": null,
+   "ref": "CB-260221100712241964135",
+   "order_id": "TRD2026022105371"
+  },
+  {
+   "resi": "0137492600194182",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-02-22",
+   "est": null,
+   "ref": "CB-26021910300311096580",
+   "order_id": "TRD2026021904127"
+  },
+  {
+   "resi": "0137492600199157",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-02-21",
+   "est": null,
+   "ref": "CB-260220145822716241840",
+   "order_id": "TRD2026022014321"
+  },
+  {
+   "resi": "001798278007",
+   "status": "cair",
+   "jumlah": 49125,
+   "tanggal": "2026-02-20",
+   "est": null,
+   "ref": "CB-260118192124147898614",
+   "order_id": "TRD2026011802875"
+  },
+  {
+   "resi": "0137222600163113",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-20",
+   "est": null,
+   "ref": "CB-26021313415260303304",
+   "order_id": "TRD2026021309738"
+  },
+  {
+   "resi": "0137492600192731",
+   "status": "cair",
+   "jumlah": 2500,
+   "tanggal": "2026-02-20",
+   "est": null,
+   "ref": "CB-260218145703661499147",
+   "order_id": "TRD2026021812689"
+  },
+  {
+   "resi": "0137492600188796",
+   "status": "cair",
+   "jumlah": 1800,
+   "tanggal": "2026-02-19",
+   "est": null,
+   "ref": "CB-260217135311905161122",
+   "order_id": "TRD2026021705527"
+  },
+  {
+   "resi": "0137222600167403",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-02-19",
+   "est": null,
+   "ref": "CB-260216092230450544074",
+   "order_id": "TRD2026021602552"
+  },
+  {
+   "resi": "JO0320811948",
+   "status": "cair",
+   "jumlah": 11400,
+   "tanggal": "2026-02-18",
+   "est": null,
+   "ref": "CB-260210151700899382919",
+   "order_id": "TRD2026021014955"
+  },
+  {
+   "resi": "0137492600192723",
+   "status": "batal",
+   "jumlah": 2500,
+   "tanggal": "2026-02-18",
+   "est": null,
+   "ref": "CB-260218144856371669545",
+   "order_id": "TRD2026021812536"
+  },
+  {
+   "resi": "0137492600186063",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-02-17",
+   "est": null,
+   "ref": "CB-26021611000114895236",
+   "order_id": "TRD2026021604801"
+  },
+  {
+   "resi": "0137222600170662",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-17",
+   "est": null,
+   "ref": "CB-260216135445886136616",
+   "order_id": "TRD2026021612545"
+  },
+  {
+   "resi": "001798279794",
+   "status": "cair",
+   "jumlah": 49275,
+   "tanggal": "2026-02-17",
+   "est": null,
+   "ref": "CB-2602082047442044050",
+   "order_id": "TRD2026020802990"
+  },
+  {
+   "resi": "JO0320745926",
+   "status": "cair",
+   "jumlah": 8250,
+   "tanggal": "2026-02-17",
+   "est": null,
+   "ref": "CB-260214175150832646828",
+   "order_id": "TRD2026021412068"
+  },
+  {
+   "resi": "0137492600185057",
+   "status": "cair",
+   "jumlah": 2400,
+   "tanggal": "2026-02-17",
+   "est": null,
+   "ref": "CB-260216091940321245570",
+   "order_id": "TRD2026021602480"
+  },
+  {
+   "resi": "0137492600174614",
+   "status": "cair",
+   "jumlah": 5500,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260211142336689180480",
+   "order_id": "TRD2026021111324"
+  },
+  {
+   "resi": "0137222600162842",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260213124427428849304",
+   "order_id": "TRD2026021308248"
+  },
+  {
+   "resi": "C2CLRWDP",
+   "status": "cair",
+   "jumlah": 25000,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260213151211206750420",
+   "order_id": "TRD2026021311908"
+  },
+  {
+   "resi": "0137222600163931",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260214080903101913254",
+   "order_id": "TRD2026021401129"
+  },
+  {
+   "resi": "JO0320413823",
+   "status": "cair",
+   "jumlah": 8250,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260212084815709566707",
+   "order_id": "TRD2026021200776"
+  },
+  {
+   "resi": "0137222600164053",
+   "status": "cair",
+   "jumlah": 5100,
+   "tanggal": "2026-02-16",
+   "est": null,
+   "ref": "CB-260214085317102593782",
+   "order_id": "TRD2026021401779"
+  },
+  {
+   "resi": "0137222600160440",
+   "status": "cair",
+   "jumlah": 5100,
+   "tanggal": "2026-02-15",
+   "est": null,
+   "ref": "CB-260212145552357278760",
+   "order_id": "TRD2026021211193"
+  },
+  {
+   "resi": "0137222600153395",
+   "status": "cair",
+   "jumlah": 8500,
+   "tanggal": "2026-02-15",
+   "est": null,
+   "ref": "CB-260211084523482732057",
+   "order_id": "TRD2026021101551"
+  },
+  {
+   "resi": "0137222600152041",
+   "status": "cair",
+   "jumlah": 5100,
+   "tanggal": "2026-02-15",
+   "est": null,
+   "ref": "CB-260210125743809542938",
+   "order_id": "TRD2026021008806"
+  },
+  {
+   "resi": "0137222600138875",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-02-14",
+   "est": null,
+   "ref": "CB-260207073755628230919",
+   "order_id": "TRD2026020700777"
+  },
+  {
+   "resi": "0137222600159624",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-14",
+   "est": null,
+   "ref": "CB-260212132039962362199",
+   "order_id": "TRD2026021208654"
+  },
+  {
+   "resi": "0137222600159103",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-14",
+   "est": null,
+   "ref": "CB-260212115716427245826",
+   "order_id": "TRD2026021206571"
+  },
+  {
+   "resi": "JO0320249906",
+   "status": "cair",
+   "jumlah": 4650,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260210082126215803710",
+   "order_id": "TRD2026021000604"
+  },
+  {
+   "resi": "0137222600157222",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260212081011452644052",
+   "order_id": "TRD2026021200428"
+  },
+  {
+   "resi": "0137492600171867",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260211083759566027459",
+   "order_id": "TRD2026021101453"
+  },
+  {
+   "resi": "0137222600149575",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260210082549315261386",
+   "order_id": "TRD2026021000622"
+  },
+  {
+   "resi": "0137492600171859",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260211083235953084678",
+   "order_id": "TRD2026021101406"
+  },
+  {
+   "resi": "0137222600145888",
+   "status": "cair",
+   "jumlah": 8600,
+   "tanggal": "2026-02-13",
+   "est": null,
+   "ref": "CB-260209102940333497494",
+   "order_id": "TRD2026020906408"
+  },
+  {
+   "resi": "JO0320175677",
+   "status": "cair",
+   "jumlah": 10650,
+   "tanggal": "2026-02-12",
+   "est": null,
+   "ref": "CB-260126133401386231882",
+   "order_id": "TRD2026012613782"
+  },
+  {
+   "resi": "0137222600152017",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-12",
+   "est": null,
+   "ref": "CB-260210125113270158846",
+   "order_id": "TRD2026021008748"
+  },
+  {
+   "resi": "0137222600148973",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-12",
+   "est": null,
+   "ref": "CB-260209152209815322779",
+   "order_id": "TRD2026020919850"
+  },
+  {
+   "resi": "0137222600142372",
+   "status": "cair",
+   "jumlah": 8200,
+   "tanggal": "2026-02-12",
+   "est": null,
+   "ref": "CB-260208202757331733504",
+   "order_id": "TRD2026020802949"
+  },
+  {
+   "resi": "0137222600141598",
+   "status": "cair",
+   "jumlah": 3000,
+   "tanggal": "2026-02-12",
+   "est": null,
+   "ref": "CB-260207135111489925150",
+   "order_id": "TRD2026020710796"
+  },
+  {
+   "resi": "C2ZVLPBW",
+   "status": "cair",
+   "jumlah": 6200,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260210120343284863262",
+   "order_id": "TRD2026021007962"
+  },
+  {
+   "resi": "0137492600165265",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260209130047276988705",
+   "order_id": "TRD2026020913416"
+  },
+  {
+   "resi": "0137492600162445",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260209081046719043077",
+   "order_id": "TRD2026020901412"
+  },
+  {
+   "resi": "0137222600102186",
+   "status": "cair",
+   "jumlah": 4100,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260129103304845124398",
+   "order_id": "TRD2026012904713"
+  },
+  {
+   "resi": "0137222600142380",
+   "status": "cair",
+   "jumlah": 5600,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260208203556752530639",
+   "order_id": "TRD2026020802966"
+  },
+  {
+   "resi": "0137222600144642",
+   "status": "cair",
+   "jumlah": 4700,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260209093153919921128",
+   "order_id": "TRD2026020903427"
+  },
+  {
+   "resi": "C2CFHTHE",
+   "status": "cair",
+   "jumlah": 19800,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260208204139736327482",
+   "order_id": "TRD2026020802980"
+  },
+  {
+   "resi": "0137222600142364",
+   "status": "cair",
+   "jumlah": 2300,
+   "tanggal": "2026-02-11",
+   "est": null,
+   "ref": "CB-260208201759378819008",
+   "order_id": "TRD2026020802940"
+  },
+  {
+   "resi": "JO0320544891",
+   "status": "cair",
+   "jumlah": 9450,
+   "tanggal": "2026-02-10",
+   "est": null,
+   "ref": "CB-260203143156462217578",
+   "order_id": "TRD2026020311867"
+  },
+  {
+   "resi": "0137492600160761",
+   "status": "cair",
+   "jumlah": 1000,
+   "tanggal": "2026-02-10",
+   "est": null,
+   "ref": "CB-260207134620102549801",
+   "order_id": "TRD2026020710559"
+  },
+  {
+   "resi": "C2GXBLBG",
+   "status": "batal",
+   "jumlah": 32900,
+   "tanggal": "2026-02-10",
+   "est": null,
+   "ref": "CB-260210102001870121949",
+   "order_id": "TRD2026021003970"
+  },
+  {
+   "resi": "0137492600158104",
+   "status": "cair",
+   "jumlah": 2000,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-260207074147684360574",
+   "order_id": "TRD2026020700785"
+  },
+  {
+   "resi": "0137222600133801",
+   "status": "cair",
+   "jumlah": 6600,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-260205151036832245165",
+   "order_id": "TRD2026020513466"
+  },
+  {
+   "resi": "0137222600117812",
+   "status": "cair",
+   "jumlah": 3500,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-260202111334655338514",
+   "order_id": "TRD2026020209507"
+  },
+  {
+   "resi": "C2XBIKSV",
+   "status": "cair",
+   "jumlah": 31800,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-260207074554317398739",
+   "order_id": "TRD2026020700794"
+  },
+  {
+   "resi": "0137492600153576",
+   "status": "cair",
+   "jumlah": 2600,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-260206081432663112561",
+   "order_id": "TRD2026020601179"
+  },
+  {
+   "resi": "0137492600149574",
+   "status": "cair",
+   "jumlah": 6900,
+   "tanggal": "2026-02-09",
+   "est": null,
+   "ref": "CB-26020508125569423224",
+   "order_id": "TRD2026020501052"
+  }
  ]
 }

@@ -38,6 +38,17 @@
     const d = new Date(v);
     return isNaN(d) ? null : d.toISOString().slice(0, 10);
   };
+  // "Estimasi Pencairan 7 Agustus 2026" -> "2026-08-07"
+  const BULAN_ID = { januari:1, februari:2, maret:3, april:4, mei:5, juni:6, juli:7,
+    agustus:8, september:9, oktober:10, november:11, desember:12 };
+  const estPencairan = teks => {
+    const m = /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(String(teks || ''));
+    if (!m) return null;
+    const b = BULAN_ID[m[2].toLowerCase()];
+    if (!b) return null;
+    return m[3] + '-' + String(b).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+  };
+
   const isiArray = j => {
     const cari = x => {
       if (Array.isArray(x)) return x;
@@ -50,6 +61,71 @@
     return cari(j) || [];
   };
 
+  // --- cari token sesi ---
+  // API mutasi menolak permintaan tanpa header Authorization, cookie saja tidak cukup.
+  // Token disimpan aplikasi Everpro di penyimpanan peramban dengan nama yang berubah-ubah,
+  // jadi dicari berdasarkan bentuknya: tiga bagian dipisah titik, diawali "eyJ".
+  const POLA_JWT = /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/;
+  const gali = (o, dalam) => {
+    dalam = dalam || 0;
+    if (!o || dalam > 5) return null;
+    if (typeof o === 'string') return POLA_JWT.test(o) ? o : null;
+    if (typeof o !== 'object') return null;
+    for (const v of Object.values(o)) { const t = gali(v, dalam + 1); if (t) return t; }
+    return null;
+  };
+  function cariToken() {
+    for (const gudang of [localStorage, sessionStorage]) {
+      for (const k of Object.keys(gudang)) {
+        const mentahNilai = String(gudang.getItem(k) || '').replace(/^"|"$/g, '');
+        if (POLA_JWT.test(mentahNilai)) return mentahNilai;
+        try { const t = gali(JSON.parse(mentahNilai)); if (t) return t; } catch (e) {}
+      }
+    }
+    for (const c of document.cookie.split(';')) {
+      const v = decodeURIComponent(c.split('=').slice(1).join('=') || '').trim();
+      if (POLA_JWT.test(v)) return v;
+    }
+    return null;
+  }
+
+  // Everpro menyimpan tokennya dengan nama teracak, jadi kalau pencarian gagal
+  // header Authorization dipinjam dari permintaan yang dikirim aplikasinya sendiri.
+  function sadapHeader() {
+    return new Promise(resolve => {
+      const asli = window.fetch;
+      const selesai = v => { window.fetch = asli; resolve(v); };
+      const waktu = setTimeout(() => selesai(null), 6000);
+      window.fetch = function (a, b) {
+        try {
+          const h = new Headers((b && b.headers) || (a && a.headers) || {});
+          const v = h.get('Authorization');
+          if (v && /^Bearer\s+\S+/i.test(v)) { clearTimeout(waktu); selesai(v); }
+        } catch (e) {}
+        return asli.apply(this, arguments);
+      };
+      // picu satu permintaan dengan berpindah tab mutasi
+      const t = Array.from(document.querySelectorAll('*'))
+        .filter(x => x.children.length === 0 && /Mutasi Tertunda/i.test(x.innerText || ''))[0];
+      if (t) (t.closest('button') || t).click();
+    });
+  }
+
+  const token = cariToken();
+  let KEPALA;
+  if (token) {
+    KEPALA = { Authorization: 'Bearer ' + token, Accept: 'application/json' };
+  } else {
+    console.log('Token tidak ada di penyimpanan, menunggu permintaan halaman...');
+    const pinjam = await sadapHeader();
+    if (!pinjam) {
+      console.error('Tidak berhasil membaca sesi. Muat ulang halaman, pastikan tabel mutasi '
+        + 'sudah tampil, lalu jalankan skrip ini sekali lagi.');
+      return;
+    }
+    KEPALA = { Authorization: pinjam, Accept: 'application/json' };
+  }
+
   const semua = [];
   let mentah = null;
 
@@ -61,7 +137,11 @@
         + `&created_at_gte=${ns(dari)}&created_at_lte=${ns(sampai)}`;
       let baris;
       try {
-        const r = await fetch(u, { credentials: 'include' });
+        const r = await fetch(u, { headers: KEPALA, credentials: 'include' });
+        if (r.status === 400 || r.status === 401) {
+          console.error('Sesi ditolak (' + r.status + '). Muat ulang halaman lalu ulangi skrip ini.');
+          return;
+        }
         if (!r.ok) { console.warn('gagal', kode, r.status); break; }
         const j = await r.json();
         if (!mentah) mentah = isiArray(j)[0] || null;
@@ -71,25 +151,24 @@
       if (!baris.length) break;
 
       for (const b of baris) {
-        const jenis = String(ambil(b, /(transaction_)?type_?(name|label|desc)?$|jenis/i) || '');
-        const ref = String(ambil(b, /reference|ref_?(no|number|code)|no_referensi/i) || '');
-        const cashback = /cashback/i.test(jenis) || /^CB-/i.test(ref);
+        // Nama medan sesuai jawaban asli Everpro:
+        //   unique_id = CB-xxx, reference_number = resi, header = TRD-xxx,
+        //   nominal = nilai, created_at = nanodetik, additional_info = "Estimasi Pencairan 7 Agustus 2026"
+        const ref = String(b.unique_id || '');
+        const cashback = /cashback/i.test(String(b.header_description || '')) || /^CB-/i.test(ref);
         if (!cashback) continue;
 
-        const resi = String(ambil(b, /awb|resi|waybill|tracking/i) || '')
-          .split(',')[0].trim();
+        const resi = String(b.reference_number || '').split(',')[0].trim();
         if (!resi) continue;
 
         semua.push({
           resi,
           status: label,
-          jumlah: Number(ambil(b, /^(amount|nominal|jumlah|value)$/i)
-            ?? ambil(b, /amount|nominal|jumlah/i) ?? 0),
-          tanggal: tanggalISO(ambil(b, /created_?at|tanggal|date|trans(action)?_?time/i)),
-          // perkiraan tanggal cair, hanya ada pada mutasi tertunda
-          est: tanggalISO(ambil(b, /est(imate|imasi)?_?|disburse|pencairan|payout|settle/i)),
+          jumlah: Number(b.nominal) || Number(b.nett_amount) || 0,
+          tanggal: tanggalISO(b.created_at),
+          est: estPencairan(b.additional_info),   // hanya terisi pada mutasi tertunda
           ref,
-          order_id: String(ambil(b, /order_?(id|no|number)|trd|no_order/i, /^id$/i) || '') || null,
+          order_id: String(b.header || '') || null,
         });
       }
       if (baris.length < LIMIT) break;
