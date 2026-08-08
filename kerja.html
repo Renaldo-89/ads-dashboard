@@ -2063,7 +2063,12 @@
     let urutan = 0;
     el.forEach(e => {
       if (e.dataset.jalan) return;
-      const teks = e.textContent;
+      // Hanya simpul teks pertama yang diubah. Kalau seluruh elemen ditimpa,
+      // anak seperti <span class="u">GMV</span> ikut terhapus dan jaraknya hilang.
+      const simpul = Array.prototype.find.call(e.childNodes,
+        n => n.nodeType === 3 && /\d/.test(n.nodeValue));
+      if (!simpul) return;
+      const teks = simpul.nodeValue;
       const m = /\d[\d.]*(?:,\d+)?/.exec(teks);
       if (!m) return;                                  // "—", "belum terhubung"
       const asli = m[0];
@@ -2080,14 +2085,14 @@
 
       e.dataset.jalan = '1';
       const lama = 850, tunda = Math.min(urutan++ * 45, 320), mulai = performance.now() + tunda;
-      e.textContent = awalan + bentuk.format(0) + akhiran;
+      simpul.nodeValue = awalan + bentuk.format(0) + akhiran;
       const langkah = now => {
         const t = (now - mulai) / lama;
         if (t < 0) { requestAnimationFrame(langkah); return; }
         const p = t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);   // melambat di ujung
-        e.textContent = awalan + bentuk.format(tujuan * p) + akhiran;
+        simpul.nodeValue = awalan + bentuk.format(tujuan * p) + akhiran;
         if (t < 1) requestAnimationFrame(langkah);
-        else { e.textContent = teks; delete e.dataset.jalan; }
+        else { simpul.nodeValue = teks; delete e.dataset.jalan; }
       };
       requestAnimationFrame(langkah);
     });
