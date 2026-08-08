@@ -729,7 +729,8 @@
     ]);
     const tugasShop = tarik('tiktok_shop', KAND_SHOP[0], r.from, r.to)
       .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
-    const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to).catch(()=>[]);
+    const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to)
+      .then(rows=>({ ok:true, rows })).catch(()=>({ ok:false, rows:[] }));
     const tugasGmv = tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
     // Everpro lewat API resmi di Worker; kalau gagal, pakai berkas hasil sinkronisasi lama
     const tugasKirim = tarikSales('everpro&detail=1', pr.from, r.to)
@@ -745,7 +746,7 @@
     const tugasCb = fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
       .then(x=>x.ok?x.json():null).catch(()=>null);
 
-    const [hasilIklan, shop, gmOrders, gmv, kirimSemua, epRekap, cbFile] = await Promise.all([
+    const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile] = await Promise.all([
       Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv, tugasKirim, tugasEp, tugasCb,
     ]);
 
@@ -755,11 +756,13 @@
       else prev[id] = rows || [];
     }
 
+    const gmOrders = gmHasil.rows || [];
     // pisahkan pesanan Globemerce menurut periode
     const pesanan = gmOrders.filter(o => o.tanggal >= r.from && o.tanggal <= r.to);
     const pesananLalu = gmOrders.filter(o => o.tanggal >= pr.from && o.tanggal <= pr.to);
     const sales = {}, prevSales = {};
-    sales.globemerce = pesanan.length ? { status:'ok', rows: rekapHarian(pesanan) } : { status:'off', rows:[] };
+    // terhubung tapi belum ada penjualan hari ini tetap dihitung 'ok', bukan 'off'
+    sales.globemerce = { status: gmHasil.ok ? 'ok' : 'off', rows: rekapHarian(pesanan) };
     prevSales.globemerce = rekapHarian(pesananLalu);
 
     // Everpro: dari API resmi bila tersedia, kalau tidak dari berkas
@@ -768,7 +771,8 @@
       ? { updated_at: epRekap.updated_at || null, langsung: epRekap.sumber === 'api' }
       : null;
     const epDalam = epBaris.filter(x => x.date >= r.from && x.date <= r.to);
-    sales.everpro = epDalam.length ? { status:'ok', rows: epDalam } : { status:'off', rows:[] };
+    const epTerhubung = !!(epRekap && (epRekap.sumber === 'api' || (epRekap.data && epRekap.data.length)));
+    sales.everpro = { status: epTerhubung ? 'ok' : 'off', rows: epDalam };
     prevSales.everpro = epBaris.filter(x => x.date >= pr.from && x.date <= pr.to);
 
     const kirim = (kirimSemua.rows||kirimSemua||[]).filter(x => x.tanggal >= r.from && x.tanggal <= r.to);
@@ -1371,6 +1375,7 @@
     const kartuSumber = SALES.map(s=>{
       const d = D.sales[s.id] || { status:'off', rows:[] };
       if (d.status!=='ok') return li(s, s.nama, s.peran+' — belum terhubung', '', '', 0);
+      if (!d.rows.length) return li(s, s.nama, s.peran+' — belum ada transaksi periode ini', '', '', 0);
       const a = aggSales(d.rows);
       return li(s, s.nama, fN(a.orders)+' pesanan · '+fN(a.units||a.orders)+' produk · '+fN(a.baru)+' pelanggan baru',
         fC(a.revenue), 'Gross profit '+fC(a.gross), 100);
@@ -1641,6 +1646,12 @@
         <b>Data Everpro belum tersedia</b><br>
         Pastikan <code>EVERPRO_CLIENT_KEY</code> dan <code>EVERPRO_CLIENT_SECRET</code>
         sudah tersimpan sebagai Secret di Cloudflare, lalu muat ulang halaman ini.</div></div>`;
+      // terhubung, tapi belum ada pengiriman pada periode ini
+      if (!d.rows.length) return heroCashback() + `<div class="panel">
+        <div class="empty"><div class="big" style="background:${S.s};color:${S.c}">${I.cart}</div>
+        <b>Belum ada pengiriman pada ${esc(labelPeriode())}</b><br>
+        Everpro terhubung dan berjalan normal &mdash; kirimannya saja yang belum ada.<br><br>
+        Coba pilih periode yang lebih panjang di atas.</div></div>`;
 
       const R = d.rows;
       const j = k => R.reduce((a,x)=>a+(Number(x[k])||0),0);
@@ -1724,6 +1735,12 @@
       <b>${S.nama} belum terhubung</b><br>${S.peran}.<br><br>
       Sambungkan lewat Worker Cloudflare dengan alamat <code>?sales=${id}</code>,
       lalu datanya otomatis muncul di sini dan ikut terhitung di Overview.</div></div>`;
+    // terhubung, tapi periode yang dipilih memang belum ada transaksinya
+    if (!d.rows.length && !(D.pesanan && D.pesanan.length)) return heroGMV() + `<div class="panel">
+      <div class="empty"><div class="big" style="background:${S.s};color:${S.c}">${I.cart}</div>
+      <b>Belum ada penjualan pada ${esc(labelPeriode())}</b><br>
+      ${S.nama} terhubung dan berjalan normal &mdash; transaksinya saja yang belum ada.<br><br>
+      Coba pilih periode yang lebih panjang di atas.</div></div>`;
     const a = aggSales(d.rows);
     const P = (id==='globemerce' && D.pesanan && D.pesanan.length) ? D.pesanan : null;
 
