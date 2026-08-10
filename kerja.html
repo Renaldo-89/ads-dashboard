@@ -71,6 +71,34 @@
   ::-webkit-scrollbar { width:8px; height:8px; }
   ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
 
+  /* ---------- kalender laba harian ---------- */
+  .kal-bungkus { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(268px,100%),1fr)); gap:18px; }
+  .kal-judul { font-size:12.5px; font-weight:700; margin:0 0 10px; letter-spacing:-.1px; }
+  .kal-nama { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:5px; }
+  .kal-nama span { font-size:10px; font-weight:700; color:var(--faint); text-align:center;
+    letter-spacing:.3px; }
+  .kal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .kal-hari { aspect-ratio:1; border-radius:9px; display:flex; align-items:center;
+    justify-content:center; font-size:11.5px; font-weight:600; position:relative;
+    background:var(--line-2); color:var(--faint); cursor:default; }
+  .kal-hari.ada { cursor:pointer; transition:transform .12s; }
+  .kal-hari.ada:hover { transform:scale(1.12); z-index:2; }
+  .kal-hari.untung { color:#fff; }
+  .kal-hari.rugi { color:#fff; }
+  .kal-hari.luar { visibility:hidden; }
+  .kal-hari.kini { box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--violet); }
+  .kal-hari.terpilih { box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+  .kal-ket { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:14px;
+    font-size:11.5px; color:var(--muted); font-weight:500; }
+  .kal-ket i { width:11px; height:11px; border-radius:4px; display:inline-block;
+    margin-right:5px; vertical-align:-1px; }
+  .kal-skala { display:flex; align-items:center; gap:4px; }
+  .kal-skala i { width:15px; height:11px; border-radius:3px; }
+  .kal-pilih { margin-top:14px; padding:13px 15px; border-radius:14px; background:var(--line-2);
+    font-size:12.5px; font-weight:500; line-height:1.6; }
+  .kal-pilih b { font-weight:700; }
+  .kal-pilih .kosong { color:var(--muted); }
+
   /* ---------- layar memuat ---------- */
   .memuat { padding:8px 0 40px; }
   .memuat-atas { display:flex; align-items:center; gap:14px; margin-bottom:22px; }
@@ -1171,6 +1199,7 @@
 
     return heroGMV()
       + blokPendapatan(t, p)
+      + kalenderLaba()
       + `<div class="sec"><h4>Iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
       <div class="kpis">
         ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total biaya iklan',fC(t.spend),delta(t.spend,p.spend,false))}
@@ -1197,6 +1226,101 @@
       <div class="panel tight"><div class="scroll-y scroll-x">
         <table class="dt"><thead><tr><th>Tanggal</th><th>Biaya</th>${D.shop.status==='ok'?'<th>Omzet</th><th>ROAS</th>':''}<th>Klik</th><th>Konv</th><th>Biaya/konv.</th></tr></thead>
         <tbody>${barisHarian()}</tbody></table></div></div>`;
+  }
+
+  // ---------- kalender laba harian ----------
+  // Gross profit per hari dihitung dari tiap pesanan Globemerce (medan profit),
+  // bukan dari rekap bulanan, supaya bisa dipecah per tanggal.
+  function labaHarian() {
+    const m = new Map();
+    const isi = d => { if (!m.has(d)) m.set(d, { profit:0, spend:0, order:0, omzet:0 }); return m.get(d); };
+    for (const o of (D.pesanan || [])) {
+      if (!o.tanggal) continue;
+      const a = isi(o.tanggal);
+      a.profit += Number(o.profit) || 0;
+      a.omzet  += Number(o.omzet) || 0;
+      a.order  += 1;
+    }
+    for (const r of allRows()) {
+      if (!r.date) continue;
+      isi(r.date).spend += Number(r.spend) || 0;
+    }
+    for (const a of m.values()) a.laba = a.profit - a.spend;
+    return m;
+  }
+
+  function kalenderLaba() {
+    if (!(D.pesanan || []).length) return '';
+    const H = labaHarian();
+    const { r } = D._rentang;
+    const hariIniStr = new Date().toISOString().slice(0, 10);
+
+    const nilai = [...H.values()].map(x => Math.abs(x.laba)).filter(v => v > 0);
+    const puncak = nilai.length ? Math.max(...nilai) : 1;
+
+    // warna makin pekat mengikuti besarnya laba, minimal tetap terbaca
+    const warna = laba => {
+      const kuat = Math.min(1, Math.abs(laba) / puncak);
+      const alpha = 0.28 + kuat * 0.72;
+      return laba >= 0 ? `rgba(16,185,129,${alpha.toFixed(2)})`
+                       : `rgba(239,68,68,${alpha.toFixed(2)})`;
+    };
+
+    // daftar bulan yang tersentuh periode terpilih
+    const awal = new Date(r.from + 'T00:00:00'), akhir = new Date(r.to + 'T00:00:00');
+    const bulan = [];
+    for (let d = new Date(awal.getFullYear(), awal.getMonth(), 1);
+         d <= akhir; d.setMonth(d.getMonth() + 1)) {
+      bulan.push(new Date(d));
+    }
+
+    const NAMA_HARI = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+    const kartuBulan = bulan.map(b => {
+      const th = b.getFullYear(), bl = b.getMonth();
+      const jumlahHari = new Date(th, bl + 1, 0).getDate();
+      // getDay(): 0 = Minggu. Digeser supaya pekan mulai Senin.
+      const geser = (new Date(th, bl, 1).getDay() + 6) % 7;
+      let sel = '';
+      for (let i = 0; i < geser; i++) sel += '<div class="kal-hari luar"></div>';
+      for (let t = 1; t <= jumlahHari; t++) {
+        const tgl = th + '-' + String(bl + 1).padStart(2, '0') + '-' + String(t).padStart(2, '0');
+        const dalam = tgl >= r.from && tgl <= r.to;
+        const a = H.get(tgl);
+        const kini = tgl === hariIniStr ? ' kini' : '';
+        if (!dalam || !a || (!a.order && !a.spend)) {
+          sel += `<div class="kal-hari${kini}" title="${tgl}${dalam?' · belum ada aktivitas':' · di luar periode'}">${t}</div>`;
+        } else {
+          const k = a.laba >= 0 ? 'untung' : 'rugi';
+          sel += `<div class="kal-hari ada ${k}${kini}" data-tgl="${tgl}"
+            style="background:${warna(a.laba)}"
+            title="${sd(tgl)} · laba ${fC(a.laba)}">${t}</div>`;
+        }
+      }
+      return `<div><p class="kal-judul">${BLN[bl]} ${th}</p>
+        <div class="kal-nama">${NAMA_HARI.map(n=>`<span>${n}</span>`).join('')}</div>
+        <div class="kal-grid">${sel}</div></div>`;
+    }).join('');
+
+    const untung = [...H.values()].filter(x => x.laba > 0).length;
+    const rugi = [...H.values()].filter(x => x.laba < 0 && (x.order || x.spend)).length;
+
+    return `<div class="sec"><h4>Kalender laba harian</h4>
+        <span class="note">${fN(untung)} hari untung · ${fN(rugi)} hari minus</span></div>
+      <div class="panel">
+        <div class="kal-bungkus">${kartuBulan}</div>
+        <div class="kal-ket">
+          <span><i style="background:rgba(16,185,129,.85)"></i>Untung</span>
+          <span><i style="background:rgba(239,68,68,.85)"></i>Minus</span>
+          <span><i style="background:var(--line-2)"></i>Belum ada aktivitas</span>
+          <span class="kal-skala">Makin pekat makin besar
+            <i style="background:rgba(16,185,129,.3)"></i>
+            <i style="background:rgba(16,185,129,.6)"></i>
+            <i style="background:rgba(16,185,129,1)"></i></span>
+        </div>
+        <div class="kal-pilih" id="kal-pilih">
+          <span class="kosong">Ketuk salah satu tanggal untuk melihat rinciannya.</span>
+        </div>
+      </div>`;
   }
 
   // Ringkasan pendapatan: gabungan penjualan dan iklan, ditutup dengan laba bersih
@@ -2278,6 +2402,23 @@
     buildFilters(); render();
   });
   document.getElementById('content').addEventListener('click', e=>{
+    // ketuk tanggal di kalender laba -> tampilkan rinciannya di bawah
+    const sel = e.target.closest('.kal-hari[data-tgl]');
+    if (sel) {
+      const a = labaHarian().get(sel.dataset.tgl);
+      const kotak = document.getElementById('kal-pilih');
+      if (a && kotak) {
+        const untung = a.laba >= 0;
+        kotak.innerHTML = `<b>${sd(sel.dataset.tgl)}</b> &middot; `
+          + `<span style="color:${untung?'var(--green-ink)':'var(--red-ink)'};font-weight:700">`
+          + `${untung ? 'Untung' : 'Minus'} ${fC(Math.abs(a.laba))}</span><br>`
+          + `Omzet ${fC(a.omzet)} &middot; gross profit ${fC(a.profit)} `
+          + `&middot; biaya iklan ${fC(a.spend)} &middot; ${fN(a.order)} pesanan`;
+      }
+      document.querySelectorAll('.kal-hari.terpilih').forEach(x=>x.classList.remove('terpilih'));
+      sel.classList.add('terpilih');
+      return;
+    }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
