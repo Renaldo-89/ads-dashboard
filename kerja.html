@@ -1243,13 +1243,20 @@
   // Cashback yang statusnya dibatalkan tidak dihitung sebagai pengurang.
   function biayaKirim(rows) {
     const K = rows || kirimAktif();
-    let tagihan = 0, ongkir = 0, cashback = 0;
+    let tagihan = 0, ongkir = 0, feeCod = 0, asuransi = 0, diskon = 0, cashback = 0;
     for (const x of K) {
       tagihan  += Number(x.harga) || 0;
       ongkir   += Number(x.ongkir) || 0;
+      feeCod   += Number(x.fee_cod) || 0;
+      asuransi += Number(x.asuransi) || 0;
+      diskon   += Number(x.diskon) || 0;
       if (String(x.cashback_status || '') !== 'batal') cashback += Number(x.cashback) || 0;
     }
-    return { tagihan, ongkir, fee: tagihan - ongkir, cashback, bersih: tagihan - cashback };
+    // total_price adalah angka resmi Everpro. Rinciannya dijumlah terpisah supaya
+    // kalau tidak klop dengan total, selisihnya kelihatan dan tidak disembunyikan.
+    const rinci = ongkir + feeCod + asuransi - diskon;
+    return { tagihan, ongkir, feeCod, asuransi, diskon, cashback,
+      selisih: tagihan - rinci, bersih: tagihan - cashback };
   }
 
   // biaya kirim bersih per tanggal, dipakai kalender laba harian
@@ -1412,7 +1419,8 @@
 
       <div class="panel tight" style="margin-top:11px">
         ${adaKirim()?li({c:'var(--pink)',s:'var(--pink-soft)',ini:'K'},'Rincian biaya pengiriman',
-          'Ongkir '+fC(bk.ongkir)+' + fee COD & asuransi '+fC(bk.fee)+' &minus; cashback '+fC(bk.cashback),
+          'Ongkir '+fC(bk.ongkir)+' + fee COD '+fC(bk.feeCod)+' + asuransi '+fC(bk.asuransi)
+            +' &minus; cashback '+fC(bk.cashback),
           fC(bk.bersih),'bersih',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
@@ -1863,18 +1871,24 @@
         <div class="sec"><h4>Biaya pengiriman</h4>
           <span class="note">yang benar-benar jadi beban, setelah cashback</span></div>
         <div class="kpis tiga">
-          ${kpi(I.money,'var(--pink)','var(--pink-soft)','Tagihan Everpro',fC(bk.tagihan),'')}
           ${kpi(I.money,'var(--blue)','var(--blue-soft)','Ongkir',fC(bk.ongkir),'')}
-          ${kpi(I.money,'var(--amber)','var(--amber-soft)','Fee COD & asuransi',fC(bk.fee),'')}
+          ${kpi(I.money,'var(--amber)','var(--amber-soft)','Fee COD',fC(bk.feeCod),'')}
+          ${kpi(I.money,'var(--violet)','var(--violet-soft)','Asuransi',fC(bk.asuransi),'')}
+          ${kpi(I.money,'var(--pink)','var(--pink-soft)','Tagihan Everpro',fC(bk.tagihan),'')}
           ${kpi(I.money,'var(--green)','var(--green-soft)','Cashback ongkir','&minus;'+fC(bk.cashback),'')}
           ${kpi(I.money,'var(--red)','var(--red-soft)','Biaya bersih',fC(bk.bersih),'')}
-          ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Rata-rata per kiriman',
-            kirimAktif().length?fC(bk.bersih/kirimAktif().length):'—','')}
         </div>
         <div class="panel tight" style="margin-bottom:16px">
           ${li({c:'var(--pink)',s:'var(--pink-soft)',ini:'='},'Cara hitungnya',
-            'Tagihan '+fC(bk.tagihan)+' &minus; cashback '+fC(bk.cashback)
-            +' = beban nyata yang dipotong dari laba di Overview', fC(bk.bersih),'bersih',0)}
+            'Ongkir '+fC(bk.ongkir)+' + fee COD '+fC(bk.feeCod)+' + asuransi '+fC(bk.asuransi)
+            + (bk.diskon?' &minus; diskon '+fC(bk.diskon):'')
+            + ' &minus; cashback '+fC(bk.cashback), fC(bk.bersih),'bersih',0)}
+          ${bk.selisih ? li({c:'var(--amber)',s:'var(--amber-soft)',ini:'?'},'Selisih belum terjelaskan',
+            'Rincian di atas tidak persis sama dengan total_price dari Everpro. Angka yang dipakai tetap total resmi mereka.',
+            fC(bk.selisih),'',0) : ''}
+          ${li({c:'var(--toska)',s:'var(--toska-soft)',ini:'R'},'Rata-rata per kiriman',
+            fN(kirimAktif().length)+' kiriman aktif di periode ini',
+            kirimAktif().length?fC(bk.bersih/kirimAktif().length):'—','',0)}
         </div>
 
         <div class="sec"><h4>Ringkasan pengiriman</h4>
