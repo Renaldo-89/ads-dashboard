@@ -1236,12 +1236,42 @@
         <tbody>${barisHarian()}</tbody></table></div></div>`;
   }
 
+  // ---------- biaya pengiriman ----------
+  // Everpro menagih ongkir plus fee COD dan asuransi, lalu mengembalikan sebagian
+  // sebagai cashback. Medan "harga" di Everpro adalah total tagihan kirim,
+  // bukan harga produk. Yang jadi beban nyata: tagihan dikurangi cashback.
+  // Cashback yang statusnya dibatalkan tidak dihitung sebagai pengurang.
+  function biayaKirim(rows) {
+    const K = rows || kirimAktif();
+    let tagihan = 0, ongkir = 0, cashback = 0;
+    for (const x of K) {
+      tagihan  += Number(x.harga) || 0;
+      ongkir   += Number(x.ongkir) || 0;
+      if (String(x.cashback_status || '') !== 'batal') cashback += Number(x.cashback) || 0;
+    }
+    return { tagihan, ongkir, fee: tagihan - ongkir, cashback, bersih: tagihan - cashback };
+  }
+
+  // biaya kirim bersih per tanggal, dipakai kalender laba harian
+  function kirimHarian() {
+    const m = new Map();
+    for (const x of kirimAktif()) {
+      const d = x.tanggal;
+      if (!d) continue;
+      if (!m.has(d)) m.set(d, 0);
+      const cb = String(x.cashback_status || '') !== 'batal' ? (Number(x.cashback) || 0) : 0;
+      m.set(d, m.get(d) + (Number(x.harga) || 0) - cb);
+    }
+    return m;
+  }
+  const adaKirim = () => kirimAktif().length > 0;
+
   // ---------- kalender laba harian ----------
   // Gross profit per hari dihitung dari tiap pesanan Globemerce (medan profit),
   // bukan dari rekap bulanan, supaya bisa dipecah per tanggal.
   function labaHarian() {
     const m = new Map();
-    const isi = d => { if (!m.has(d)) m.set(d, { profit:0, spend:0, order:0, omzet:0 }); return m.get(d); };
+    const isi = d => { if (!m.has(d)) m.set(d, { profit:0, spend:0, kirim:0, order:0, omzet:0 }); return m.get(d); };
     for (const o of (D.pesanan || [])) {
       if (!o.tanggal) continue;
       const a = isi(o.tanggal);
@@ -1253,7 +1283,8 @@
       if (!r.date) continue;
       isi(r.date).spend += Number(r.spend) || 0;
     }
-    for (const a of m.values()) a.laba = a.profit - a.spend;
+    for (const [d, v] of kirimHarian()) isi(d).kirim += v;
+    for (const a of m.values()) a.laba = a.profit - a.kirim - a.spend;
     return m;
   }
 
@@ -1343,7 +1374,8 @@
     }
     const s = aggSales(salesRows());
     const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
-    const laba = s.gross - t.spend;
+    const bk = biayaKirim();
+    const laba = s.gross - bk.bersih - t.spend;
     const labaLalu = sp.gross - (p.spend||0);
     const bulanan = salesRows().some(r=>r.granularity==='monthly');
     const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
@@ -1354,6 +1386,7 @@
 
     return `<div class="sec"><h4>Ringkasan pendapatan</h4>
         <span class="note">${bulanan?'data penjualan bersifat bulanan':'gabungan semua sumber'}</span></div>
+      ${adaKirim()?'':'<p class="lead">Everpro belum terhubung, jadi biaya pengiriman belum dipotong dari laba.</p>'}
       ${bulanan?'<p class="lead">Globemerce hanya menyediakan rekap bulanan, jadi angka penjualan di bawah adalah total bulan yang tersentuh periode terpilih — sementara biaya iklan mengikuti periode persis. Untuk perbandingan yang setara, pilih chip bulan di atas.</p>':''}
       <div class="kpis">
         ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet',fC(s.revenue),delta(s.revenue,sp.revenue,false))}
@@ -1361,6 +1394,7 @@
         ${kpi(I.list,'var(--pink)','var(--pink-soft)','Total transaksi',fN(s.orders),delta(s.orders,sp.orders,false))}
         ${kpi(I.money,'var(--green)','var(--green-soft)','Gross profit',fC(s.gross),delta(s.gross,sp.gross,false))}
         ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),delta(t.spend,p.spend,false))}
+        ${adaKirim()?kpi(I.plug,'var(--pink)','var(--pink-soft)','Biaya pengiriman',fC(bk.bersih),''):''}
         ${kpi(I.up,'var(--toska)','var(--toska-soft)','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
         ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
         ${kpi(I.up,'var(--violet)','var(--violet-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
@@ -1371,12 +1405,15 @@
         <div class="laba-b">
           <p class="k">LABA SETELAH IKLAN</p>
           <p class="v">${fC(laba)}</p>
-          <p class="s">Gross profit ${fC(s.gross)} dikurangi biaya iklan ${fC(t.spend)}</p>
+          <p class="s">Gross profit ${fC(s.gross)}${adaKirim()?' &minus; kirim '+fC(bk.bersih):''} &minus; iklan ${fC(t.spend)}</p>
         </div>
         <div class="laba-d">${delta(laba, labaLalu, false) || ''}</div>
       </div>
 
       <div class="panel tight" style="margin-top:11px">
+        ${adaKirim()?li({c:'var(--pink)',s:'var(--pink-soft)',ini:'K'},'Rincian biaya pengiriman',
+          'Ongkir '+fC(bk.ongkir)+' + fee COD & asuransi '+fC(bk.fee)+' &minus; cashback '+fC(bk.cashback),
+          fC(bk.bersih),'bersih',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
           unit>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
@@ -1786,12 +1823,12 @@
         Coba pilih periode yang lebih panjang di atas.</div></div>`;
 
       const R = d.rows;
+      const bk = biayaKirim();
       const j = k => R.reduce((a,x)=>a+(Number(x[k])||0),0);
       const kirim = j('delivered'), proses = j('in_process'), retur = j('returned');
       const gagal = j('failed_delivery'), hilang = j('lost_broken');
       const tunggu = j('waiting_for_pickup'), gagalPickup = j('pickup_failed');
       const total = j('total_order');
-      const ongkir = j('shipment_price');
       const selesai = kirim + proses + retur + gagal + hilang + tunggu + gagalPickup;
       const rasio = selesai>0 ? kirim/selesai*100 : 0;
 
@@ -1823,12 +1860,28 @@
             <p class="s">${fN(proses)} dalam perjalanan · ${fN(tunggu)} menunggu dijemput</p>
           </div></div>
 
+        <div class="sec"><h4>Biaya pengiriman</h4>
+          <span class="note">yang benar-benar jadi beban, setelah cashback</span></div>
+        <div class="kpis tiga">
+          ${kpi(I.money,'var(--pink)','var(--pink-soft)','Tagihan Everpro',fC(bk.tagihan),'')}
+          ${kpi(I.money,'var(--blue)','var(--blue-soft)','Ongkir',fC(bk.ongkir),'')}
+          ${kpi(I.money,'var(--amber)','var(--amber-soft)','Fee COD & asuransi',fC(bk.fee),'')}
+          ${kpi(I.money,'var(--green)','var(--green-soft)','Cashback ongkir','&minus;'+fC(bk.cashback),'')}
+          ${kpi(I.money,'var(--red)','var(--red-soft)','Biaya bersih',fC(bk.bersih),'')}
+          ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Rata-rata per kiriman',
+            kirimAktif().length?fC(bk.bersih/kirimAktif().length):'—','')}
+        </div>
+        <div class="panel tight" style="margin-bottom:16px">
+          ${li({c:'var(--pink)',s:'var(--pink-soft)',ini:'='},'Cara hitungnya',
+            'Tagihan '+fC(bk.tagihan)+' &minus; cashback '+fC(bk.cashback)
+            +' = beban nyata yang dipotong dari laba di Overview', fC(bk.bersih),'bersih',0)}
+        </div>
+
         <div class="sec"><h4>Ringkasan pengiriman</h4>
           <span class="note">${everproInfo && everproInfo.langsung ? 'langsung dari API Everpro'
                 : (everproInfo && everproInfo.updated_at ? 'berkas · '+everproInfo.updated_at : '')}</span></div>
         <div class="kpis tiga">
           ${kpi(I.cart,S.c,S.s,'Total pengiriman',fN(total),'')}
-          ${kpi(I.money,'var(--blue)','var(--blue-soft)','Ongkos kirim',fC(ongkir),'')}
           ${kpi(I.up,'var(--green)','var(--green-soft)','Rasio terkirim',fP(rasio),'')}
           ${kpi(I.cart,'var(--toska)','var(--toska-soft)','Terkirim COD',fN(j('delivered_cod')),'')}
           ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Terkirim non-COD',fN(j('delivered_non_cod')),'')}
@@ -2421,7 +2474,8 @@
           + `<span style="color:${untung?'var(--green-ink)':'var(--red-ink)'};font-weight:700">`
           + `${untung ? 'Untung' : 'Minus'} ${fC(Math.abs(a.laba))}</span><br>`
           + `Omzet ${fC(a.omzet)} &middot; gross profit ${fC(a.profit)} `
-          + `&middot; biaya iklan ${fC(a.spend)} &middot; ${fN(a.order)} pesanan`;
+          + `&middot; kirim ${fC(a.kirim)} &middot; iklan ${fC(a.spend)} `
+          + `&middot; ${fN(a.order)} pesanan`;
       }
       document.querySelectorAll('.kal-hari.terpilih').forEach(x=>x.classList.remove('terpilih'));
       sel.classList.add('terpilih');
