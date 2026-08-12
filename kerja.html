@@ -515,6 +515,7 @@
   const KAND_SHOP = [['date','revenue','orders'],['date','total_amount','order_id'],['date','gmv','orders'],['date','revenue']];
 
   const I = {
+    balik:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 0 10h-3"/></svg>',
     cs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-3.8 3.4-6 7.5-6s7.5 2.2 7.5 6"/></svg>',
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>',
     list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>',
@@ -547,6 +548,7 @@
     { g:1, id:'globemerce', lbl:'Globemerce',ic:I.money,  t:'Globemerce', sales:'globemerce' },
     { g:1, id:'everpro',  lbl:'Everpro',     ic:I.plug,   t:'Everpro',    sales:'everpro' },
     { g:1, id:'cs',       lbl:'Customer Service', ic:I.cs, t:'Performa Customer Service' },
+    { g:1, id:'retur',    lbl:'Data Return',      ic:I.balik, t:'Paket retur' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -1138,6 +1140,7 @@
     else if (m.sales) el.innerHTML = pgSumber(m.sales);
     else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
     else if (page==='cs') el.innerHTML = pgCS();
+    else if (page==='retur') el.innerHTML = pgRetur();
     else if (page==='kampanye') el.innerHTML = pgKampanye();
     else if (page==='lelang') el.innerHTML = pgLelang();
     else if (page==='jam') el.innerHTML = pgJam();
@@ -1810,6 +1813,105 @@
         <tbody>${baris}</tbody></table></div></div>`;
 
     return kartu + peringkat + tabel;
+  }
+
+  // ---------- halaman Data Return ----------
+  // Paket berstatus retur dari Everpro (kelompok "retur"), dicocokkan ke pesanan
+  // Globemerce lewat resi atau nomor order yang tersisip di data pengiriman.
+  function pgRetur() {
+    const semua = D.kirim || [];
+    if (!semua.length) return `<div class="panel"><div class="empty">
+      <div class="big" style="background:var(--toska-soft);color:var(--toska)">${I.plug}</div>
+      <b>Data pengiriman belum tersedia</b><br>
+      Halaman ini membaca status paket dari Everpro.</div></div>`;
+
+    const R = semua.filter(x => String(x.kelompok || '') === 'retur');
+    const pb = petaPembeli();
+
+    if (!R.length) return `<div class="panel"><div class="empty">
+      <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
+      <b>Tidak ada paket retur pada ${esc(labelPeriode())}</b><br>
+      Dari ${fN(kirimAktif().length)} kiriman aktif, tidak satu pun kembali.</div></div>`;
+
+    // biaya yang tetap keluar walau barang tidak sampai
+    const biaya = R.reduce((a, x) => a + (Number(x.harga) || 0), 0);
+    const cbHilang = R.reduce((a, x) =>
+      a + (String(x.cashback_status || '') === 'batal' ? (Number(x.cashback) || 0) : 0), 0);
+    const nilaiOrder = R.reduce((a, x) => {
+      const o = cari(pb, kunciKirim(x));
+      return a + (o ? (Number(o.omzet) || 0) : 0);
+    }, 0);
+    const cocok = R.filter(x => cari(pb, kunciKirim(x))).length;
+    const rasio = kirimAktif().length ? R.length / kirimAktif().length * 100 : 0;
+
+    // sebaran per kurir dan per CS, untuk melihat pola
+    const per = (fn) => {
+      const m = new Map();
+      for (const x of R) { const k = fn(x) || '(tidak diketahui)'; m.set(k, (m.get(k) || 0) + 1); }
+      return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    };
+    const perKurir = per(x => x.kurir);
+    const perCS = per(x => { const o = cari(pb, kunciKirim(x)); return o ? namaCS(o.agen) : null; });
+
+    const daftar = (judul, data, warna) => data.length ? `<div class="sec"><h4>${judul}</h4></div>
+      <div class="panel tight">${data.map(([nama, n]) => li(
+        { c: warna, s: 'var(--line-2)', ini: String(n) }, nama,
+        fP(n / R.length * 100) + ' dari seluruh retur', fN(n), 'paket',
+        n / data[0][1] * 100)).join('')}</div>` : '';
+
+    const baris = R.slice().sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)))
+      .map(x => {
+        const o = cari(pb, kunciKirim(x));
+        const noOrder = o ? o.no : (x.no_globemerce || null);
+        const [cc, cs, ct] = WARNA_CASHBACK(x.cashback_status);
+        return `<tr>
+          <td class="tgl">${sd(x.tanggal)}</td>
+          <td class="resi">${x.resi ? esc(x.resi) : '<span style="color:var(--faint)">—</span>'}</td>
+          <td class="no">${noOrder
+            ? '#' + esc(noOrder)
+            : '<span style="color:var(--red)">tidak ketemu</span>'}</td>
+          <td class="nama">${o ? esc(o.pembeli || '—')
+            : '<span style="color:var(--faint)">tidak ada di Globemerce</span>'}
+            ${o && o.agen ? '<br><span style="font-size:10px;color:var(--faint)">'+esc(namaCS(o.agen))+'</span>' : ''}</td>
+          <td class="nama">${o ? esc(o.provinsi || '—') : '—'}</td>
+          <td class="kurir">${esc(x.kurir || '—')}</td>
+          <td class="ctr">${x.cod
+            ? '<span class="pill2" style="background:var(--amber-soft);color:var(--amber-ink)">COD</span>'
+            : '<span class="pill2" style="background:var(--line-2);color:var(--muted)">Non COD</span>'}</td>
+          <td class="num uang">${o ? fC(o.omzet) : '—'}</td>
+          <td class="num uang">${fC(x.harga)}</td>
+          <td class="ctr"><span class="pill2" style="background:${cs};color:${cc}">${esc(ct || '—')}</span></td>
+        </tr>`;
+      }).join('');
+
+    return `<div class="kpis tiga">
+        ${kpi(I.balik,'var(--red)','var(--red-soft)','Paket retur',fN(R.length),'')}
+        ${kpi(I.alert, rasio>=5?'var(--red)':'var(--amber)', rasio>=5?'var(--red-soft)':'var(--amber-soft)',
+          'Rasio retur',fP(rasio),'')}
+        ${kpi(I.money,'var(--pink)','var(--pink-soft)','Biaya kirim hangus',fC(biaya),'')}
+        ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Nilai order tertahan',nilaiOrder?fC(nilaiOrder):'—','')}
+        ${kpi(I.money,'var(--amber)','var(--amber-soft)','Cashback batal',fC(cbHilang),'')}
+        ${kpi(I.eye,'var(--toska)','var(--toska-soft)','Cocok dengan Globemerce',fN(cocok)+' dari '+fN(R.length),'')}
+      </div>
+
+      <div class="panel tight" style="margin:12px 0 4px">
+        ${li({c:'var(--red)',s:'var(--red-soft)',ini:'!'},'Kerugian langsung',
+          'Ongkir tetap ditagih walau barang kembali'
+          + (cbHilang ? ', dan cashback-nya ikut batal' : ''),
+          fC(biaya + cbHilang),'total',0)}
+      </div>
+
+      ${daftar('Retur per kurir', perKurir, 'var(--red)')}
+      ${daftar('Retur per Customer Service', perCS, 'var(--violet)')}
+
+      <div class="sec"><h4>Daftar paket retur</h4>
+        <span class="note">${fN(R.length)} paket · diurutkan dari yang terbaru</span></div>
+      <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
+        <thead><tr>
+          <th>Tanggal</th><th>Resi</th><th>No order</th><th>Pembeli</th><th>Provinsi</th>
+          <th>Kurir</th><th class="ctr">Bayar</th><th class="num">Nilai order</th>
+          <th class="num">Biaya kirim</th><th class="ctr">Cashback</th>
+        </tr></thead><tbody>${baris}</tbody></table></div></div>`;
   }
 
   function pgSumber(id) {
