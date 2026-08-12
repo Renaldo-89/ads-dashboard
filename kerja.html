@@ -1008,9 +1008,9 @@
     return k;
   }
 
-  function petaPembeli() {              // kunci -> pesanan Globemerce
+  function petaPembeli(daftar) {         // kunci -> pesanan Globemerce
     const m = new Map();
-    for (const o of (D.pesanan||[])) for (const k of kunciPesanan(o)) if (!m.has(k)) m.set(k, o);
+    for (const o of (daftar || D.pesanan || [])) for (const k of kunciPesanan(o)) if (!m.has(k)) m.set(k, o);
     return m;
   }
   function petaKirim() {                // kunci -> pengiriman Everpro (tanpa yang dibatalkan)
@@ -1851,14 +1851,20 @@
     const th = Number(tahun) || new Date().getFullYear();
     const ada = returData.get(th);
     if (ada && (ada.memuat || !ada.gagal)) return;          // sudah ada atau sedang ditarik
-    returData.set(th, { rows: [], memuat: true });
+    returData.set(th, { rows: [], pesanan: [], memuat: true });
     render();
     const kini = new Date().getFullYear();
+    const dari = th + '-01-01';
     const sampai = th === kini ? new Date().toISOString().slice(0, 10) : th + '-12-31';
-    tarikSales('everpro&detail=1', th + '-01-01', sampai)
-      .then(rows => returData.set(th, { rows: tempelCashback(rows || []), memuat: false }))
-      .catch(() => returData.set(th, { rows: [], memuat: false, gagal: true }))
-      .finally(() => render());
+    // Pesanan Globemerce setahun ikut ditarik. Tanpa ini, retur dari bulan lalu
+    // tidak punya lawan untuk dicocokkan karena D.pesanan hanya berisi periode terpilih.
+    Promise.all([
+      tarikSales('everpro&detail=1', dari, sampai).catch(() => null),
+      tarikSales('globemerce&detail=1', dari, sampai).catch(() => []),
+    ]).then(([kirim, pesanan]) => {
+      if (kirim === null) { returData.set(th, { rows: [], pesanan: [], memuat: false, gagal: true }); return; }
+      returData.set(th, { rows: tempelCashback(kirim || []), pesanan: pesanan || [], memuat: false });
+    }).finally(() => render());
   }
 
   // ---------- halaman Data Return ----------
@@ -1890,6 +1896,7 @@
     }
 
     const semua = perTahun ? (simpan ? simpan.rows : []) : (D.kirim || []);
+    const pesananCocok = perTahun ? (simpan ? simpan.pesanan : []) : (D.pesanan || []);
     const cakupan = perTahun ? 'sepanjang ' + th : labelPeriode();
     const BATAL = x => /batal/i.test(String(x.kelompok || ''));
     const aktifSemua = semua.filter(x => !BATAL(x));
@@ -1900,7 +1907,7 @@
       Halaman ini membaca status paket dari Everpro.</div></div>`;
 
     const R = semua.filter(x => String(x.kelompok || '') === 'retur');
-    const pb = petaPembeli();
+    const pb = petaPembeli(pesananCocok);
 
     if (!R.length) return chips + `<div class="panel"><div class="empty">
       <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
@@ -1965,7 +1972,8 @@
         ${kpi(I.money,'var(--pink)','var(--pink-soft)','Biaya kirim hangus',fC(biaya),'')}
         ${kpi(I.cart,'var(--violet)','var(--violet-soft)','Nilai order tertahan',nilaiOrder?fC(nilaiOrder):'—','')}
         ${kpi(I.money,'var(--amber)','var(--amber-soft)','Cashback batal',fC(cbHilang),'')}
-        ${kpi(I.eye,'var(--toska)','var(--toska-soft)','Cocok dengan Globemerce',fN(cocok)+' dari '+fN(R.length),'')}
+        ${kpi(I.eye,'var(--toska)','var(--toska-soft)','Cocok dengan Globemerce',
+          fN(cocok)+' dari '+fN(R.length),'')}
       </div>
 
       <div class="panel tight" style="margin:12px 0 4px">
@@ -1979,7 +1987,8 @@
       ${daftar('Retur per Customer Service', perCS, 'var(--violet)')}
 
       <div class="sec"><h4>Daftar paket retur</h4>
-        <span class="note">${fN(R.length)} paket ${esc(cakupan)} · dari ${fN(aktifSemua.length)} kiriman aktif</span></div>
+        <span class="note">${fN(R.length)} paket ${esc(cakupan)} · dari ${fN(aktifSemua.length)} kiriman aktif
+          · dicocokkan ke ${fN(pesananCocok.length)} pesanan Globemerce</span></div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr>
           <th>Tanggal</th><th>Resi</th><th>No order</th><th>Pembeli</th><th>Provinsi</th>
