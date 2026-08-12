@@ -593,6 +593,7 @@
   let everproInfo = null;
   let gantiTema = false;
   let cashbackInfo = null;
+  let PETA_CB = new Map();
   let BUST = '';
   const NAMA_AKUN = new Map();
   const namaAkun = id => NAMA_AKUN.get(String(id)) || String(id);
@@ -822,6 +823,7 @@
           dari: cbFile.dari || null, sampai: cbFile.sampai || null } : null;
     const petaCb = new Map();
     for (const c of cashback) { const k = bersihResi(c.resi); if (k) petaCb.set(k, c); }
+    PETA_CB = petaCb;
     if (petaCb.size) for (const x of kirim) {
       const c = petaCb.get(bersihResi(x.resi));
       if (!c) {
@@ -852,6 +854,7 @@
     BUST = '';                       // penanda paksa-segar hanya berlaku sekali
     buildFilters(); buildNav(); render();
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
+    if (page==='retur' && returMode==='tahun') muatRetur();
   }
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
@@ -1815,12 +1818,62 @@
     return kartu + peringkat + tabel;
   }
 
+  // ---------- data retur setahun ----------
+  // Halaman Data Return memakai rentang setahun penuh, bukan periode di atas,
+  // karena retur itu jarang dan tidak berguna dilihat per beberapa hari.
+  let returTahun = null;          // { rows, memuat, tahun }
+  let returMode = 'tahun';        // 'tahun' | 'periode'
+
+  function tempelCashback(rows) {
+    for (const x of rows) {
+      const c = PETA_CB.get(bersihResi(x.resi));
+      if (!c) { x.cashback_status = x.cashback ? 'belum tercatat' : ''; continue; }
+      x.cashback_status = c.status;
+      x.cashback_tgl = c.tanggal;
+      x.cashback_est = c.est || null;
+      x.cashback_telat = telatCair(c);
+    }
+    return rows;
+  }
+
+  function muatRetur() {
+    const th = new Date().getFullYear();
+    if (returTahun && returTahun.tahun === th) return;      // sudah ada
+    if (returTahun && returTahun.memuat) return;
+    returTahun = { rows: [], memuat: true, tahun: th };
+    render();
+    tarikSales('everpro&detail=1', th + '-01-01', new Date().toISOString().slice(0, 10))
+      .then(rows => { returTahun = { rows: tempelCashback(rows || []), memuat: false, tahun: th }; })
+      .catch(() => { returTahun = { rows: [], memuat: false, tahun: th, gagal: true }; })
+      .finally(() => render());
+  }
+
   // ---------- halaman Data Return ----------
   // Paket berstatus retur dari Everpro (kelompok "retur"), dicocokkan ke pesanan
   // Globemerce lewat resi atau nomor order yang tersisip di data pengiriman.
   function pgRetur() {
-    const semua = D.kirim || [];
-    if (!semua.length) return `<div class="panel"><div class="empty">
+    const th = new Date().getFullYear();
+    const chips = `<div class="chips" style="margin-bottom:14px">
+      <button class="${returMode==='tahun'?'on':''}" data-retur="tahun">Sepanjang ${th}</button>
+      <button class="${returMode==='periode'?'on':''}" data-retur="periode">Ikut periode di atas</button>
+    </div>`;
+
+    if (returMode === 'tahun' && (!returTahun || returTahun.memuat)) {
+      return chips + `<div class="panel"><div class="empty">
+        <div class="spinner"></div>Menarik data retur sepanjang ${th}&hellip;</div></div>`;
+    }
+    if (returMode === 'tahun' && returTahun && returTahun.gagal) {
+      return chips + `<div class="panel"><div class="empty">
+        <b>Gagal menarik data setahun</b><br>
+        Coba muat ulang halaman, atau pakai pilihan "Ikut periode di atas".</div></div>`;
+    }
+
+    const semua = returMode === 'tahun' ? (returTahun ? returTahun.rows : []) : (D.kirim || []);
+    const cakupan = returMode === 'tahun' ? 'sepanjang ' + th : labelPeriode();
+    const BATAL = x => /batal/i.test(String(x.kelompok || ''));
+    const aktifSemua = semua.filter(x => !BATAL(x));
+
+    if (!semua.length) return chips + `<div class="panel"><div class="empty">
       <div class="big" style="background:var(--toska-soft);color:var(--toska)">${I.plug}</div>
       <b>Data pengiriman belum tersedia</b><br>
       Halaman ini membaca status paket dari Everpro.</div></div>`;
@@ -1828,10 +1881,10 @@
     const R = semua.filter(x => String(x.kelompok || '') === 'retur');
     const pb = petaPembeli();
 
-    if (!R.length) return `<div class="panel"><div class="empty">
+    if (!R.length) return chips + `<div class="panel"><div class="empty">
       <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
-      <b>Tidak ada paket retur pada ${esc(labelPeriode())}</b><br>
-      Dari ${fN(kirimAktif().length)} kiriman aktif, tidak satu pun kembali.</div></div>`;
+      <b>Tidak ada paket retur ${esc(cakupan)}</b><br>
+      Dari ${fN(aktifSemua.length)} kiriman aktif, tidak satu pun kembali.</div></div>`;
 
     // biaya yang tetap keluar walau barang tidak sampai
     const biaya = R.reduce((a, x) => a + (Number(x.harga) || 0), 0);
@@ -1842,7 +1895,7 @@
       return a + (o ? (Number(o.omzet) || 0) : 0);
     }, 0);
     const cocok = R.filter(x => cari(pb, kunciKirim(x))).length;
-    const rasio = kirimAktif().length ? R.length / kirimAktif().length * 100 : 0;
+    const rasio = aktifSemua.length ? R.length / aktifSemua.length * 100 : 0;
 
     // sebaran per kurir dan per CS, untuk melihat pola
     const per = (fn) => {
@@ -1884,7 +1937,7 @@
         </tr>`;
       }).join('');
 
-    return `<div class="kpis tiga">
+    return chips + `<div class="kpis tiga">
         ${kpi(I.balik,'var(--red)','var(--red-soft)','Paket retur',fN(R.length),'')}
         ${kpi(I.alert, rasio>=5?'var(--red)':'var(--amber)', rasio>=5?'var(--red-soft)':'var(--amber-soft)',
           'Rasio retur',fP(rasio),'')}
@@ -1905,7 +1958,7 @@
       ${daftar('Retur per Customer Service', perCS, 'var(--violet)')}
 
       <div class="sec"><h4>Daftar paket retur</h4>
-        <span class="note">${fN(R.length)} paket · diurutkan dari yang terbaru</span></div>
+        <span class="note">${fN(R.length)} paket ${esc(cakupan)} · dari ${fN(aktifSemua.length)} kiriman aktif</span></div>
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr>
           <th>Tanggal</th><th>Resi</th><th>No order</th><th>Pembeli</th><th>Provinsi</th>
@@ -2563,6 +2616,7 @@
     const b = e.target.closest('button[data-page]'); if(!b) return;
     page = b.dataset.page; buildNav(); render(); tutup(); window.scrollTo({top:0,behavior:'smooth'});
     if (butuhExtra()) muatExtra();
+    if (page==='retur' && returMode==='tahun') muatRetur();
   });
   document.getElementById('periods').addEventListener('click', e=>{
     const b = e.target.closest('button[data-p]'); if(!b) return;
@@ -2597,6 +2651,8 @@
       sel.classList.add('terpilih');
       return;
     }
+    const rt = e.target.closest('button[data-retur]');
+    if (rt) { returMode = rt.dataset.retur; if (returMode==='tahun') muatRetur(); render(); return; }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
