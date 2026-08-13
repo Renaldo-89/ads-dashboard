@@ -71,6 +71,29 @@
   ::-webkit-scrollbar { width:8px; height:8px; }
   ::-webkit-scrollbar-thumb { background:var(--scroll); border-radius:8px; }
 
+  /* ---------- kartu target GMV harian ---------- */
+  .target { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:14px 20px; margin:12px 0 6px; box-shadow:var(--bayang); }
+  .target-kiri { display:flex; align-items:baseline; gap:9px; flex-shrink:0; }
+  .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint); }
+  .target-kiri .v { font-size:22px; font-weight:700; letter-spacing:-.7px; }
+  .target-kiri .u { font-size:11px; font-weight:600; color:var(--faint); }
+  .target-bar { flex:1; min-width:150px; height:10px; border-radius:6px;
+    background:var(--line-2); overflow:hidden; position:relative; }
+  .target-isi { height:100%; border-radius:6px; animation:isiBar .95s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes isiBar { from { width:0; } }
+  .target-kanan { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+  .target-pct { font-size:17px; font-weight:700; letter-spacing:-.4px; }
+  .target-ket { font-size:11.5px; font-weight:500; color:var(--muted); line-height:1.45; }
+  .target-ket b { font-weight:700; }
+  @media (prefers-reduced-motion: reduce) { .target-isi { animation:none; } }
+  @media (max-width:620px) {
+    .target { gap:11px; padding:13px 15px; }
+    .target-bar { order:3; flex-basis:100%; min-width:0; }
+    .target-kanan { margin-left:auto; }
+  }
+
   /* ---------- kalender laba harian ---------- */
   .kal-bungkus { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(268px,100%),1fr)); gap:18px; }
   .kal-judul { font-size:12.5px; font-weight:700; margin:0 0 10px; letter-spacing:-.1px; }
@@ -865,6 +888,7 @@
     buildFilters(); buildNav(); render();
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
+    muatGmvHarian();
   }
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
@@ -1222,8 +1246,8 @@
     const cpc = t.clicks>0 ? t.spend/t.clicks : 0;
 
     return heroGMV()
-      + blokPendapatan(t, p)
       + blokTantangan()
+      + blokPendapatan(t, p)
       + kalenderLaba()
       + `<div class="sec"><h4>Iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
       <div class="kpis">
@@ -1290,60 +1314,72 @@
   }
   const adaKirim = () => kirimAktif().length > 0;
 
-  // ---------- tantangan GMV naik 5% per hari ----------
-  // Target tiap hari = GMV hari sebelumnya x 1,05. Hari pertama tidak punya
-  // pembanding, jadi tidak dinilai. Hari tanpa pesanan tetap dihitung sebagai
-  // nol dan otomatis gagal, karena itu memang hari tanpa penjualan.
-  const LAJU_TARGET = 1.05;
+  // ---------- tantangan GMV harian ----------
+  // Sengaja TIDAK mengikuti chip periode di atas. Targetnya selalu hari ini,
+  // dengan acuan GMV kemarin. Datanya ditarik sendiri untuk 30 hari terakhir
+  // supaya angkanya tidak berubah waktu kamu ganti periode.
+  const LAJU_TARGET = 1.02;          // target naik 2% dari hari sebelumnya
+  const JENDELA_GMV = 30;            // hari ke belakang untuk rentetan dan rata-rata
+
+  let gmvHarian = null;              // { peta:Map, memuat, gagal }
+
+  function muatGmvHarian() {
+    if (gmvHarian && (gmvHarian.memuat || !gmvHarian.gagal)) return;
+    gmvHarian = { peta: new Map(), memuat: true };
+    const hari = new Date();
+    const sampai = hari.toISOString().slice(0, 10);
+    const awal = new Date(hari.getTime() - (JENDELA_GMV + 1) * 864e5).toISOString().slice(0, 10);
+    tarikSales('globemerce&detail=1', awal, sampai)
+      .then(rows => {
+        const m = new Map();
+        for (const o of (rows || [])) {
+          if (!o.tanggal) continue;
+          m.set(o.tanggal, (m.get(o.tanggal) || 0) + (Number(o.pv) || 0));
+        }
+        gmvHarian = { peta: m, memuat: false };
+      })
+      .catch(() => { gmvHarian = { peta: new Map(), memuat: false, gagal: true }; })
+      .finally(() => { if (page === 'overview') render(); });
+  }
 
   function tantanganGMV() {
-    const P = D.pesanan || [];
-    if (!D._rentang) return { gagal: 'Data belum selesai dimuat.' };
-    if (!P.length) return { gagal: 'Belum ada pesanan Globemerce pada periode ini, '
-      + 'jadi GMV harian tidak bisa dihitung.' };
-    const { r } = D._rentang;
+    if (!gmvHarian || gmvHarian.memuat) return { memuat: true };
+    if (gmvHarian.gagal) return { gagal: 'Gagal menarik data GMV harian dari Globemerce.' };
 
-    // kumpulkan GMV per tanggal, lalu isi tanggal kosong dengan nol
-    const perHari = new Map();
-    for (const o of P) {
-      if (!o.tanggal) continue;
-      perHari.set(o.tanggal, (perHari.get(o.tanggal) || 0) + (Number(o.pv) || 0));
-    }
+    const peta = gmvHarian.peta;
+    const hariIni = new Date();
+    const tgl = n => new Date(hariIni.getTime() - n * 864e5).toISOString().slice(0, 10);
+
     const urut = [];
-    for (let d = new Date(r.from + 'T00:00:00'); d <= new Date(r.to + 'T00:00:00');
-         d.setDate(d.getDate() + 1)) {
-      const t = d.toISOString().slice(0, 10);
-      urut.push({ tanggal: t, gmv: perHari.get(t) || 0 });
+    for (let i = JENDELA_GMV; i >= 0; i--) {
+      const t = tgl(i);
+      urut.push({ tanggal: t, gmv: peta.get(t) || 0 });
     }
-    if (urut.length < 2) return { gagal: 'Periode yang dipilih hanya satu hari. '
-      + 'Target 5% butuh pembanding hari sebelumnya, jadi pilih periode minimal dua hari.' };
-    const adaGmv = urut.some(x => x.gmv > 0);
-    if (!adaGmv) return { gagal: 'Semua pesanan pada periode ini bernilai GMV nol, '
-      + 'jadi tidak ada yang bisa dibandingkan.' };
 
     let tercapai = 0, dinilai = 0, beruntun = 0, beruntunTerbaik = 0;
     for (let i = 1; i < urut.length; i++) {
-      const target = urut[i - 1].gmv * LAJU_TARGET;
-      urut[i].target = target;
-      if (urut[i - 1].gmv <= 0) { urut[i].nilai = null; continue; }  // tidak adil dinilai
+      const kemarin = urut[i - 1].gmv;
+      if (kemarin <= 0) { urut[i].nilai = null; continue; }   // target dari nol tidak adil
       dinilai++;
-      const lulus = urut[i].gmv >= target;
+      const lulus = urut[i].gmv >= kemarin * LAJU_TARGET;
       urut[i].nilai = lulus;
       if (lulus) { tercapai++; beruntun++; beruntunTerbaik = Math.max(beruntunTerbaik, beruntun); }
       else beruntun = 0;
     }
 
+    const ini = urut[urut.length - 1];          // hari ini
+    const lalu = urut[urut.length - 2];         // kemarin
+    const target = lalu.gmv * LAJU_TARGET;
+    const kurang = Math.max(0, target - ini.gmv);
     const total = urut.reduce((a, x) => a + x.gmv, 0);
-    const terakhir = urut[urut.length - 1];
+
     return {
-      hari: urut.length,
+      hariIni: ini.gmv, kemarin: lalu.gmv, target, kurang,
+      lulus: lalu.gmv > 0 && ini.gmv >= target,
+      belumBisaDinilai: lalu.gmv <= 0,
       rata: total / urut.length,
-      total,
-      tercapai, dinilai,
-      persen: dinilai ? tercapai / dinilai * 100 : 0,
+      tercapai, dinilai, persen: dinilai ? tercapai / dinilai * 100 : 0,
       beruntun, beruntunTerbaik,
-      hariIni: terakhir,
-      targetBesok: terakhir.gmv * LAJU_TARGET,
     };
   }
 
@@ -1445,39 +1481,36 @@
 
   function blokTantangan() {
     const c = tantanganGMV();
-    if (!c) return '';
-    if (c.gagal) return `<div class="sec"><h4>Tantangan GMV</h4>
-        <span class="note">target tiap hari: GMV kemarin naik 5%</span></div>
-      <div class="panel"><div class="empty">
-        <div class="big" style="background:var(--violet-soft);color:var(--violet)">${I.target}</div>
-        <b>Belum bisa dihitung</b><br>${esc(c.gagal)}</div></div>`;
-    const kena = c.persen >= 50;
-    const hariIniLulus = c.hariIni.nilai === true;
-    return `<div class="sec"><h4>Tantangan GMV</h4>
-        <span class="note">target tiap hari: GMV kemarin naik 5%</span></div>
-      <div class="kpis tiga">
-        ${kpi(I.spark,'var(--violet)','var(--violet-soft)','Rata-rata GMV per hari',
-          fN(Math.round(c.rata)),'')}
-        ${kpi(I.target, kena?'var(--green)':'var(--amber)', kena?'var(--green-soft)':'var(--amber-soft)',
-          'Target tercapai', fN(c.tercapai)+' dari '+fN(c.dinilai)+' hari','')}
-        ${kpi(I.up, c.persen>=50?'var(--green)':'var(--red)', c.persen>=50?'var(--green-soft)':'var(--red-soft)',
-          'Tingkat keberhasilan', fP(c.persen),'')}
-        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Rentetan terpanjang',
-          fN(c.beruntunTerbaik)+' hari','')}
-        ${kpi(I.cart, hariIniLulus?'var(--green)':'var(--muted)', hariIniLulus?'var(--green-soft)':'var(--line-2)',
-          'GMV hari terakhir', fN(Math.round(c.hariIni.gmv)),'')}
-        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Target besok',
-          fN(Math.round(c.targetBesok)),'')}
-      </div>
-      <div class="panel tight" style="margin-top:11px">
-        ${li({c: c.beruntun?'var(--green)':'var(--muted)', s: c.beruntun?'var(--green-soft)':'var(--line-2)',
-          ini: String(c.beruntun)},'Rentetan berjalan',
-          c.beruntun ? 'Sudah '+fN(c.beruntun)+' hari berturut-turut mencapai target'
-                     : 'Rentetan terputus, mulai lagi besok',
-          fN(Math.round(c.targetBesok)),'target besok',0)}
-        ${li({c:'var(--faint)',s:'var(--line-2)',ini:'i'},'Cara menilai',
-          'Hari yang didahului hari tanpa penjualan tidak ikut dinilai, karena target dari nol selalu nol',
-          fN(c.hari - 1 - c.dinilai),'hari dilewati',0)}
+    if (c.memuat) return `<div class="target"><div class="target-kiri">
+        <span class="k">TARGET HARI INI</span></div>
+      <div class="target-bar"></div>
+      <div class="target-kanan"><span class="target-ket">menarik GMV harian&hellip;</span></div></div>`;
+    if (c.gagal) return `<div class="target"><div class="target-kiri">
+        <span class="k">TARGET HARI INI</span></div>
+      <div class="target-kanan"><span class="target-ket">${esc(c.gagal)}</span></div></div>`;
+
+    const pct = c.target > 0 ? Math.min(100, c.hariIni / c.target * 100) : 0;
+    const w = c.lulus ? 'var(--green)' : c.belumBisaDinilai ? 'var(--muted)'
+      : pct >= 60 ? 'var(--amber)' : 'var(--red)';
+    const ket = c.belumBisaDinilai
+      ? 'Kemarin belum ada penjualan, jadi target hari ini belum bisa dipatok'
+      : c.lulus
+        ? `<b>Tercapai.</b> GMV hari ini ${fN(Math.round(c.hariIni))}, kemarin ${fN(Math.round(c.kemarin))}`
+        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi · sekarang ${fN(Math.round(c.hariIni))}`;
+
+    return `<div class="target">
+        <div class="target-kiri">
+          <span class="k">TARGET HARI INI</span>
+          <span class="v" style="color:${w}">${fN(Math.round(c.target))}</span>
+          <span class="u">GMV &middot; +2% dari kemarin</span>
+        </div>
+        <div class="target-bar">
+          <div class="target-isi" style="width:${pct.toFixed(1)}%;background:${w}"></div>
+        </div>
+        <div class="target-kanan">
+          <span class="target-pct" style="color:${w}">${fP(pct)}</span>
+          <span class="target-ket">${ket}${c.beruntun?' &middot; rentetan <b>'+fN(c.beruntun)+' hari</b>':''}</span>
+        </div>
       </div>`;
   }
 
