@@ -1223,6 +1223,7 @@
 
     return heroGMV()
       + blokPendapatan(t, p)
+      + blokTantangan()
       + kalenderLaba()
       + `<div class="sec"><h4>Iklan</h4><span class="note">dibanding periode sebelumnya</span></div>
       <div class="kpis">
@@ -1288,6 +1289,57 @@
     return m;
   }
   const adaKirim = () => kirimAktif().length > 0;
+
+  // ---------- tantangan GMV naik 5% per hari ----------
+  // Target tiap hari = GMV hari sebelumnya x 1,05. Hari pertama tidak punya
+  // pembanding, jadi tidak dinilai. Hari tanpa pesanan tetap dihitung sebagai
+  // nol dan otomatis gagal, karena itu memang hari tanpa penjualan.
+  const LAJU_TARGET = 1.05;
+
+  function tantanganGMV() {
+    const P = D.pesanan || [];
+    if (!P.length || !D._rentang) return null;
+    const { r } = D._rentang;
+
+    // kumpulkan GMV per tanggal, lalu isi tanggal kosong dengan nol
+    const perHari = new Map();
+    for (const o of P) {
+      if (!o.tanggal) continue;
+      perHari.set(o.tanggal, (perHari.get(o.tanggal) || 0) + (Number(o.pv) || 0));
+    }
+    const urut = [];
+    for (let d = new Date(r.from + 'T00:00:00'); d <= new Date(r.to + 'T00:00:00');
+         d.setDate(d.getDate() + 1)) {
+      const t = d.toISOString().slice(0, 10);
+      urut.push({ tanggal: t, gmv: perHari.get(t) || 0 });
+    }
+    if (urut.length < 2) return null;
+
+    let tercapai = 0, dinilai = 0, beruntun = 0, beruntunTerbaik = 0;
+    for (let i = 1; i < urut.length; i++) {
+      const target = urut[i - 1].gmv * LAJU_TARGET;
+      urut[i].target = target;
+      if (urut[i - 1].gmv <= 0) { urut[i].nilai = null; continue; }  // tidak adil dinilai
+      dinilai++;
+      const lulus = urut[i].gmv >= target;
+      urut[i].nilai = lulus;
+      if (lulus) { tercapai++; beruntun++; beruntunTerbaik = Math.max(beruntunTerbaik, beruntun); }
+      else beruntun = 0;
+    }
+
+    const total = urut.reduce((a, x) => a + x.gmv, 0);
+    const terakhir = urut[urut.length - 1];
+    return {
+      hari: urut.length,
+      rata: total / urut.length,
+      total,
+      tercapai, dinilai,
+      persen: dinilai ? tercapai / dinilai * 100 : 0,
+      beruntun, beruntunTerbaik,
+      hariIni: terakhir,
+      targetBesok: terakhir.gmv * LAJU_TARGET,
+    };
+  }
 
   // ---------- kalender laba harian ----------
   // Gross profit per hari dihitung dari tiap pesanan Globemerce (medan profit),
@@ -1382,6 +1434,39 @@
         <div class="kal-pilih" id="kal-pilih">
           <span class="kosong">Ketuk salah satu tanggal untuk melihat rinciannya.</span>
         </div>
+      </div>`;
+  }
+
+  function blokTantangan() {
+    const c = tantanganGMV();
+    if (!c) return '';
+    const kena = c.persen >= 50;
+    const hariIniLulus = c.hariIni.nilai === true;
+    return `<div class="sec"><h4>Tantangan GMV</h4>
+        <span class="note">target tiap hari: GMV kemarin naik 5%</span></div>
+      <div class="kpis tiga">
+        ${kpi(I.spark,'var(--violet)','var(--violet-soft)','Rata-rata GMV per hari',
+          fN(Math.round(c.rata)),'')}
+        ${kpi(I.target, kena?'var(--green)':'var(--amber)', kena?'var(--green-soft)':'var(--amber-soft)',
+          'Target tercapai', fN(c.tercapai)+' dari '+fN(c.dinilai)+' hari','')}
+        ${kpi(I.up, c.persen>=50?'var(--green)':'var(--red)', c.persen>=50?'var(--green-soft)':'var(--red-soft)',
+          'Tingkat keberhasilan', fP(c.persen),'')}
+        ${kpi(I.up,'var(--toska)','var(--toska-soft)','Rentetan terpanjang',
+          fN(c.beruntunTerbaik)+' hari','')}
+        ${kpi(I.cart, hariIniLulus?'var(--green)':'var(--muted)', hariIniLulus?'var(--green-soft)':'var(--line-2)',
+          'GMV hari terakhir', fN(Math.round(c.hariIni.gmv)),'')}
+        ${kpi(I.target,'var(--amber)','var(--amber-soft)','Target besok',
+          fN(Math.round(c.targetBesok)),'')}
+      </div>
+      <div class="panel tight" style="margin-top:11px">
+        ${li({c: c.beruntun?'var(--green)':'var(--muted)', s: c.beruntun?'var(--green-soft)':'var(--line-2)',
+          ini: String(c.beruntun)},'Rentetan berjalan',
+          c.beruntun ? 'Sudah '+fN(c.beruntun)+' hari berturut-turut mencapai target'
+                     : 'Rentetan terputus, mulai lagi besok',
+          fN(Math.round(c.targetBesok)),'target besok',0)}
+        ${li({c:'var(--faint)',s:'var(--line-2)',ini:'i'},'Cara menilai',
+          'Hari yang didahului hari tanpa penjualan tidak ikut dinilai, karena target dari nol selalu nol',
+          fN(c.hari - 1 - c.dinilai),'hari dilewati',0)}
       </div>`;
   }
 
