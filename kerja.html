@@ -1298,7 +1298,9 @@
 
   function tantanganGMV() {
     const P = D.pesanan || [];
-    if (!P.length || !D._rentang) return null;
+    if (!D._rentang) return { gagal: 'Data belum selesai dimuat.' };
+    if (!P.length) return { gagal: 'Belum ada pesanan Globemerce pada periode ini, '
+      + 'jadi GMV harian tidak bisa dihitung.' };
     const { r } = D._rentang;
 
     // kumpulkan GMV per tanggal, lalu isi tanggal kosong dengan nol
@@ -1313,7 +1315,11 @@
       const t = d.toISOString().slice(0, 10);
       urut.push({ tanggal: t, gmv: perHari.get(t) || 0 });
     }
-    if (urut.length < 2) return null;
+    if (urut.length < 2) return { gagal: 'Periode yang dipilih hanya satu hari. '
+      + 'Target 5% butuh pembanding hari sebelumnya, jadi pilih periode minimal dua hari.' };
+    const adaGmv = urut.some(x => x.gmv > 0);
+    if (!adaGmv) return { gagal: 'Semua pesanan pada periode ini bernilai GMV nol, '
+      + 'jadi tidak ada yang bisa dibandingkan.' };
 
     let tercapai = 0, dinilai = 0, beruntun = 0, beruntunTerbaik = 0;
     for (let i = 1; i < urut.length; i++) {
@@ -1440,6 +1446,11 @@
   function blokTantangan() {
     const c = tantanganGMV();
     if (!c) return '';
+    if (c.gagal) return `<div class="sec"><h4>Tantangan GMV</h4>
+        <span class="note">target tiap hari: GMV kemarin naik 5%</span></div>
+      <div class="panel"><div class="empty">
+        <div class="big" style="background:var(--violet-soft);color:var(--violet)">${I.target}</div>
+        <b>Belum bisa dihitung</b><br>${esc(c.gagal)}</div></div>`;
     const kena = c.persen >= 50;
     const hariIniLulus = c.hariIni.nilai === true;
     return `<div class="sec"><h4>Tantangan GMV</h4>
