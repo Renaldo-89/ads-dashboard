@@ -74,72 +74,40 @@
   /* ---------- kartu target GMV harian ---------- */
   .target { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
     background:var(--panel); border:1px solid var(--line); border-radius:18px;
-    padding:16px 20px; margin:12px 0 6px; box-shadow:var(--bayang);
-    position:relative; overflow:hidden; }
-  .target.lulus { border-color:var(--green);
-    box-shadow:0 0 0 1px var(--green), 0 10px 30px rgba(16,185,129,.22);
-    animation:napasKartu 2.4s ease-in-out infinite; }
+    padding:15px 20px; margin:12px 0 6px; box-shadow:var(--bayang); }
   .target-kiri { display:flex; align-items:baseline; gap:9px; flex-shrink:0; }
   .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint); }
   .target-kiri .v { font-size:23px; font-weight:700; letter-spacing:-.7px; }
   .target-kiri .u { font-size:11px; font-weight:600; color:var(--faint); }
 
-  /* jalur tidak dipotong, supaya api dan bara bisa menjulur ke atas */
-  .target-bar { flex:1; min-width:170px; height:14px; border-radius:7px;
-    background:var(--line-2); position:relative; overflow:visible; }
-  .target-bar::after { content:''; position:absolute; right:0; top:-3px; bottom:-3px; width:2px;
-    background:var(--faint); opacity:.5; border-radius:2px; }
-  .target-isi { height:100%; border-radius:7px; position:relative; overflow:hidden;
-    animation:isiBar 1.2s cubic-bezier(.34,1.45,.5,1) both; }
-
-  /* ---- listrik: kilat zigzag menyambar sepanjang bilah ---- */
-  .target-kilat { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-  .target-kilat polyline { fill:none; stroke:#fff; stroke-width:2.4; stroke-linecap:round;
-    stroke-linejoin:round; stroke-dasharray:14 150; filter:drop-shadow(0 0 3px #fff);
-    animation:sambar 1.25s linear infinite, kedip .16s steps(2,end) infinite; }
-  .target-isi.penuh .target-kilat polyline { animation-duration:.85s, .12s; stroke-width:2.8; }
-
-  /* ---- api: kobaran di ujung yang sedang dikejar ---- */
-  .target-api { position:absolute; top:50%; width:40px; height:40px; border-radius:50%;
-    transform:translate(-50%,-50%); pointer-events:none; filter:blur(7px); mix-blend-mode:screen;
-    background:radial-gradient(circle,rgba(255,247,190,.98) 0%,rgba(255,176,44,.85) 32%,
-      rgba(255,72,24,.42) 62%,transparent 76%);
-    animation:kobar .22s steps(2,end) infinite alternate, ayun 1.3s ease-in-out infinite; }
-  .target-bara { position:absolute; top:50%; width:4px; height:4px; border-radius:50%;
-    background:radial-gradient(circle,#FFE9A3,#FF7A1A); pointer-events:none; opacity:0;
-    animation:bara 1.5s linear infinite; }
+  .target-bar { flex:1; min-width:170px; height:11px; border-radius:99px;
+    background:var(--line-2); position:relative; }
+  /* isian menyala: gradasi terang di ujung + pendar sewarna statusnya */
+  .target-isi { height:100%; border-radius:99px; position:relative; overflow:hidden;
+    animation:isiBar 1.05s cubic-bezier(.22,1,.36,1) both; }
+  /* satu sapuan cahaya, pelan dan tidak ramai */
+  .target-isi::after { content:''; position:absolute; inset:0;
+    background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);
+    transform:translateX(-100%); animation:sapuTarget 2.8s 1s cubic-bezier(.4,0,.6,1) infinite; }
+  /* titik terang di batas capaian, berdenyut lembut */
+  .target-titik { position:absolute; top:50%; width:7px; height:7px; border-radius:50%;
+    transform:translate(-50%,-50%); background:#fff; animation:denyutTitik 1.9s ease-in-out infinite; }
 
   .target-kanan { display:flex; align-items:center; gap:14px; flex-shrink:0; }
   .target-pct { font-size:19px; font-weight:700; letter-spacing:-.5px; }
-  .target-pct.pop { animation:popAngka .8s .95s cubic-bezier(.34,1.7,.5,1) both; display:inline-block; }
   .target-ket { font-size:11.5px; font-weight:500; color:var(--muted); line-height:1.45; }
   .target-ket b { font-weight:700; color:var(--ink-2); }
-  .target-piala { font-size:17px; animation:lompat 1.1s .95s ease-out both; display:inline-block; }
 
   @keyframes isiBar { from { width:0; } }
-  @keyframes sambar { from { stroke-dashoffset:164; } to { stroke-dashoffset:0; } }
-  @keyframes kedip { 0%,100% { opacity:1; } 50% { opacity:.45; } }
-  @keyframes kobar { 0% { transform:translate(-50%,-50%) scale(1) ; opacity:.92; }
-    100% { transform:translate(-50%,-52%) scale(1.22); opacity:1; } }
-  @keyframes ayun { 0%,100% { margin-left:-1px; } 50% { margin-left:2px; } }
-  @keyframes bara { 0% { opacity:0; transform:translate(-50%,0) scale(.5); }
-    18% { opacity:1; }
-    100% { opacity:0; transform:translate(calc(-50% + var(--geser,4px)),-26px) scale(.2); } }
-  @keyframes napasKartu { 0%,100% { box-shadow:0 0 0 1px var(--green), 0 10px 30px rgba(16,185,129,.22); }
-    50% { box-shadow:0 0 0 2px var(--green), 0 12px 38px rgba(16,185,129,.4); } }
-  @keyframes popAngka { 0% { transform:scale(.6); opacity:0; } 60% { transform:scale(1.18); opacity:1; }
-    100% { transform:scale(1); opacity:1; } }
-  @keyframes lompat { 0% { transform:translateY(0) scale(.4); opacity:0; }
-    45% { transform:translateY(-9px) scale(1.25); opacity:1; }
-    70% { transform:translateY(0) scale(1); } 85% { transform:translateY(-3px); }
-    100% { transform:translateY(0) scale(1); } }
+  @keyframes sapuTarget { 0% { transform:translateX(-100%); } 40%,100% { transform:translateX(230%); } }
+  @keyframes denyutTitik { 0%,100% { transform:translate(-50%,-50%) scale(1); opacity:.9; }
+    50% { transform:translate(-50%,-50%) scale(1.3); opacity:1; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .target.lulus, .target-isi, .target-pct.pop, .target-piala { animation:none; }
-    .target-kilat, .target-api, .target-bara { display:none; }
+    .target-isi, .target-isi::after, .target-titik { animation:none; }
   }
   @media (max-width:620px) {
-    .target { gap:11px; padding:14px 15px; }
+    .target { gap:11px; padding:13px 15px; }
     .target-bar { order:3; flex-basis:100%; min-width:0; }
     .target-kanan { margin-left:auto; }
     .target-ket { flex-basis:100%; }
@@ -1541,39 +1509,34 @@
       <div class="target-kanan"><span class="target-ket">${esc(c.gagal)}</span></div></div>`;
 
     const pct = c.target > 0 ? Math.min(100, c.hariIni / c.target * 100) : 0;
-    const w = c.lulus ? 'var(--green)' : c.belumBisaDinilai ? 'var(--muted)'
-      : pct >= 60 ? 'var(--amber)' : 'var(--red)';
+    // warna inti dan warna pendar dipisah supaya nyalanya kuat tanpa jadi norak
+    const set = c.lulus ? ['#10B981', '#34D399', '16,185,129']
+      : c.belumBisaDinilai ? ['#8B87A8', '#A9A5C2', '139,135,168']
+      : pct >= 60 ? ['#F59E0B', '#FBBF24', '245,158,11']
+      : ['#EF4444', '#F87171', '239,68,68'];
+    const [inti, terang, rgb] = set;
     const ket = c.belumBisaDinilai
-      ? 'Kemarin belum ada penjualan, jadi target hari ini belum bisa dipatok'
+      ? 'Kemarin belum ada penjualan, target hari ini belum bisa dipatok'
       : c.lulus
         ? `<b>Tercapai.</b> GMV hari ini ${fN(Math.round(c.hariIni))}, kemarin ${fN(Math.round(c.kemarin))}`
-        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi · sekarang ${fN(Math.round(c.hariIni))}`;
+        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; sekarang ${fN(Math.round(c.hariIni))}`;
 
-    const penuh = pct >= 100;
-    // zigzag listrik, digambar melar mengikuti lebar bilah
-    const kilat = `<svg class="target-kilat" viewBox="0 0 100 14" preserveAspectRatio="none"
-      aria-hidden="true"><polyline points="0,7 7,3 13,11 20,4 27,10 34,3 41,11 48,4 55,10 62,3
-      69,11 76,4 83,10 90,3 97,10 100,7"/></svg>`;
-    const bara = [0, .45, .9].map((d, i) =>
-      `<span class="target-bara" style="left:${pct.toFixed(1)}%;--geser:${i===1?'-5px':(i?'7px':'2px')};
-        animation-delay:${d}s"></span>`).join('');
-    return `<div class="target${c.lulus?' lulus':''}">
+    return `<div class="target">
         <div class="target-kiri">
           <span class="k">TARGET HARI INI</span>
-          <span class="v" style="color:${w}">${fN(Math.round(c.target))}</span>
+          <span class="v" style="color:${inti};text-shadow:0 0 18px rgba(${rgb},.45)">${fN(Math.round(c.target))}</span>
           <span class="u">GMV &middot; +2% dari kemarin</span>
         </div>
         <div class="target-bar">
-          <div class="target-isi${penuh?' penuh':''}" style="width:${pct.toFixed(1)}%;
-            background:${w};background-image:linear-gradient(90deg,rgba(255,255,255,0) 45%,rgba(255,255,255,.3) 100%)">${
-            pct > 3 ? kilat : ''}</div>
-          ${!c.belumBisaDinilai && pct > 1 ? `<span class="target-api"
-            style="left:${pct.toFixed(1)}%"></span>${bara}` : ''}
+          <div class="target-isi" style="width:${pct.toFixed(1)}%;
+            background:linear-gradient(90deg,${inti},${terang});
+            box-shadow:0 0 10px rgba(${rgb},.75), 0 0 20px rgba(${rgb},.45)"></div>
+          ${pct > 1 && !c.belumBisaDinilai ? `<span class="target-titik" style="left:${pct.toFixed(1)}%;
+            box-shadow:0 0 8px ${terang}, 0 0 16px rgba(${rgb},.8)"></span>` : ''}
         </div>
         <div class="target-kanan">
-          <span class="target-pct pop" style="color:${w}">${fP(pct)}</span>
-          <span class="target-ket">${c.lulus?'<span class="target-piala">&#127942;</span> ':''}${ket}${
-            c.beruntun?' &middot; rentetan <b>'+fN(c.beruntun)+' hari</b>':''}</span>
+          <span class="target-pct" style="color:${inti};text-shadow:0 0 16px rgba(${rgb},.4)">${fP(pct)}</span>
+          <span class="target-ket">${ket}${c.beruntun?' &middot; rentetan <b>'+fN(c.beruntun)+' hari</b>':''}</span>
         </div>
       </div>`;
   }
