@@ -74,24 +74,57 @@
   /* ---------- kartu target GMV harian ---------- */
   .target { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
     background:var(--panel); border:1px solid var(--line); border-radius:18px;
-    padding:14px 20px; margin:12px 0 6px; box-shadow:var(--bayang); }
+    padding:15px 20px; margin:12px 0 6px; box-shadow:var(--bayang);
+    position:relative; overflow:hidden; }
+  .target.lulus { border-color:var(--green); box-shadow:0 0 0 1px var(--green), 0 10px 28px rgba(16,185,129,.18); }
   .target-kiri { display:flex; align-items:baseline; gap:9px; flex-shrink:0; }
   .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint); }
-  .target-kiri .v { font-size:22px; font-weight:700; letter-spacing:-.7px; }
+  .target-kiri .v { font-size:23px; font-weight:700; letter-spacing:-.7px; }
   .target-kiri .u { font-size:11px; font-weight:600; color:var(--faint); }
-  .target-bar { flex:1; min-width:150px; height:10px; border-radius:6px;
+
+  .target-bar { flex:1; min-width:160px; height:13px; border-radius:7px;
     background:var(--line-2); overflow:hidden; position:relative; }
-  .target-isi { height:100%; border-radius:6px; animation:isiBar .95s cubic-bezier(.22,1,.36,1) both; }
-  @keyframes isiBar { from { width:0; } }
+  /* garis tipis penanda 100%, supaya kelihatan seberapa jauh sisanya */
+  .target-bar::after { content:''; position:absolute; right:0; top:0; bottom:0; width:2px;
+    background:var(--faint); opacity:.45; }
+  .target-isi { height:100%; border-radius:7px; position:relative; overflow:hidden;
+    animation:isiBar 1.15s cubic-bezier(.34,1.4,.5,1) both; }
+  /* kilau yang menyapu terus, memberi kesan masih bergerak */
+  .target-isi::after { content:''; position:absolute; inset:0; border-radius:7px;
+    background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.5) 50%,transparent 80%);
+    transform:translateX(-100%); animation:sapu 2.1s 1.1s ease-in-out infinite; }
+  .target-isi.penuh::after { animation-duration:1.5s; }
+  /* ujung bilah berdenyut selama target belum tercapai */
+  .target-ujung { position:absolute; top:50%; width:15px; height:15px; border-radius:50%;
+    transform:translate(-50%,-50%); opacity:.32; animation:denyutUjung 1.5s ease-in-out infinite; }
+
   .target-kanan { display:flex; align-items:center; gap:14px; flex-shrink:0; }
-  .target-pct { font-size:17px; font-weight:700; letter-spacing:-.4px; }
+  .target-pct { font-size:19px; font-weight:700; letter-spacing:-.5px; }
+  .target-pct.pop { animation:popAngka .75s .95s cubic-bezier(.34,1.7,.5,1) both; display:inline-block; }
   .target-ket { font-size:11.5px; font-weight:500; color:var(--muted); line-height:1.45; }
-  .target-ket b { font-weight:700; }
-  @media (prefers-reduced-motion: reduce) { .target-isi { animation:none; } }
+  .target-ket b { font-weight:700; color:var(--ink-2); }
+  .target-piala { font-size:17px; animation:lompat 1.1s .95s ease-out both; display:inline-block; }
+
+  @keyframes isiBar { from { width:0; } }
+  @keyframes sapu { 0% { transform:translateX(-100%); } 55%,100% { transform:translateX(100%); } }
+  @keyframes denyutUjung { 0%,100% { transform:translate(-50%,-50%) scale(1); opacity:.32; }
+    50% { transform:translate(-50%,-50%) scale(1.7); opacity:.08; } }
+  @keyframes popAngka { 0% { transform:scale(.6); opacity:0; } 60% { transform:scale(1.18); opacity:1; }
+    100% { transform:scale(1); opacity:1; } }
+  @keyframes lompat { 0% { transform:translateY(0) scale(.4); opacity:0; }
+    45% { transform:translateY(-9px) scale(1.25); opacity:1; }
+    70% { transform:translateY(0) scale(1); } 85% { transform:translateY(-3px); }
+    100% { transform:translateY(0) scale(1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .target-isi, .target-isi::after, .target-ujung, .target-pct.pop, .target-piala { animation:none; }
+    .target-ujung { display:none; }
+  }
   @media (max-width:620px) {
     .target { gap:11px; padding:13px 15px; }
     .target-bar { order:3; flex-basis:100%; min-width:0; }
     .target-kanan { margin-left:auto; }
+    .target-ket { flex-basis:100%; }
   }
 
   /* ---------- kalender laba harian ---------- */
@@ -1498,18 +1531,23 @@
         ? `<b>Tercapai.</b> GMV hari ini ${fN(Math.round(c.hariIni))}, kemarin ${fN(Math.round(c.kemarin))}`
         : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi · sekarang ${fN(Math.round(c.hariIni))}`;
 
-    return `<div class="target">
+    const penuh = pct >= 100;
+    return `<div class="target${c.lulus?' lulus':''}">
         <div class="target-kiri">
           <span class="k">TARGET HARI INI</span>
           <span class="v" style="color:${w}">${fN(Math.round(c.target))}</span>
           <span class="u">GMV &middot; +2% dari kemarin</span>
         </div>
         <div class="target-bar">
-          <div class="target-isi" style="width:${pct.toFixed(1)}%;background:${w}"></div>
+          <div class="target-isi${penuh?' penuh':''}" style="width:${pct.toFixed(1)}%;
+            background:${w};background-image:linear-gradient(90deg,rgba(255,255,255,0) 45%,rgba(255,255,255,.32) 100%)"></div>
+          ${!penuh && !c.belumBisaDinilai
+            ? `<span class="target-ujung" style="left:${pct.toFixed(1)}%;background:${w}"></span>` : ''}
         </div>
         <div class="target-kanan">
-          <span class="target-pct" style="color:${w}">${fP(pct)}</span>
-          <span class="target-ket">${ket}${c.beruntun?' &middot; rentetan <b>'+fN(c.beruntun)+' hari</b>':''}</span>
+          <span class="target-pct pop" style="color:${w}">${fP(pct)}</span>
+          <span class="target-ket">${c.lulus?'<span class="target-piala">&#127942;</span> ':''}${ket}${
+            c.beruntun?' &middot; rentetan <b>'+fN(c.beruntun)+' hari</b>':''}</span>
         </div>
       </div>`;
   }
@@ -2585,7 +2623,8 @@
   // Nilai sudah terlanjur jadi teks berformat ("Rp4,6jt", "51,1%", "22,13x").
   // Jadi bagian angkanya dipotong, dihitung ulang tiap frame, lalu ditempel
   // kembali di antara awalan dan akhiran aslinya. Format apa pun ikut terjaga.
-  const SASARAN_ANGKA = '.kpi .v, .gcard .v, .laba .v, .sc .v, .pod .nilai';
+  const SASARAN_ANGKA = '.kpi .v, .gcard .v, .laba .v, .sc .v, .pod .nilai,'
+    + ' .target-kiri .v, .target-pct';
   const kurangGerak = () => window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
