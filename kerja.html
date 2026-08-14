@@ -75,9 +75,12 @@
   .target { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
     background:var(--panel); border:1px solid var(--line); border-radius:18px;
     padding:15px 20px; margin:12px 0 6px; box-shadow:var(--bayang); }
-  .target-kiri { display:flex; align-items:baseline; gap:9px; flex-shrink:0; }
-  .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint); }
-  .target-kiri .v { font-size:23px; font-weight:700; letter-spacing:-.7px; }
+  .target-kiri { display:flex; align-items:baseline; gap:8px; flex-shrink:0; }
+  .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint);
+    align-self:center; }
+  .target-kiri .v { font-size:27px; font-weight:700; letter-spacing:-1px; }
+  .target-kiri .bagi { font-size:15px; font-weight:600; color:var(--faint); }
+  .target-kiri .t { font-size:15px; font-weight:700; color:var(--muted); }
   .target-kiri .u { font-size:11px; font-weight:600; color:var(--faint); }
 
   .target-bar { flex:1; min-width:170px; height:11px; border-radius:99px;
@@ -1518,14 +1521,16 @@
     const ket = c.belumBisaDinilai
       ? 'Kemarin belum ada penjualan, target hari ini belum bisa dipatok'
       : c.lulus
-        ? `<b>Tercapai.</b> GMV hari ini ${fN(Math.round(c.hariIni))}, kemarin ${fN(Math.round(c.kemarin))}`
-        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; sekarang ${fN(Math.round(c.hariIni))}`;
+        ? `<b>Tercapai.</b> Kemarin ${fN(Math.round(c.kemarin))}`
+        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; kemarin ${fN(Math.round(c.kemarin))}`;
 
     return `<div class="target">
         <div class="target-kiri">
-          <span class="k">TARGET HARI INI</span>
-          <span class="v" style="color:${inti};text-shadow:0 0 18px rgba(${rgb},.45)">${fN(Math.round(c.target))}</span>
-          <span class="u">GMV &middot; +2% dari kemarin</span>
+          <span class="k">GMV HARI INI</span>
+          <span class="v" style="color:${inti};text-shadow:0 0 18px rgba(${rgb},.45)">${fN(Math.round(c.hariIni))}</span>
+          <span class="bagi">/</span>
+          <span class="t">${fN(Math.round(c.target))}</span>
+          <span class="u">target &middot; +2% dari kemarin</span>
         </div>
         <div class="target-bar">
           <div class="target-isi" style="width:${pct.toFixed(1)}%;
