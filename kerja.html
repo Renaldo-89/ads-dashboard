@@ -1087,7 +1087,10 @@
   const cbTunda = x => /tertunda|pending|proses/i.test(String(x.cashback_status||''));
 
   // cashback tertunda yang estimasi pencairannya sudah lewat
-  const hariIni = () => new Date().toISOString().slice(0,10);
+  // Selalu pakai waktu lokal lewat iso(). toISOString memakai UTC, dan di Jakarta
+  // (UTC+7) itu meleset satu hari untuk semua jam sebelum 07.00 pagi.
+  const tglLokal = d => iso(d === undefined ? new Date() : new Date(d));
+  const hariIni = () => tglLokal();
   function telatCair(c) {
     if (!c || c.status !== 'tertunda' || !c.est) return 0;
     const s = Math.floor((Date.parse(hariIni()) - Date.parse(c.est)) / 864e5);
@@ -1349,8 +1352,8 @@
     if (gmvHarian && (gmvHarian.memuat || !gmvHarian.gagal)) return;
     gmvHarian = { peta: new Map(), memuat: true };
     const hari = new Date();
-    const sampai = hari.toISOString().slice(0, 10);
-    const awal = new Date(hari.getTime() - (JENDELA_GMV + 1) * 864e5).toISOString().slice(0, 10);
+    const sampai = tglLokal(hari);
+    const awal = tglLokal(hari.getTime() - (JENDELA_GMV + 1) * 864e5);
     tarikSales('globemerce&detail=1', awal, sampai)
       .then(rows => {
         const m = new Map();
@@ -1370,7 +1373,7 @@
 
     const peta = gmvHarian.peta;
     const hariIni = new Date();
-    const tgl = n => new Date(hariIni.getTime() - n * 864e5).toISOString().slice(0, 10);
+    const tgl = n => tglLokal(hariIni.getTime() - n * 864e5);
 
     const urut = [];
     for (let i = JENDELA_GMV; i >= 0; i--) {
@@ -1431,7 +1434,7 @@
     if (!(D.pesanan || []).length) return '';
     const H = labaHarian();
     const { r } = D._rentang;
-    const hariIniStr = new Date().toISOString().slice(0, 10);
+    const hariIniStr = tglLokal();
 
     const nilai = [...H.values()].map(x => Math.abs(x.laba)).filter(v => v > 0);
     const puncak = nilai.length ? Math.max(...nilai) : 1;
@@ -2016,7 +2019,7 @@
     render();
     const kini = new Date().getFullYear();
     const dari = th + '-01-01';
-    const sampai = th === kini ? new Date().toISOString().slice(0, 10) : th + '-12-31';
+    const sampai = th === kini ? tglLokal() : th + '-12-31';
     // Pesanan Globemerce setahun ikut ditarik. Tanpa ini, retur dari bulan lalu
     // tidak punya lawan untuk dicocokkan karena D.pesanan hanya berisi periode terpilih.
     Promise.all([
