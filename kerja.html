@@ -906,42 +906,42 @@
     const r = rentang(period), pr = sebelum(r);
 
     // --- semua permintaan inti berjalan bersamaan ---
-    const tugasIklan = IKLAN.flatMap(id => [
+    const csAja = AKU.peran === 'cs';
+    const kosong = Promise.resolve([]);
+    // Peran cs tidak berwenang membuka data ini. Tugasnya tidak dibuat sama sekali,
+    // bukan dibuat lalu diabaikan — kalau dibuat, permintaannya tetap terkirim
+    // dan hanya menambah beban tanpa hasil.
+    const tugasIklan = csAja ? [] : IKLAN.flatMap(id => [
       tarik(id, FI, r.from, r.to).then(rows=>['now',id,rows]).catch(()=>['now',id,null]),
       tarik(id, FI_PREV, pr.from, pr.to).then(rows=>['prev',id,rows]).catch(()=>['prev',id,[]]),
     ]);
-    const tugasShop = tarik('tiktok_shop', KAND_SHOP[0], r.from, r.to)
-      .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
+    const tugasShop = csAja ? Promise.resolve({ status:'off', rows:[], field:null })
+      : tarik('tiktok_shop', KAND_SHOP[0], r.from, r.to)
+        .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
     const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to)
       .then(rows=>({ ok:true, rows })).catch(()=>({ ok:false, rows:[] }));
     // ringkasan seluruh tim, tanpa data pelanggan; boleh dibuka semua peran
     const tugasTim = tarikSales('globemerce&cs=1', r.from, r.to).catch(()=>[]);
-    const tugasGmv = tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
+    const tugasGmv = csAja ? kosong : tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
     // Everpro lewat API resmi di Worker; kalau gagal, pakai berkas hasil sinkronisasi lama
     const tugasKirim = tarikSales('everpro&detail=1', pr.from, r.to)
       .then(rows=>({ sumber:'api', rows }))
       .catch(()=> fetch('data/everpro-orders.json' + (BUST?('?t='+BUST):''))
         .then(x=>x.ok?x.json():{data:[]}).then(j=>({ sumber:'berkas', rows:j.data||[] }))
         .catch(()=>({ sumber:'kosong', rows:[] })));
-    const tugasEp = tarikSales('everpro', pr.from, r.to)
-      .then(rows=>({ sumber:'api', data:rows }))
-      .catch(()=> fetch('data/everpro.json' + (BUST?('?t='+BUST):''))
-        .then(x=>x.ok?x.json():null).catch(()=>null));
+    const tugasEp = csAja ? Promise.resolve(null)
+      : tarikSales('everpro', pr.from, r.to)
+        .then(rows=>({ sumber:'api', data:rows }))
+        .catch(()=> fetch('data/everpro.json' + (BUST?('?t='+BUST):''))
+          .then(x=>x.ok?x.json():null).catch(()=>null));
     // status pencairan cashback dari halaman My Balance, dicocokkan lewat resi
-    const tugasCb = fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
-      .then(x=>x.ok?x.json():null).catch(()=>null);
+    const tugasCb = csAja ? Promise.resolve(null)
+      : fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
+        .then(x=>x.ok?x.json():null).catch(()=>null);
 
-    const kosong = Promise.resolve([]);
-    const csAja = AKU.peran === 'cs';
     const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile, tim] = await Promise.all([
-      csAja ? Promise.resolve([]) : Promise.all(tugasIklan),
-      csAja ? Promise.resolve({ status:'off', rows:[], field:null }) : tugasShop,
-      tugasGm,
-      csAja ? kosong : tugasGmv,
-      tugasKirim,
-      csAja ? Promise.resolve(null) : tugasEp,
-      csAja ? Promise.resolve(null) : tugasCb,
-      tugasTim,
+      Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv,
+      tugasKirim, tugasEp, tugasCb, tugasTim,
     ]);
 
     const iklan={}, prev={};
@@ -1010,7 +1010,7 @@
     buildFilters(); buildNav(); render();
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
-    muatGmvHarian();
+    if (AKU.peran !== 'cs') muatGmvHarian();
   }
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
@@ -3146,7 +3146,7 @@
   document.getElementById('reload').addEventListener('click', ()=>{ BUST = String(Date.now()); D.extra = null; muat(); });
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
 
-  buildFilters(); buildNav(); mulai();
+  buildFilters(); mulai();   // menu dibangun setelah peran diketahui, supaya tidak berkelip
 })();
 </script>
 </body>
