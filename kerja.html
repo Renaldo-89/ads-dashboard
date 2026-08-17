@@ -862,6 +862,7 @@
     catatHariMasuk();
     tampilkanIdentitas();
     if (AKU.peran === 'cs') page = 'cs';
+    buildNav();          // menu tampil lebih dulu, tidak menunggu data
     muat();
   }
 
@@ -1000,7 +1001,7 @@
           tim: tim || [], _rentang:{ r, pr } };
 
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
+    const ok = IKLAN.filter(id=>(iklan[id]||{}).status==='ok').length;
     document.getElementById('live-txt').textContent = 'Segar ' + jam;
     document.getElementById('live').classList.toggle('off', ok===0);
     document.getElementById('loading').style.display='none';
@@ -2750,7 +2751,7 @@
   function pgInsight() {
     const out = [];
     const t = agg(allRows()), p = aggPrev(), om = omzet();
-    const belum = IKLAN.filter(id=>D.iklan[id].status!=='ok').map(id=>PLAT[id].nama);
+    const belum = IKLAN.filter(id=>(D.iklan[id]||{}).status!=='ok').map(id=>PLAT[id].nama);
     if (belum.length) out.push(['setup','var(--muted)','var(--line-2)', belum.join(' dan ')+' belum terhubung, jadi angka di Overview belum mencakup seluruh biaya iklanmu.']);
     if (D.shop.status!=='ok') out.push(['setup','var(--muted)','var(--line-2)','TikTok Shop belum terhubung. Begitu tersambung, ROAS gabungan dan kolom omzet terisi sendiri.']);
 
@@ -2761,7 +2762,7 @@
       out.push([r>=2?'bagus':'perhatian', r>=2?'var(--green)':'var(--red)', r>=2?'var(--green-soft)':'var(--red-soft)',
         'ROAS gabungan '+r.toFixed(2).replace('.',',')+'× — setiap Rp1.000 biaya iklan menghasilkan '+fIDR(r*1000)+' omzet.']); }
 
-    const per = IKLAN.filter(id=>D.iklan[id].status==='ok').map(id=>{ const a=agg(rowsOf(id));
+    const per = IKLAN.filter(id=>(D.iklan[id]||{}).status==='ok').map(id=>{ const a=agg(rowsOf(id));
       return { nama:PLAT[id].nama, spend:a.spend, conv:a.conversions, cpa:a.conversions>0?a.spend/a.conversions:null }; })
       .filter(x=>x.spend>0);
     const dgn = per.filter(x=>x.cpa!==null).sort((a,b)=>a.cpa-b.cpa);
