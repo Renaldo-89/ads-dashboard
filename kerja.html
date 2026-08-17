@@ -120,6 +120,43 @@
     .target-ket { flex:1 1 100%; }
   }
 
+  /* ---------- kartu tugas follow-up ---------- */
+  .fu { border-bottom:1px solid var(--line-2); }
+  .fu:last-child { border-bottom:none; }
+  .fu-atas { display:flex; align-items:center; gap:11px; padding:13px 2px; cursor:pointer;
+    flex-wrap:wrap; }
+  .fu-atas:hover { background:var(--hover); }
+  .fu-hari { font-size:11px; font-weight:700; color:var(--faint); letter-spacing:.3px;
+    flex-shrink:0; }
+  .fu-nama { font-size:13.5px; font-weight:700; letter-spacing:-.2px; }
+  .fu-prod { font-size:11.5px; color:var(--muted); font-weight:500; }
+  .fu-judul { font-size:12.5px; color:var(--ink-2); font-weight:600; flex:1; min-width:120px; }
+  .fu-tanda { font-size:17px; color:var(--faint); font-weight:700; flex-shrink:0; width:18px;
+    text-align:center; }
+  .fu.buka { background:var(--line-2); border-radius:14px; margin:4px 0; }
+  .fu.buka .fu-atas:hover { background:transparent; }
+  .fu-isi { padding:2px 14px 15px; }
+  .fu-baris { margin-bottom:11px; font-size:12.5px; }
+  .fu-baris b { display:block; font-size:10.5px; letter-spacing:.6px; color:var(--faint);
+    margin-bottom:5px; }
+  .fu-baris ul { margin:0; padding-left:18px; }
+  .fu-baris li { margin-bottom:3px; line-height:1.5; }
+  .fu-chat { margin:0 0 7px; padding:12px 14px; border-radius:12px; background:var(--panel);
+    border:1px solid var(--line); font-family:inherit; font-size:12.5px; line-height:1.6;
+    white-space:pre-wrap; }
+  .fu-salin { border:1px solid var(--line); background:var(--panel); color:var(--ink-2);
+    padding:6px 13px; border-radius:9px; font-size:11.5px; font-weight:600;
+    font-family:inherit; cursor:pointer; }
+  .fu-salin:hover { border-color:var(--violet); color:var(--violet); }
+  .fu-rujuk { display:flex; gap:9px; align-items:flex-start; padding:11px 13px;
+    border-radius:12px; background:var(--amber-soft); color:var(--amber-ink);
+    font-size:12px; font-weight:500; line-height:1.5; }
+  .fu-rujuk svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+  @media (max-width:620px) {
+    .fu-judul { flex-basis:100%; min-width:0; }
+    .fu-atas { gap:8px; }
+  }
+
   /* ---------- kalender laba harian ---------- */
   .kal-bungkus { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(268px,100%),1fr)); gap:18px; }
   .kal-judul { font-size:12.5px; font-weight:700; margin:0 0 10px; letter-spacing:-.1px; }
@@ -1961,6 +1998,259 @@
         </tr></thead><tbody>${baris}</tbody></table></div></div>`;
   }
 
+  // ---------- mesin jadwal follow-up ----------
+  // Dua jalur. Pelanggan baru mengikuti SOP 28 hari; pelanggan repeat lebih
+  // longgar karena sudah tahu cara pakai. Coffiy tidak dijadwalkan.
+  // Lama pakai dihitung jumlah unit x 30 hari.
+  const HARI_PER_UNIT = 30;
+
+  const PRODUK = [
+    { kode:'COFFIY', pola:/coffi?y/i, label:'Coffiy',  bidang:null, lewati:true },
+    { kode:'DVN',    pola:/\bdvn\b/i, label:'DVN',     bidang:'kulit' },
+    { kode:'EROJAN', pola:/erojan/i,  label:'EROJAN',  bidang:'stamina' },
+    { kode:'SGLOW',  pola:/s[\s\-_]?glow/i, label:'S-Glow', bidang:'kuku & rambut' },
+    { kode:'NOVIA',  pola:/novia/i,   label:'Novia',   bidang:'kesehatan kewanitaan' },
+  ];
+
+  // Tips berupa kebiasaan sehari-hari. Bukan anjuran pengobatan, bukan klaim khasiat.
+  const TIPS = {
+    DVN: ['Pakai tabir surya tiap pagi, walau di dalam ruangan',
+          'Cukupkan air putih, kulit ikut terpengaruh cairan tubuh',
+          'Usahakan tidur di jam yang sama tiap malam'],
+    EROJAN: ['Tidur cukup, jangan menumpuk kurang tidur di akhir pekan',
+             'Olahraga ringan rutin lebih baik daripada berat tapi jarang',
+             'Kurangi rokok dan alkohol, keduanya menahan hasil'],
+    SGLOW: ['Cukupkan asupan protein, kuku dan rambut dibentuk dari itu',
+            'Jangan keramas dengan air terlalu panas',
+            'Hindari mengikat rambut terlalu kencang setiap hari'],
+    NOVIA: ['Pilih pakaian dalam berbahan katun',
+            'Jaga area tetap kering, ganti bila terasa lembap',
+            'Hindari sabun pewangi pada area sensitif'],
+  };
+
+  // Peringatan khusus: keluhan yang tidak boleh dijawab sendiri oleh CS
+  const RUJUK_DOKTER = {
+    NOVIA: 'Kalau pelanggan mengeluh nyeri, keputihan tidak normal, atau siklus terganggu, '
+         + 'arahkan ke dokter. Jangan memberi saran pengobatan.',
+    EROJAN: 'Kalau pelanggan menyebut keluhan jantung, tekanan darah, atau sedang minum obat rutin, '
+          + 'arahkan ke dokter sebelum melanjutkan konsumsi.',
+  };
+
+  function kenaliProduk(o) {
+    for (const p of (o.produk || [])) {
+      const n = String(p.nama || '');
+      for (const d of PRODUK) if (d.pola.test(n)) return d;
+    }
+    return null;
+  }
+
+  const tambahHari = (tgl, n) => tglLokal(new Date(tgl + 'T00:00:00').getTime() + n * 864e5);
+  const selisihHari = (a, b) =>
+    Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
+
+  // Isi tiap sentuhan. Teks contoh chat mengikuti SOP; untuk produk selain EROJAN,
+  // aturan dosisnya TIDAK dikarang — CS diminta mengisi sesuai anjuran kemasan.
+  function isiSentuhan(hari, d, jalur) {
+    const nama = d ? d.label : 'produk';
+    const tips = (d && TIPS[d.kode]) ? TIPS[d.kode] : null;
+    if (jalur === 'repeat') {
+      if (hari === 1) return {
+        judul: 'Konfirmasi paket & terima kasih',
+        tugas: ['Pastikan paket sudah diterima dengan baik',
+                'Ucapkan terima kasih atas pembelian ulangnya'],
+        chat: `Halo Kak, terima kasih sudah order ${nama} lagi. `
+            + `Paketnya sudah diterima dengan baik ya Kak?`,
+        catatan: ['Jangan mengulang edukasi cara konsumsi, pelanggan sudah tahu',
+                  'Cukup singkat, jangan bertele-tele'],
+      };
+      if (hari === 15) return {
+        judul: 'Tips ringan sesuai produk',
+        tugas: ['Bagikan 2 tips kebiasaan sehat', 'Tanyakan singkat kondisinya'],
+        chat: `Halo Kak, sedikit tips ya biar hasilnya makin terasa:\n`
+            + (tips ? tips.slice(0, 2).map(t => '• ' + t).join('\n') : '• (sesuaikan dengan produk)')
+            + `\n\nSejauh ini gimana Kak?`,
+        catatan: ['Tips saja, jangan menawarkan pembelian di sini'],
+      };
+      return null;
+    }
+    // jalur pelanggan baru, mengikuti SOP
+    const S = {
+      1: { judul:'Edukasi konsumsi & pantangan',
+        tugas:['Jelaskan cara konsumsi', 'Jelaskan pantangan singkat & jelas',
+               'Ingatkan pentingnya konsistensi'],
+        chat: d && d.kode === 'EROJAN'
+          ? 'Halo Kak,\nCara konsumsi EROJAN:\n• 1 kapsul pagi setelah makan\n'
+            + '• 1 kapsul malam setelah makan\n\nAgar hasilnya optimal:\n'
+            + '• Minum rutin setiap hari\n• Usahakan di jam yang sama\n'
+            + '• Perbanyak air putih\n• Kurangi begadang, rokok, dan alkohol\n'
+            + '• Hindari bersamaan dengan kopi atau teh kental\n\n'
+            + 'Kalau ada yang ingin ditanyakan, hubungi saya ya Kak.'
+          : `Halo Kak,\nCara konsumsi ${nama}: (isi sesuai anjuran di kemasan)\n\n`
+            + 'Agar hasilnya optimal:\n• Minum rutin setiap hari\n'
+            + '• Usahakan di jam yang sama\n• Perbanyak air putih\n\n'
+            + 'Kalau ada yang ingin ditanyakan, hubungi saya ya Kak.',
+        catatan:['Jangan menjanjikan hasil instan', 'Catat tanggal mulai konsumsi',
+                 'Jangan membahas repeat order'] },
+      3: { judul:'Reminder & cek kondisi awal',
+        tugas:['Reminder konsumsi dengan bahasa halus', 'Tanyakan kondisi awal'],
+        chat:'Halo Kak, aku mau ingetin sedikit ya, semoga sudah mulai rutin diminum.\n'
+           + 'Sejauh ini aman kan Kak?\nBiar aku bisa bantu pantau, sebelum konsumsi '
+           + 'biasanya kondisinya ada di skala berapa ya Kak (1–10)?',
+        catatan:['Jangan meminta foto before–after', 'Jangan memaksa customer menjawab',
+                 'Catat kondisi awalnya'] },
+      7: { judul:'Cek rutin & kendala',
+        tugas:['Tanyakan apakah konsumsi rutin', 'Gali kendala: lupa, jam minum, kondisi badan'],
+        chat:`Halo Kak, sudah masuk 1 minggu ya konsumsi ${nama}.\n`
+           + 'Selama seminggu ini sudah rutin belum Kak? Ada kendala nggak sejauh ini?',
+        catatan:['Dengarkan lebih banyak, jangan menyela', 'Berikan solusi kecil',
+                 'Jangan bahas repeat order'] },
+      14: { judul:'Cek perubahan awal',
+        tugas:['Tanyakan perubahan kecil yang dirasakan', 'Tekankan konsistensi'],
+        chat:`Halo Kak, sudah 2 minggu ya konsumsi ${nama}.\n`
+           + 'Biasanya di fase ini mulai ada perubahan kecil. Sejauh ini Kak merasa ada perubahan nggak?',
+        catatan:['Validasi semua jawaban customer', 'Jangan menjanjikan hasil besar'] },
+      21: { judul:'Tips kesehatan & evaluasi',
+        tugas:['Bagikan 2–3 tips ringan', 'Tanyakan progres lanjutan'],
+        chat:'Halo Kak, sedikit tips ya supaya hasilnya makin terasa:\n'
+           + (tips ? tips.map(t => '• ' + t).join('\n') : '• Tidur cukup\n• Cukupkan air putih')
+           + '\n\nSejauh ini badan Kak terasa gimana?',
+        catatan:['Tips cukup 2–3 poin', 'Jangan mulai menawarkan pembelian ulang'] },
+      27: { judul:'Kontrol hasil pemakaian',
+        tugas:['Tanyakan hasil pemakaian keseluruhan', 'Dengarkan pengalamannya'],
+        chat:`Halo Kak, sudah hampir 1 bulan ya konsumsi ${nama}.\n`
+           + 'Sejauh ini yang paling Kak rasakan apa?',
+        catatan:['Jangan langsung closing', 'Catat potensi repeat'] },
+    };
+    return S[hari] || null;
+  }
+
+  function sentuhanStok(nama, jalur) {
+    return {
+      judul: 'Reminder stok & repeat order',
+      tugas: ['Ingatkan stok mulai menipis', 'Tawarkan kelanjutan tanpa tekanan'],
+      chat: `Halo Kak, biasanya di hari-hari ini stok ${nama} sudah mulai menipis ya.\n`
+          + 'Kalau Kak mau lanjut, aku bisa bantu siapkan pengiriman berikutnya.',
+      catatan: ['Jangan menekan keputusan customer',
+                'Jangan gunakan kata promo atau diskon mendesak'],
+    };
+  }
+
+  // Jadwal satu pesanan. Mengembalikan null kalau produknya dilewati atau tanggalnya kosong.
+  function jadwalPesanan(o) {
+    if (!o.tanggal) return null;
+    const d = kenaliProduk(o);
+    if (d && d.lewati) return null;               // Coffiy
+    const unit = Math.max(1, Number(o.unit) || 1);
+    const lamaPakai = unit * HARI_PER_UNIT;
+    const jalur = o.jenis_pembeli === 'repeat' ? 'repeat' : 'baru';
+    const nama = d ? d.label : 'produknya';
+    const hariList = jalur === 'repeat' ? [1, 15] : [1, 3, 7, 14, 21, 27];
+    const hariStok = Math.max(2, lamaPakai - (jalur === 'repeat' ? 3 : 2));
+
+    const titik = [];
+    for (const h of hariList) {
+      if (h >= hariStok) continue;                // jangan menabrak reminder stok
+      const isi = isiSentuhan(h, d, jalur);
+      if (isi) titik.push({ hari: h, tanggal: tambahHari(o.tanggal, h), ...isi });
+    }
+    titik.push({ hari: hariStok, tanggal: tambahHari(o.tanggal, hariStok),
+      ...sentuhanStok(nama, jalur), stok: true });
+
+    return { pesanan: o, produk: d, jalur, unit, lamaPakai,
+      habis: tambahHari(o.tanggal, lamaPakai), titik };
+  }
+
+  // Semua tugas dari pesanan yang boleh dilihat pengguna ini
+  function tugasFollowUp(pesanan) {
+    const hari = tglLokal();
+    const keluar = { hariIni: [], terlewat: [], akanDatang: [], tanpaJadwal: 0 };
+    for (const o of (pesanan || [])) {
+      const j = jadwalPesanan(o);
+      if (!j) { keluar.tanpaJadwal++; continue; }
+      for (const t of j.titik) {
+        const beda = selisihHari(hari, t.tanggal);   // negatif = sudah lewat
+        const baris = { ...t, j, beda };
+        if (beda === 0) keluar.hariIni.push(baris);
+        else if (beda < 0 && beda >= -7) keluar.terlewat.push(baris);
+        else if (beda > 0 && beda <= 3) keluar.akanDatang.push(baris);
+      }
+    }
+    keluar.terlewat.sort((a, b) => b.beda - a.beda);
+    keluar.akanDatang.sort((a, b) => a.beda - b.beda);
+    return keluar;
+  }
+
+  // ---------- tampilan tugas follow-up ----------
+  // Hanya untuk login CS. Admin tidak melihat ini; baginya halaman CS tetap
+  // berisi peringkat dan daftar pelanggan seperti biasa.
+  let fuBuka = null;      // nomor pesanan + hari yang sedang dibuka
+
+  function kartuTugas(t, jenis) {
+    const o = t.j.pesanan;
+    const d = t.j.produk;
+    const kunci = o.no + '-' + t.hari;
+    const buka = fuBuka === kunci;
+    const w = jenis === 'terlewat' ? 'var(--red)' : jenis === 'hariIni' ? 'var(--green)' : 'var(--muted)';
+    const ws = jenis === 'terlewat' ? 'var(--red-soft)' : jenis === 'hariIni' ? 'var(--green-soft)' : 'var(--line-2)';
+    const cap = jenis === 'terlewat'
+      ? 'Terlewat ' + Math.abs(t.beda) + ' hari'
+      : jenis === 'hariIni' ? 'Hari ini' : 'Dalam ' + t.beda + ' hari';
+    const rujuk = d && RUJUK_DOKTER[d.kode];
+
+    return `<div class="fu ${buka?'buka':''}" data-fu="${esc(kunci)}">
+      <div class="fu-atas">
+        <span class="pill2" style="background:${ws};color:${w}">${cap}</span>
+        <span class="fu-hari">Hari ${t.hari}</span>
+        <span class="fu-nama">${esc(o.pembeli || '—')}</span>
+        <span class="fu-prod">${d ? esc(d.label) : 'produk lain'}
+          ${t.j.unit > 1 ? '· ' + fN(t.j.unit) + ' unit' : ''}
+          · ${t.j.jalur === 'repeat' ? 'repeat' : 'baru'}</span>
+        <span class="fu-judul">${esc(t.judul)}</span>
+        <span class="fu-tanda">${buka ? '&minus;' : '+'}</span>
+      </div>
+      ${buka ? `<div class="fu-isi">
+        <div class="fu-baris"><b>Telepon</b><span>${o.telepon ? esc(o.telepon) : '—'}
+          &middot; order #${esc(o.no)} &middot; beli ${sd(o.tanggal)}
+          &middot; habis ${sd(t.j.habis)}</span></div>
+        <div class="fu-baris"><b>Tugas</b><ul>${t.tugas.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+        <div class="fu-baris"><b>Contoh chat</b><pre class="fu-chat">${esc(t.chat)}</pre>
+          <button class="fu-salin" data-salin="${esc(kunci)}">Salin chat</button></div>
+        <div class="fu-baris"><b>Catatan</b><ul>${t.catatan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+        ${rujuk ? `<div class="fu-rujuk">${I.alert} ${esc(rujuk)}</div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+
+  function blokFollowUp(pesanan) {
+    const T = tugasFollowUp(pesanan);
+    const jum = T.hariIni.length + T.terlewat.length;
+    if (!jum && !T.akanDatang.length) {
+      return `<div class="sec"><h4>Follow-up</h4></div>
+        <div class="panel"><div class="empty">
+          <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
+          <b>Tidak ada follow-up jatuh tempo</b><br>
+          Semua pelanggan pada periode ini sudah di luar jadwal sentuhan.
+          ${T.tanpaJadwal ? '<br><span style="font-size:12px">' + fN(T.tanpaJadwal)
+            + ' pesanan tanpa jadwal (Coffiy atau produk tak dikenali)</span>' : ''}</div></div>`;
+    }
+    const bagian = (judul, arr, jenis) => arr.length
+      ? `<div class="sec"><h4>${judul}</h4><span class="note">${fN(arr.length)} pelanggan</span></div>
+         <div class="panel tight">${arr.map(t => kartuTugas(t, jenis)).join('')}</div>`
+      : '';
+    return `<div class="sec"><h4>Follow-up</h4>
+        <span class="note">jadwal mengikuti SOP &middot; pelanggan repeat lebih longgar</span></div>
+      <div class="kpis tiga">
+        ${kpi(I.alert, T.terlewat.length?'var(--red)':'var(--muted)',
+          T.terlewat.length?'var(--red-soft)':'var(--line-2)','Terlewat',fN(T.terlewat.length),'')}
+        ${kpi(I.clock, T.hariIni.length?'var(--green)':'var(--muted)',
+          T.hariIni.length?'var(--green-soft)':'var(--line-2)','Jatuh tempo hari ini',fN(T.hariIni.length),'')}
+        ${kpi(I.list,'var(--toska)','var(--toska-soft)','3 hari ke depan',fN(T.akanDatang.length),'')}
+      </div>
+      ${bagian('Terlewat', T.terlewat, 'terlewat')}
+      ${bagian('Hari ini', T.hariIni, 'hariIni')}
+      ${bagian('Akan datang', T.akanDatang, 'akanDatang')}`;
+  }
+
   // ---------- halaman Customer Service ----------
   // Nama CS dibaca dari kolom Sender di Globemerce (medan "agen").
   // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
@@ -2202,7 +2492,8 @@
           ${adaOngkir?'<th class="num">Ongkir</th>':''}</tr></thead>
         <tbody>${baris}</tbody></table></div></div>`;
 
-    return kartu + blokOngkir + peringkat + tabel;
+    const fu = AKU.peran === 'cs' ? blokFollowUp(dipilihSemua) : '';
+    return fu + kartu + blokOngkir + peringkat + tabel;
   }
 
   // ---------- data retur setahun ----------
@@ -3067,6 +3358,19 @@
       sel.classList.add('terpilih');
       return;
     }
+    const salin = e.target.closest('button[data-salin]');
+    if (salin) {
+      const pre = salin.parentElement.querySelector('.fu-chat');
+      if (pre) {
+        navigator.clipboard.writeText(pre.textContent).then(() => {
+          const t = salin.textContent; salin.textContent = 'Tersalin';
+          setTimeout(() => { salin.textContent = t; }, 1400);
+        }).catch(() => { salin.textContent = 'Gagal menyalin'; });
+      }
+      return;
+    }
+    const fu = e.target.closest('.fu[data-fu]');
+    if (fu) { fuBuka = fuBuka === fu.dataset.fu ? null : fu.dataset.fu; render(); return; }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
