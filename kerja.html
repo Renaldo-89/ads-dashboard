@@ -1382,30 +1382,44 @@
     const urut = [];
     for (let i = JENDELA_GMV; i >= 0; i--) {
       const t = tgl(i);
-      urut.push({ tanggal: t, gmv: peta.get(t) || 0 });
+      urut.push({ tanggal: t, gmv: peta.get(t) || 0,
+        minggu: new Date(t + 'T00:00:00').getDay() === 0 });
     }
+
+    // Minggu biasanya libur. Kalau hari sebelumnya Minggu dan memang kosong,
+    // acuan mundur ke Sabtu supaya target Senin tidak jadi nol.
+    const acuan = i => {
+      let j = i - 1;
+      if (j >= 0 && urut[j].minggu && urut[j].gmv <= 0) j -= 1;
+      return j >= 0 ? urut[j] : null;
+    };
 
     let tercapai = 0, dinilai = 0, beruntun = 0, beruntunTerbaik = 0;
     for (let i = 1; i < urut.length; i++) {
-      const kemarin = urut[i - 1].gmv;
-      if (kemarin <= 0) { urut[i].nilai = null; continue; }   // target dari nol tidak adil
+      // Minggu kosong tidak dinilai, supaya rentetan tidak putus tiap pekan
+      if (urut[i].minggu && urut[i].gmv <= 0) { urut[i].nilai = null; continue; }
+      const a = acuan(i);
+      if (!a || a.gmv <= 0) { urut[i].nilai = null; continue; }   // target dari nol tidak adil
       dinilai++;
-      const lulus = urut[i].gmv >= kemarin * LAJU_TARGET;
+      const lulus = urut[i].gmv >= a.gmv * LAJU_TARGET;
       urut[i].nilai = lulus;
       if (lulus) { tercapai++; beruntun++; beruntunTerbaik = Math.max(beruntunTerbaik, beruntun); }
       else beruntun = 0;
     }
 
     const ini = urut[urut.length - 1];          // hari ini
-    const lalu = urut[urut.length - 2];         // kemarin
-    const target = lalu.gmv * LAJU_TARGET;
+    const a = acuan(urut.length - 1);           // acuan, biasanya kemarin
+    const lompatMinggu = !!(a && a.tanggal !== urut[urut.length - 2].tanggal);
+    const dasar = a ? a.gmv : 0;
+    const target = dasar * LAJU_TARGET;
     const kurang = Math.max(0, target - ini.gmv);
-    const total = urut.reduce((a, x) => a + x.gmv, 0);
+    const total = urut.reduce((a2, x) => a2 + x.gmv, 0);
 
     return {
-      hariIni: ini.gmv, kemarin: lalu.gmv, target, kurang,
-      lulus: lalu.gmv > 0 && ini.gmv >= target,
-      belumBisaDinilai: lalu.gmv <= 0,
+      hariIni: ini.gmv, kemarin: dasar, target, kurang,
+      tglAcuan: a ? a.tanggal : null, lompatMinggu,
+      lulus: dasar > 0 && ini.gmv >= target,
+      belumBisaDinilai: dasar <= 0,
       rata: total / urut.length,
       tercapai, dinilai, persen: dinilai ? tercapai / dinilai * 100 : 0,
       beruntun, beruntunTerbaik,
@@ -1527,9 +1541,13 @@
     const [inti, terang, rgb] = set;
     const ket = c.belumBisaDinilai
       ? 'Kemarin belum ada penjualan, target hari ini belum bisa dipatok'
-      : c.lulus
-        ? `<b>Tercapai.</b> Kemarin ${fN(Math.round(c.kemarin))}`
-        : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; kemarin ${fN(Math.round(c.kemarin))}`;
+      : (() => {
+          const asal = c.lompatMinggu
+            ? 'Sabtu ' + fN(Math.round(c.kemarin)) + ' (Minggu libur)'
+            : 'kemarin ' + fN(Math.round(c.kemarin));
+          return c.lulus ? `<b>Tercapai.</b> Acuan ${asal}`
+            : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; acuan ${asal}`;
+        })();
 
     return `<div class="target">
         <div class="target-kiri">
