@@ -75,7 +75,9 @@
   .target { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
     background:var(--panel); border:1px solid var(--line); border-radius:18px;
     padding:15px 20px; margin:12px 0 6px; box-shadow:var(--bayang); }
-  .target-kiri { display:flex; align-items:baseline; gap:8px; flex-shrink:0; }
+  /* semua anak boleh menyusut; tanpa ini kolom kanan memaksa kartu melebar */
+  .target > * { min-width:0; }
+  .target-kiri { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
   .target-kiri .k { font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--faint);
     align-self:center; }
   .target-kiri .v { font-size:27px; font-weight:700; letter-spacing:-1px; }
@@ -83,7 +85,7 @@
   .target-kiri .t { font-size:15px; font-weight:700; color:var(--muted); }
   .target-kiri .u { font-size:11px; font-weight:600; color:var(--faint); }
 
-  .target-bar { flex:1; min-width:170px; height:11px; border-radius:99px;
+  .target-bar { flex:1 1 170px; min-width:120px; height:11px; border-radius:99px;
     background:var(--line-2); position:relative; }
   /* isian menyala: gradasi terang di ujung + pendar sewarna statusnya */
   .target-isi { height:100%; border-radius:99px; position:relative; overflow:hidden;
@@ -96,9 +98,10 @@
   .target-titik { position:absolute; top:50%; width:7px; height:7px; border-radius:50%;
     transform:translate(-50%,-50%); background:#fff; animation:denyutTitik 1.9s ease-in-out infinite; }
 
-  .target-kanan { display:flex; align-items:center; gap:14px; flex-shrink:0; }
-  .target-pct { font-size:19px; font-weight:700; letter-spacing:-.5px; }
-  .target-ket { font-size:11.5px; font-weight:500; color:var(--muted); line-height:1.45; }
+  .target-kanan { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .target-pct { font-size:19px; font-weight:700; letter-spacing:-.5px; flex-shrink:0; }
+  .target-ket { font-size:11.5px; font-weight:500; color:var(--muted); line-height:1.45;
+    min-width:0; flex:1 1 auto; }
   .target-ket b { font-weight:700; color:var(--ink-2); }
 
   @keyframes isiBar { from { width:0; } }
@@ -110,10 +113,11 @@
     .target-isi, .target-isi::after, .target-titik { animation:none; }
   }
   @media (max-width:620px) {
-    .target { gap:11px; padding:13px 15px; }
-    .target-bar { order:3; flex-basis:100%; min-width:0; }
-    .target-kanan { margin-left:auto; }
-    .target-ket { flex-basis:100%; }
+    .target { gap:10px; padding:14px 15px; }
+    .target-kiri  { order:1; flex:1 1 100%; }
+    .target-bar   { order:2; flex:1 1 100%; width:100%; min-width:0; }
+    .target-kanan { order:3; flex:1 1 100%; justify-content:space-between; }
+    .target-ket { flex:1 1 100%; }
   }
 
   /* ---------- kalender laba harian ---------- */
@@ -1536,7 +1540,7 @@
           <span class="u">target &middot; +2% dari kemarin</span>
         </div>
         <div class="target-bar">
-          <div class="target-isi" style="width:${pct.toFixed(1)}%;
+          <div class="target-isi" style="width:${pct.toFixed(1)}%;${pct > 0 ? 'min-width:9px;' : ''}
             background:linear-gradient(90deg,${inti},${terang});
             box-shadow:0 0 10px rgba(${rgb},.75), 0 0 20px rgba(${rgb},.45)"></div>
           ${pct > 1 && !c.belumBisaDinilai ? `<span class="target-titik" style="left:${pct.toFixed(1)}%;
