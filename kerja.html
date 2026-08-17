@@ -2058,9 +2058,28 @@
   }
 
   function pgCS() {
+    // Peringkat diambil dari ringkasan tim (semua CS), rincian pelanggan dari
+    // pesanan yang boleh dilihat pengguna ini. Keduanya digabung per nama.
+    const lokal = rekapCS();
+    const dipilihSemua = lokal.flatMap(c => c.pesanan);
+    const petaLokal = new Map(lokal.map(c => [c.nama, c]));
     const tim = peringkatTim();
-    const R = tim.length ? tim : rekapCS();
-    R.luar = R.luar || [];
+    let R;
+    if (tim.length) {
+      R = tim.map(t => {
+        const l = petaLokal.get(t.nama);
+        return { ...t,
+          pesanan: l ? l.pesanan : [],
+          bermasalah: l ? l.bermasalah : 0,
+          dilacak: l ? l.dilacak : 0,
+          terkirim: l ? l.terkirim : 0 };
+      });
+      R.luar = tim.luar || [];
+    } else {
+      R = lokal;
+      R.luar = lokal.luar || [];
+    }
+    const punyaKirim = lokal.some(c => c.dilacak > 0);
     if (!R.length) return `<div class="panel"><div class="empty">
       <b>Belum ada data Customer Service</b><br>
       Nama CS dibaca dari kolom <b>Sender</b> di Globemerce, dan belum ada pesanan di periode ini.</div></div>`;
