@@ -723,8 +723,12 @@
   // ---------- kunci dashboard ----------
   // Sandi disimpan di peramban ini saja, tidak pernah masuk ke repo.
   // Worker menolak permintaan tanpa sandi yang benar.
-  let SANDI = '';
-  try { SANDI = localStorage.getItem('kunci') || ''; } catch (e) {}
+  let SANDI = '', PENGGUNA = '';
+  let AKU = { peran: 'admin', nama: '', agen: null };
+  try {
+    SANDI = localStorage.getItem('kunci') || '';
+    PENGGUNA = localStorage.getItem('pengguna') || '';
+  } catch (e) {}
 
   function mintaSandi(pesan) {
     return new Promise(resolve => {
@@ -739,6 +743,11 @@
             <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
         <h2 style="font-size:17px;font-weight:700;margin:0 0 4px;letter-spacing:-.3px">Hiro Dashboard</h2>
         <p style="font-size:13px;color:var(--muted);margin:0 0 18px">${pesan || 'Masukkan sandi untuk membuka'}</p>
+        <input id="u-in" type="text" autocomplete="username" placeholder="Nama pengguna"
+          value="${esc(PENGGUNA)}"
+          style="width:100%;padding:12px 14px;border-radius:13px;border:1px solid var(--line);
+          background:var(--panel);color:var(--ink);font-size:14px;font-family:inherit;outline:none;
+          margin-bottom:8px">
         <input id="k-in" type="password" autocomplete="current-password" placeholder="Sandi"
           style="width:100%;padding:12px 14px;border-radius:13px;border:1px solid var(--line);
           background:var(--panel);color:var(--ink);font-size:14px;font-family:inherit;outline:none">
@@ -747,36 +756,56 @@
           cursor:pointer">Buka</button></div>`;
       document.body.appendChild(l);
       const inp = l.querySelector('#k-in');
-      inp.focus();
+      const inu = l.querySelector('#u-in');
+      (PENGGUNA ? inp : inu).focus();
       const kirim = () => {
-        const v = inp.value.trim();
-        if (!v) { inp.focus(); return; }
-        l.remove(); resolve(v);
+        const v = inp.value.trim(), u = inu.value.trim();
+        if (!v || !u) { (u ? inp : inu).focus(); return; }
+        l.remove(); resolve({ sandi: v, pengguna: u });
       };
       l.querySelector('#k-ok').addEventListener('click', kirim);
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') kirim(); });
+      [inu, inp].forEach(el => el.addEventListener('keydown',
+        e => { if (e.key === 'Enter') kirim(); }));
     });
   }
 
   // Satu pintu untuk semua panggilan ke Worker: sandi selalu ikut,
   // dan kalau ditolak, sandi lama dibuang lalu diminta ulang.
   async function ambil(url) {
-    const res = await fetch(url, { headers: SANDI ? { 'X-Kunci': SANDI } : {} });
+    const h = {};
+    if (SANDI) h['X-Kunci'] = SANDI;
+    if (PENGGUNA) h['X-Pengguna'] = PENGGUNA;
+    const res = await fetch(url, { headers: h });
     if (res.status === 401) {
       try { localStorage.removeItem('kunci'); } catch (e) {}
-      SANDI = await mintaSandi('Sandi salah, coba lagi');
-      try { localStorage.setItem('kunci', SANDI); } catch (e) {}
+      const m = await mintaSandi('Nama pengguna atau sandi salah');
+      SANDI = m.sandi; PENGGUNA = m.pengguna;
+      simpanMasuk();
       return ambil(url);
     }
     return res;
   }
+  function simpanMasuk() {
+    try { localStorage.setItem('kunci', SANDI); localStorage.setItem('pengguna', PENGGUNA); }
+    catch (e) {}
+  }
 
   // Sandi diminta lebih dulu kalau peramban ini belum pernah menyimpannya
   async function mulai() {
-    if (!SANDI) {
-      SANDI = await mintaSandi();
-      try { localStorage.setItem('kunci', SANDI); } catch (e) {}
+    if (!SANDI || !PENGGUNA) {
+      const m = await mintaSandi();
+      SANDI = m.sandi; PENGGUNA = m.pengguna;
+      simpanMasuk();
     }
+    // Worker yang memutuskan peran, bukan peramban. Jadi tidak bisa dipalsukan
+    // dengan mengubah localStorage.
+    try {
+      const r = await ambil(PROXY + '?aku=1');
+      const j = await r.json();
+      if (j && j.data) AKU = j.data;
+    } catch (e) { /* Worker versi lama: anggap admin */ }
+    document.body.dataset.peran = AKU.peran;
+    if (AKU.peran === 'cs') page = 'cs';
     muat();
   }
 
@@ -829,6 +858,8 @@
       .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
     const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to)
       .then(rows=>({ ok:true, rows })).catch(()=>({ ok:false, rows:[] }));
+    // ringkasan seluruh tim, tanpa data pelanggan; boleh dibuka semua peran
+    const tugasTim = tarikSales('globemerce&cs=1', r.from, r.to).catch(()=>[]);
     const tugasGmv = tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
     // Everpro lewat API resmi di Worker; kalau gagal, pakai berkas hasil sinkronisasi lama
     const tugasKirim = tarikSales('everpro&detail=1', pr.from, r.to)
@@ -844,8 +875,17 @@
     const tugasCb = fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
       .then(x=>x.ok?x.json():null).catch(()=>null);
 
-    const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile] = await Promise.all([
-      Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv, tugasKirim, tugasEp, tugasCb,
+    const kosong = Promise.resolve([]);
+    const csAja = AKU.peran === 'cs';
+    const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile, tim] = await Promise.all([
+      csAja ? Promise.resolve([]) : Promise.all(tugasIklan),
+      csAja ? Promise.resolve({ status:'off', rows:[], field:null }) : tugasShop,
+      tugasGm,
+      csAja ? kosong : tugasGmv,
+      tugasKirim,
+      csAja ? Promise.resolve(null) : tugasEp,
+      csAja ? Promise.resolve(null) : tugasCb,
+      tugasTim,
     ]);
 
     const iklan={}, prev={};
@@ -901,7 +941,7 @@
     }
 
     D = { iklan, prev, shop, extra:null, sales, prevSales, pesanan, gmv, kirim, cashback,
-          _rentang:{ r, pr } };
+          tim: tim || [], _rentang:{ r, pr } };
 
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>iklan[id].status==='ok').length;
@@ -1172,9 +1212,13 @@
   }
 
   // ---------- navigasi ----------
+  // Peran cs hanya melihat menu Customer Service. Ini sekadar merapikan tampilan;
+  // pengamanan sebenarnya ada di Worker, yang menolak data lain dengan 403.
+  const menuBoleh = m => AKU.peran === 'admin' || m.id === 'cs';
+
   function buildNav() {
     [1,2,3].forEach(g=>{
-      document.getElementById('nav'+g).innerHTML = MENU.filter(m=>m.g===g).map(m=>{
+      document.getElementById('nav'+g).innerHTML = MENU.filter(m=>m.g===g && menuBoleh(m)).map(m=>{
         let tag='';
         if (m.plat) {
           const st = m.plat==='tiktok_shop' ? D.shop.status : (D.iklan[m.plat]||{}).status;
@@ -1187,10 +1231,17 @@
         return '<button data-page="'+m.id+'" class="'+(page===m.id?'on':'')+'">'+m.ic
           +'<span class="lbl">'+m.lbl+'</span>'+tag+'</button>';
       }).join('');
+      const kotak = document.getElementById('nav'+g);
+      const judul = kotak.previousElementSibling;
+      if (judul && judul.classList.contains('navlbl'))
+        judul.style.display = kotak.children.length ? '' : 'none';
     });
   }
 
   function render() {
+    // Peran cs dikunci di halamannya sendiri. Ini hanya merapikan tampilan;
+    // yang benar-benar menahan data tetap Worker, yang menjawab 403.
+    if (AKU.peran === 'cs' && page !== 'cs') page = 'cs';
     const m = MENU.find(x=>x.id===page) || MENU[0];
     document.getElementById('ptitle').textContent = m.t;
     let crumb = rentang(period).label;
@@ -1858,13 +1909,16 @@
   // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
   let fCS = 'all';
 
-  // Nama tampilan berbeda dari nama di Globemerce
-  const NAMA_CS = { yara: 'Lili' };
+  // Nama tampilan berbeda dari nama di Globemerce.
+  // Beberapa nama boleh menunjuk orang yang sama; barisnya nanti digabung.
+  const NAMA_CS = { yara: 'Lili', riana: 'Intan', intan: 'Intan' };
   // Bukan Customer Service. Disembunyikan dari peringkat, tapi tetap dihitung di catatan
   // supaya total di halaman ini masih bisa dicocokkan dengan halaman Globemerce.
   const BUKAN_CS = { NANDA: 'order sendiri', DINDA: 'advertiser' };
-  const namaCS = n => NAMA_CS[String(n||'').trim()] || NAMA_CS[String(n||'').trim().toLowerCase()]
-    || (String(n||'').trim() || '(tanpa nama)');
+  const namaCS = n => {
+    const t = String(n || '').trim();
+    return NAMA_CS[t] || NAMA_CS[t.toLowerCase()] || (t || '(tanpa nama)');
+  };
   const inisial = n => String(n||'?').trim().slice(0,2).toUpperCase();
   const MAHKOTA = '<svg class="mahkota" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
     + '<path d="M3 8.5l3.6 3 3.3-5.2a1.3 1.3 0 0 1 2.2 0l3.3 5.2 3.6-3c.9-.7 2.1.2 1.7 1.3l-2.5 7.4'
@@ -1903,6 +1957,35 @@
     return daftar;
   }
 
+  // Peringkat tim dibangun dari ringkasan Worker, bukan dari daftar pesanan.
+  // Peran cs memang tidak menerima pesanan CS lain, tapi tetap boleh melihat
+  // angka timnya. Peran admin memakai sumber yang sama supaya angkanya seragam.
+  function peringkatTim() {
+    // Dua nama Sender bisa menunjuk satu orang (mis. INTAN dan RIANA),
+    // jadi digabung berdasarkan nama tampilannya.
+    const gabung = new Map();
+    for (const x of (D.tim || [])) {
+      const n = String(x.agen || '').trim().toUpperCase();
+      if (!n || BUKAN_CS[n]) continue;
+      const kunci = namaCS(x.agen);
+      if (!gabung.has(kunci)) gabung.set(kunci, {
+        nama: kunci, asli: [], order: 0, gmv: 0, baru: 0, repeat: 0 });
+      const a = gabung.get(kunci);
+      a.asli.push(String(x.agen || '').trim());
+      a.order  += Number(x.order) || 0;
+      a.gmv    += Number(x.gmv) || 0;
+      a.baru   += Number(x.baru) || 0;
+      a.repeat += Number(x.repeat) || 0;
+    }
+    const baris = [...gabung.values()].sort((a, b) => b.gmv - a.gmv || b.order - a.order);
+    const luar = (D.tim || []).filter(x => BUKAN_CS[String(x.agen || '').trim().toUpperCase()])
+      .map(x => ({ nama: String(x.agen || '').trim(),
+        alasan: BUKAN_CS[String(x.agen || '').trim().toUpperCase()], n: Number(x.order) || 0 }))
+      .sort((a, b) => b.n - a.n);
+    baris.luar = luar;
+    return baris;
+  }
+
   // tiga teratas ditampilkan sebagai podium, juara di tengah
   function podium(R) {
     const tiga = R.slice(0, 3);
@@ -1919,7 +2002,9 @@
   }
 
   function pgCS() {
-    const R = rekapCS();
+    const tim = peringkatTim();
+    const R = tim.length ? tim : rekapCS();
+    R.luar = R.luar || [];
     if (!R.length) return `<div class="panel"><div class="empty">
       <b>Belum ada data Customer Service</b><br>
       Nama CS dibaca dari kolom <b>Sender</b> di Globemerce, dan belum ada pesanan di periode ini.</div></div>`;
@@ -1940,6 +2025,23 @@
       ${R.map(c => `<button class="${fCS===c.nama?'on':''}" data-cs="${esc(c.nama)}">${esc(c.nama)}
         <span class="tag">${fN(c.order)}</span></button>`).join('')}</div>`;
 
+    // Biaya kirim pelanggan CS ini: ongkir ditambah fee COD dan asuransi.
+    // Cashback sengaja tidak ditampilkan, itu urusan pemilik usaha.
+    const resiSaya = new Set((dipilihSemua || []).map(o => bersihResi(o.resi)).filter(Boolean));
+    const kirimSaya = kirimAktif().filter(x => {
+      const r = bersihResi(x.resi);
+      return r && resiSaya.has(r);
+    });
+    const ok = { ongkir:0, feeCod:0, asuransi:0, tagihan:0, cod:0 };
+    for (const x of kirimSaya) {
+      ok.ongkir   += Number(x.ongkir) || 0;
+      ok.feeCod   += Number(x.fee_cod) || 0;
+      ok.asuransi += Number(x.asuransi) || 0;
+      ok.tagihan  += Number(x.harga) || 0;
+      if (x.cod) ok.cod += 1;
+    }
+    const adaOngkir = kirimSaya.length > 0;
+
     const kartu = `<div class="kpis tiga">
       ${kpi(I.spark,'#F59E0B','#FEF6E7','Total GMV',fN(Math.round(total.gmv)),'')}
       ${kpi(I.cart,'#7C3AED','#F3EEFE','Total order',fN(total.order),'')}
@@ -1955,13 +2057,24 @@
       ? `<div class="note" style="margin:-4px 0 12px">Tidak ikut diperingkat: ${
           R.luar.map(x => `${fN(x.n)} order ${esc(x.nama)} (${esc(x.alasan)})`).join(' · ')}.</div>` : '';
 
+    const blokOngkir = adaOngkir ? `<div class="sec"><h4>Biaya pengiriman</h4>
+        <span class="note">${fN(kirimSaya.length)} kiriman &middot; ${fN(ok.cod)} di antaranya COD</span></div>
+      <div class="kpis tiga">
+        ${kpi(I.plug,'var(--blue)','var(--blue-soft)','Ongkir',fC(ok.ongkir),'')}
+        ${kpi(I.money,'var(--amber)','var(--amber-soft)','Fee COD',fC(ok.feeCod),'')}
+        ${kpi(I.money,'var(--violet)','var(--violet-soft)','Asuransi',fC(ok.asuransi),'')}
+        ${kpi(I.money,'var(--pink)','var(--pink-soft)','Total tagihan kirim',fC(ok.tagihan),'')}
+        ${kpi(I.cart,'var(--toska)','var(--toska-soft)','Rata-rata per kiriman',
+          fC(ok.tagihan / kirimSaya.length),'')}
+      </div>` : '';
+
     const peringkat = `<div class="sec"><h4>Peringkat performa</h4>
         <span class="note">berdasarkan GMV point dari Globemerce</span></div>
       ${podium(R)}${catatan}
       <div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Customer Service</th><th class="num">GMV</th><th class="num">Order</th>
           <th class="num">Baru</th><th class="num">Repeat</th><th class="ctr">% Repeat</th>
-          <th class="num">Bermasalah</th><th class="ctr">% Bermasalah</th></tr></thead>
+          ${punyaKirim?'<th class="num">Bermasalah</th><th class="ctr">% Bermasalah</th>':''}</tr></thead>
         <tbody>${R.map((c, i) => {
           const rp = c.order ? c.repeat / c.order * 100 : 0;
           const rb = rasio(c);
@@ -1975,8 +2088,8 @@
             <td class="num">${fN(c.baru)}</td>
             <td class="num">${fN(c.repeat)}</td>
             <td class="ctr"><span class="pill2" style="background:var(--toska-soft);color:var(--toska)">${fP(rp)}</span></td>
-            <td class="num">${fN(c.bermasalah)}</td>
-            <td class="ctr"><span style="color:${wb};font-weight:600">${c.dilacak?fP(rb):'—'}</span></td>
+            ${punyaKirim?`<td class="num">${fN(c.bermasalah)}</td>
+            <td class="ctr"><span style="color:${wb};font-weight:600">${c.dilacak?fP(rb):'&mdash;'}</span></td>`:''}
           </tr>`; }).join('')}</tbody></table></div></div>`;
 
     const dipilih = fCS === 'all' ? R.flatMap(c => c.pesanan) : (R.find(c => c.nama === fCS) || {}).pesanan || [];
@@ -1997,8 +2110,9 @@
         <td class="resi">${resi ? esc(resi) : '<span style="color:var(--red)">belum ada resi</span>'}</td>
         <td class="kurir">${esc(o.kurir||'—')}</td>
         <td class="ctr">${k
-          ? '<span class="pill2" style="background:'+ws+';color:'+wc+'">'+esc(k.status||'—')+'</span>'
-          : '<span class="pill2" style="background:var(--line-2);color:var(--muted)">'+esc(o.status||'—')+'</span>'}</td>
+          ? '<span class="pill2" style="background:'+ws+';color:'+wc+'">'+esc(k.status||'&mdash;')+'</span>'
+          : '<span class="pill2" style="background:var(--line-2);color:var(--muted)">'+esc(o.status||'&mdash;')+'</span>'}</td>
+        ${adaOngkir?`<td class="num uang">${k?fC(Number(k.harga)||0):'&mdash;'}</td>`:''}
       </tr>`;
     }).join('');
 
@@ -2008,10 +2122,11 @@
       ${chips}
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr><th>Tanggal</th><th>No order</th><th>Pembeli</th><th>Telepon</th>
-          <th>Provinsi</th><th>Resi</th><th>Kurir</th><th class="ctr">Status kirim</th></tr></thead>
+          <th>Provinsi</th><th>Resi</th><th>Kurir</th><th class="ctr">Status kirim</th>
+          ${adaOngkir?'<th class="num">Ongkir</th>':''}</tr></thead>
         <tbody>${baris}</tbody></table></div></div>`;
 
-    return kartu + peringkat + tabel;
+    return kartu + blokOngkir + peringkat + tabel;
   }
 
   // ---------- data retur setahun ----------
