@@ -493,10 +493,10 @@
 
   <div class="profile">
     <div class="row">
-      <div class="avatar">RN</div>
+      <div class="avatar" id="p-inisial">RN</div>
       <div style="min-width:0">
-        <p class="nm">Renald</p>
-        <p class="em">renaldo1600016091@webmail.uad.ac.id</p>
+        <p class="nm" id="p-nama">Renald</p>
+        <p class="em" id="p-peran">renaldo1600016091@webmail.uad.ac.id</p>
       </div>
     </div>
     <div class="foot">
@@ -505,6 +505,9 @@
         <button class="mini" id="tema" aria-label="Ganti tema" title="Mode terang / gelap"></button>
         <button class="mini" id="reload" aria-label="Muat ulang">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        </button>
+        <button class="mini" id="keluar" aria-label="Keluar" title="Keluar dari akun ini">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/></svg>
         </button>
       </span>
     </div>
@@ -720,6 +723,49 @@
   const salesRows = () => SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
   const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
+  // ---------- keluar dan masa berlaku sesi ----------
+  // Sesi berlaku 24 jam terhitung sejak masuk, bukan sampai pergantian tanggal.
+  const TGL_MASUK = 'masuk-waktu';
+  const UMUR_SESI = 24 * 60 * 60 * 1000;
+  const bacaWaktuMasuk = () => {
+    try { return Number(localStorage.getItem(TGL_MASUK)) || 0; } catch (e) { return 0; }
+  };
+  const catatHariMasuk = () => { try { localStorage.setItem(TGL_MASUK, String(Date.now())); } catch (e) {} };
+  const sesiKedaluwarsa = () => {
+    const t = bacaWaktuMasuk();
+    return !!t && (Date.now() - t) > UMUR_SESI;
+  };
+  const sisaSesi = () => {
+    const t = bacaWaktuMasuk();
+    if (!t) return null;
+    const sisa = UMUR_SESI - (Date.now() - t);
+    return sisa > 0 ? sisa : 0;
+  };
+
+  function keluar() {
+    try {
+      localStorage.removeItem('kunci');
+      localStorage.removeItem('pengguna');
+      localStorage.removeItem(TGL_MASUK);
+      localStorage.removeItem('masuk-tgl');   // sisa dari versi sebelumnya
+    } catch (e) {}
+    location.reload();
+  }
+
+  function tampilkanIdentitas() {
+    const nama = AKU.nama || PENGGUNA || '—';
+    const el = id => document.getElementById(id);
+    if (el('p-nama')) el('p-nama').textContent = nama.charAt(0).toUpperCase() + nama.slice(1);
+    if (el('p-inisial')) el('p-inisial').textContent = nama.slice(0, 2).toUpperCase();
+    const sisa = sisaSesi();
+    const jam = sisa === null ? '' : ' · sesi ' + (sisa >= 36e5
+      ? Math.round(sisa / 36e5) + ' jam lagi'
+      : Math.max(1, Math.round(sisa / 6e4)) + ' menit lagi');
+    if (el('p-peran')) el('p-peran').textContent =
+      (AKU.peran === 'admin' ? 'Admin · akses penuh'
+        : 'Customer Service' + (AKU.agen ? ' · ' + AKU.agen : '')) + jam;
+  }
+
   // ---------- kunci dashboard ----------
   // Sandi disimpan di peramban ini saja, tidak pernah masuk ke repo.
   // Worker menolak permintaan tanpa sandi yang benar.
@@ -786,14 +832,22 @@
     return res;
   }
   function simpanMasuk() {
-    try { localStorage.setItem('kunci', SANDI); localStorage.setItem('pengguna', PENGGUNA); }
-    catch (e) {}
+    try {
+      localStorage.setItem('kunci', SANDI);
+      localStorage.setItem('pengguna', PENGGUNA);
+      localStorage.setItem(TGL_MASUK, String(Date.now()));
+    } catch (e) {}
   }
 
   // Sandi diminta lebih dulu kalau peramban ini belum pernah menyimpannya
   async function mulai() {
+    // Hari sudah berganti sejak terakhir masuk: sesi lama dibuang
+    if (sesiKedaluwarsa()) {
+      try { localStorage.removeItem('kunci'); localStorage.removeItem('pengguna'); } catch (e) {}
+      SANDI = ''; PENGGUNA = '';
+    }
     if (!SANDI || !PENGGUNA) {
-      const m = await mintaSandi();
+      const m = await mintaSandi(bacaWaktuMasuk() ? 'Sesi sudah lewat 24 jam, masuk lagi ya' : null);
       SANDI = m.sandi; PENGGUNA = m.pengguna;
       simpanMasuk();
     }
@@ -805,6 +859,8 @@
       if (j && j.data) AKU = j.data;
     } catch (e) { /* Worker versi lama: anggap admin */ }
     document.body.dataset.peran = AKU.peran;
+    catatHariMasuk();
+    tampilkanIdentitas();
     if (AKU.peran === 'cs') page = 'cs';
     muat();
   }
@@ -3058,6 +3114,15 @@
   document.getElementById('tema').addEventListener('click', () =>
     pakaiTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap'));
   pakaiTema(document.documentElement.dataset.tema || 'terang');
+
+  document.getElementById('keluar').addEventListener('click', keluar);
+
+  // Tab dibiarkan terbuka melewati tengah malam: begitu dilihat lagi, minta masuk ulang
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && sesiKedaluwarsa()) keluar();
+  });
+  window.addEventListener('focus', () => { if (sesiKedaluwarsa()) keluar(); });
+  setInterval(() => { if (sesiKedaluwarsa()) keluar(); else tampilkanIdentitas(); }, 60000);
 
   document.getElementById('reload').addEventListener('click', ()=>{ BUST = String(Date.now()); D.extra = null; muat(); });
   window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
