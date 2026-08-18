@@ -1064,6 +1064,41 @@
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
     if (AKU.peran !== 'cs') muatGmvHarian();
+    if (AKU.peran === 'cs') isiTanggalKirim();
+  }
+
+  // ---------- mengisi tanggal paket diterima ----------
+  // Daftar pengiriman Everpro tidak memuat tanggal terkirim; tanggalnya hanya
+  // ada di riwayat pelacakan, satu permintaan untuk satu resi. Worker
+  // menyimpan hasilnya permanen, jadi beban ini hanya terasa sekali saja.
+  // Dijalankan setelah halaman tampil, dan halamannya digambar ulang tiap
+  // satu gelombang selesai supaya jadwalnya terlihat membaik sendiri.
+  let isiKirimJalan = false;
+  async function isiTanggalKirim() {
+    if (isiKirimJalan) return;
+    const perlu = (D.kirim || [])
+      .filter(x => x && x.kelompok === 'terkirim' && !x.tgl_kirim && x.resi)
+      .map(x => x.resi);
+    if (!perlu.length) return;
+    isiKirimJalan = true;
+    try {
+      // 25 sekali jalan, mengikuti batas yang dipakai Worker. Dibatasi empat
+      // gelombang per pemuatan supaya tidak menahan sisa halaman terlalu lama;
+      // sisanya menyusul saat halaman dibuka lagi.
+      for (let i = 0; i < perlu.length && i < 100; i += 25) {
+        const kelompok = perlu.slice(i, i + 25);
+        const r = await ambil(PROXY + '?kirim=1&no=' + encodeURIComponent(kelompok.join(',')));
+        if (r.status !== 200) break;              // KV belum siap, hentikan diam-diam
+        const j = await r.json();
+        const peta = (j && j.data) || {};
+        let dapat = 0;
+        for (const x of (D.kirim || [])) {
+          if (x && x.resi && peta[x.resi] && !x.tgl_kirim) { x.tgl_kirim = peta[x.resi]; dapat++; }
+        }
+        if (dapat) render();
+      }
+    } catch (e) { /* diam saja, halaman tetap jalan dengan perkiraan */ }
+    finally { isiKirimJalan = false; }
   }
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
