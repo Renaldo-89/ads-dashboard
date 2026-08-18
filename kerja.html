@@ -2003,6 +2003,9 @@
   // longgar karena sudah tahu cara pakai. Coffiy tidak dijadwalkan.
   // Lama pakai dihitung jumlah unit x 30 hari.
   const HARI_PER_UNIT = 30;
+  // Dipakai hanya kalau Everpro bilang paket sudah terkirim tapi tidak
+  // menyebutkan tanggalnya. Angka perkiraan, dan barisnya diberi tanda.
+  const TRANSIT_PERKIRAAN = 3;
 
   const PRODUK = [
     { kode:'COFFIY', pola:/coffi?y/i, label:'Coffiy',  bidang:null, lewati:true },
@@ -2135,9 +2138,29 @@
     };
   }
 
-  // Jadwal satu pesanan. Mengembalikan null kalau produknya dilewati atau tanggalnya kosong.
+  // Jadwal satu pesanan. Mengembalikan null kalau paketnya belum diterima
+  // atau produknya memang tidak dijadwalkan.
+  // Follow-up baru berlaku setelah paket benar-benar diterima. Selama barang
+  // masih di jalan pelanggan belum bisa memakainya, jadi menghubunginya untuk
+  // menanyakan cara pakai hanya membuat bingung. Hari 1 dihitung dari tanggal
+  // terkirim di Everpro, bukan dari tanggal pesanan dibuat di Globemerce.
+  //
+  // Kembaliannya: '' berarti belum boleh dijadwalkan sama sekali.
+  function mulaiFollowUp(o) {
+    const k = o._kirim;
+    if (!k || String(k.kelompok || '') !== 'terkirim') return '';
+    if (k.tgl_kirim) return { tanggal: k.tgl_kirim, pasti: true };
+    // Sudah terkirim tapi Everpro tidak memberi tanggalnya. Daripada pesanan
+    // ini hilang dari daftar, dipakai perkiraan dari tanggal order dan ditandai.
+    const dasar = k.tanggal || o.tanggal;
+    return dasar ? { tanggal: tambahHari(dasar, TRANSIT_PERKIRAAN), pasti: false } : '';
+  }
+
   function jadwalPesanan(o) {
-    if (!o.tanggal) return null;
+    // dinamai awalFU, bukan mulai, supaya tidak menutupi fungsi mulai() di luar
+    const awalFU = mulaiFollowUp(o);
+    if (!awalFU) return null;
+    const awal = awalFU.tanggal;
     const d = kenaliProduk(o);
     if (d && d.lewati) return null;               // Coffiy
     const unit = Math.max(1, Number(o.unit) || 1);
@@ -2151,22 +2174,31 @@
     for (const h of hariList) {
       if (h >= hariStok) continue;                // jangan menabrak reminder stok
       const isi = isiSentuhan(h, d, jalur);
-      if (isi) titik.push({ hari: h, tanggal: tambahHari(o.tanggal, h), ...isi });
+      if (isi) titik.push({ hari: h, tanggal: tambahHari(awal, h), ...isi });
     }
-    titik.push({ hari: hariStok, tanggal: tambahHari(o.tanggal, hariStok),
+    titik.push({ hari: hariStok, tanggal: tambahHari(awal, hariStok),
       ...sentuhanStok(nama, jalur), stok: true });
 
     return { pesanan: o, produk: d, jalur, unit, lamaPakai,
-      habis: tambahHari(o.tanggal, lamaPakai), titik };
+      terima: awal, pasti: awalFU.pasti,
+      habis: tambahHari(awal, lamaPakai), titik };
   }
 
   // Semua tugas dari pesanan yang boleh dilihat pengguna ini
   function tugasFollowUp(pesanan) {
     const hari = tglLokal();
-    const keluar = { hariIni: [], terlewat: [], akanDatang: [], tanpaJadwal: 0 };
+    const keluar = { hariIni: [], terlewat: [], akanDatang: [],
+      tanpaJadwal: 0, belumSampai: 0, tanpaLacak: 0, perkiraan: 0 };
     for (const o of (pesanan || [])) {
       const j = jadwalPesanan(o);
-      if (!j) { keluar.tanpaJadwal++; continue; }
+      if (!j) {
+        const k = o._kirim;
+        if (!k) keluar.tanpaLacak++;
+        else if (String(k.kelompok || '') !== 'terkirim') keluar.belumSampai++;
+        else keluar.tanpaJadwal++;
+        continue;
+      }
+      if (!j.pasti) keluar.perkiraan++;
       for (const t of j.titik) {
         const beda = selisihHari(hari, t.tanggal);   // negatif = sudah lewat
         const baris = { ...t, j, beda };
@@ -2211,6 +2243,7 @@
       ${buka ? `<div class="fu-isi">
         <div class="fu-baris"><b>Telepon</b><span>${o.telepon ? esc(o.telepon) : '—'}
           &middot; order #${esc(o.no)} &middot; beli ${sd(o.tanggal)}
+          &middot; diterima ${sd(t.j.terima)}${t.j.pasti ? '' : ' (perkiraan)'}
           &middot; habis ${sd(t.j.habis)}</span></div>
         <div class="fu-baris"><b>Tugas</b><ul>${t.tugas.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
         <div class="fu-baris"><b>Contoh chat</b><pre class="fu-chat">${esc(t.chat)}</pre>
@@ -2224,21 +2257,31 @@
   function blokFollowUp(pesanan) {
     const T = tugasFollowUp(pesanan);
     const jum = T.hariIni.length + T.terlewat.length;
+    // Alasan pesanan tidak berjadwal ditulis apa adanya, supaya CS tahu
+    // daftarnya pendek karena paketnya belum sampai, bukan karena datanya hilang.
+    const sisa = [];
+    if (T.belumSampai) sisa.push(fN(T.belumSampai) + ' paket masih dalam perjalanan');
+    if (T.tanpaLacak) sisa.push(fN(T.tanpaLacak) + ' pesanan belum ada resinya di Everpro');
+    if (T.tanpaJadwal) sisa.push(fN(T.tanpaJadwal) + ' tanpa jadwal (Coffiy atau produk tak dikenali)');
+    if (T.perkiraan) sisa.push(fN(T.perkiraan) + ' memakai tanggal terima perkiraan');
+    const catatan = sisa.length
+      ? `<div class="note" style="margin:-2px 0 10px">${sisa.join(' &middot; ')}</div>` : '';
     if (!jum && !T.akanDatang.length) {
       return `<div class="sec"><h4>Follow-up</h4></div>
         <div class="panel"><div class="empty">
           <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
           <b>Tidak ada follow-up jatuh tempo</b><br>
-          Semua pelanggan pada periode ini sudah di luar jadwal sentuhan.
-          ${T.tanpaJadwal ? '<br><span style="font-size:12px">' + fN(T.tanpaJadwal)
-            + ' pesanan tanpa jadwal (Coffiy atau produk tak dikenali)</span>' : ''}</div></div>`;
+          Jadwal dimulai setelah paket diterima. Tidak ada yang jatuh tempo sekarang.
+          ${sisa.length ? '<br><span style="font-size:12px">' + sisa.join(' &middot; ')
+            + '</span>' : ''}</div></div>`;
     }
     const bagian = (judul, arr, jenis) => arr.length
       ? `<div class="sec"><h4>${judul}</h4><span class="note">${fN(arr.length)} pelanggan</span></div>
          <div class="panel tight">${arr.map(t => kartuTugas(t, jenis)).join('')}</div>`
       : '';
     return `<div class="sec"><h4>Follow-up</h4>
-        <span class="note">jadwal mengikuti SOP &middot; pelanggan repeat lebih longgar</span></div>
+        <span class="note">dihitung sejak paket diterima &middot; pelanggan repeat lebih longgar</span></div>
+      ${catatan}
       <div class="kpis tiga">
         ${kpi(I.alert, T.terlewat.length?'var(--red)':'var(--muted)',
           T.terlewat.length?'var(--red-soft)':'var(--line-2)','Terlewat',fN(T.terlewat.length),'')}
