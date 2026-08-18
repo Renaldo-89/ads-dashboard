@@ -152,9 +152,23 @@
     border-radius:12px; background:var(--amber-soft); color:var(--amber-ink);
     font-size:12px; font-weight:500; line-height:1.5; }
   .fu-rujuk svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+  /* tombol penanda tugas selesai */
+  .fu-ok { flex-shrink:0; display:inline-flex; align-items:center; gap:5px;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    padding:5px 11px; border-radius:999px; font-size:11px; font-weight:700;
+    font-family:inherit; cursor:pointer; letter-spacing:.2px;
+    transition:background .15s, color .15s, border-color .15s; }
+  .fu-ok svg { width:13px; height:13px; }
+  .fu-ok:hover { border-color:var(--green); color:var(--green); background:var(--green-soft); }
+  .fu-ok.aktif { border-color:transparent; background:var(--green); color:#fff; }
+  .fu-ok.aktif:hover { background:var(--red); color:#fff; }
+  .fu-ok:disabled { opacity:.5; cursor:default; }
+  .fu-selesai .fu-nama, .fu-selesai .fu-judul { color:var(--muted); }
+  .fu-selesai .fu-judul { text-decoration:line-through; text-decoration-color:var(--line); }
   @media (max-width:620px) {
     .fu-judul { flex-basis:100%; min-width:0; }
     .fu-atas { gap:8px; }
+    .fu-ok { padding:5px 9px; }
   }
 
   /* ---------- kalender laba harian ---------- */
@@ -629,6 +643,7 @@
     up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6 4 4 6-7"/><path d="M20 12V8h-4"/></svg>',
     alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.01"/></svg>',
     bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
     sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     plug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6M15 3v6"/><path d="M6 9h12v3a6 6 0 0 1-12 0z"/><path d="M12 18v3"/></svg>',
     eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>',
@@ -898,7 +913,7 @@
     document.body.dataset.peran = AKU.peran;
     catatHariMasuk();
     tampilkanIdentitas();
-    if (AKU.peran === 'cs') page = 'cs';
+    if (AKU.peran === 'cs') { page = 'cs'; await fuMuat(); }
     buildNav();          // menu tampil lebih dulu, tidak menunggu data
     muat();
   }
@@ -2184,10 +2199,62 @@
       habis: tambahHari(awal, lamaPakai), titik };
   }
 
+  // ---------- tanda "sudah saya kerjakan" ----------
+  // Satu tanda untuk satu pesanan pada satu hari sentuhan, milik masing-masing
+  // CS. Disimpan di Worker (Cloudflare KV) supaya tidak hilang saat ganti HP
+  // atau bersihkan cache. Peramban tetap dipakai sebagai cadangan: kalau KV
+  // belum diikat, tombolnya masih bekerja, hanya tidak ikut pindah perangkat.
+  let FU_SUDAH = {};
+  let fuKeServer = false;   // benar kalau Worker sudah punya penyimpanan
+
+  const kunciTugas = (o, hari) =>
+    String(o.no || '').replace(/[^A-Za-z0-9]/g, '') + '-' + hari;
+  const kunciSimpanan = () => 'fu-sudah-' + (PENGGUNA || 'x');
+
+  function fuSimpanLokal() {
+    try { localStorage.setItem(kunciSimpanan(), JSON.stringify(FU_SUDAH)); } catch (e) {}
+  }
+
+  async function fuMuat() {
+    try {
+      const t = localStorage.getItem(kunciSimpanan());
+      const d = t ? JSON.parse(t) : null;
+      FU_SUDAH = d && typeof d === 'object' ? d : {};
+    } catch (e) { FU_SUDAH = {}; }
+    try {
+      const r = await ambil(PROXY + '?fu=1');
+      if (r.status === 501) return;            // KV belum diikat, pakai cadangan
+      const j = await r.json();
+      if (j && j.data && typeof j.data === 'object') {
+        FU_SUDAH = j.data;
+        fuKeServer = true;
+        fuSimpanLokal();
+      }
+    } catch (e) {}
+  }
+
+  async function fuTandai(kunci, sudah) {
+    if (sudah) FU_SUDAH[kunci] = { t: waktuLokal() };
+    else delete FU_SUDAH[kunci];
+    fuSimpanLokal();
+    if (!fuKeServer) return;
+    try {
+      await ambil(PROXY + '?fu=simpan&tugas=' + encodeURIComponent(kunci)
+        + '&nilai=' + (sudah ? 1 : 0));
+    } catch (e) {}
+  }
+
+  const waktuLokal = () => {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+      + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  };
+
   // Semua tugas dari pesanan yang boleh dilihat pengguna ini
   function tugasFollowUp(pesanan) {
     const hari = tglLokal();
-    const keluar = { hariIni: [], terlewat: [], akanDatang: [],
+    const keluar = { hariIni: [], terlewat: [], akanDatang: [], selesai: [],
       tanpaJadwal: 0, belumSampai: 0, tanpaLacak: 0, perkiraan: 0 };
     for (const o of (pesanan || [])) {
       const j = jadwalPesanan(o);
@@ -2201,7 +2268,12 @@
       if (!j.pasti) keluar.perkiraan++;
       for (const t of j.titik) {
         const beda = selisihHari(hari, t.tanggal);   // negatif = sudah lewat
-        const baris = { ...t, j, beda };
+        const kunci = kunciTugas(o, t.hari);
+        const tanda = FU_SUDAH[kunci];
+        const baris = { ...t, j, beda, kunci, tanda };
+        // Yang sudah dicentang keluar dari daftar kerja dan tidak lagi
+        // dihitung terlewat, tapi tetap ditampilkan supaya bisa dibatalkan.
+        if (tanda) { if (beda <= 0 && beda >= -14) keluar.selesai.push(baris); continue; }
         if (beda === 0) keluar.hariIni.push(baris);
         else if (beda < 0 && beda >= -7) keluar.terlewat.push(baris);
         else if (beda > 0 && beda <= 3) keluar.akanDatang.push(baris);
@@ -2209,6 +2281,7 @@
     }
     keluar.terlewat.sort((a, b) => b.beda - a.beda);
     keluar.akanDatang.sort((a, b) => a.beda - b.beda);
+    keluar.selesai.sort((a, b) => String(b.tanda && b.tanda.t).localeCompare(String(a.tanda && a.tanda.t)));
     return keluar;
   }
 
@@ -2220,16 +2293,19 @@
   function kartuTugas(t, jenis) {
     const o = t.j.pesanan;
     const d = t.j.produk;
-    const kunci = o.no + '-' + t.hari;
+    const kunci = t.kunci || kunciTugas(o, t.hari);
     const buka = fuBuka === kunci;
-    const w = jenis === 'terlewat' ? 'var(--red)' : jenis === 'hariIni' ? 'var(--green)' : 'var(--muted)';
-    const ws = jenis === 'terlewat' ? 'var(--red-soft)' : jenis === 'hariIni' ? 'var(--green-soft)' : 'var(--line-2)';
-    const cap = jenis === 'terlewat'
-      ? 'Terlewat ' + Math.abs(t.beda) + ' hari'
+    const sudah = jenis === 'selesai';
+    const w = sudah ? 'var(--green)'
+      : jenis === 'terlewat' ? 'var(--red)' : jenis === 'hariIni' ? 'var(--green)' : 'var(--muted)';
+    const ws = sudah ? 'var(--green-soft)'
+      : jenis === 'terlewat' ? 'var(--red-soft)' : jenis === 'hariIni' ? 'var(--green-soft)' : 'var(--line-2)';
+    const cap = sudah ? 'Sudah'
+      : jenis === 'terlewat' ? 'Terlewat ' + Math.abs(t.beda) + ' hari'
       : jenis === 'hariIni' ? 'Hari ini' : 'Dalam ' + t.beda + ' hari';
     const rujuk = d && RUJUK_DOKTER[d.kode];
 
-    return `<div class="fu ${buka?'buka':''}" data-fu="${esc(kunci)}">
+    return `<div class="fu ${buka?'buka':''} ${sudah?'fu-selesai':''}" data-fu="${esc(kunci)}">
       <div class="fu-atas">
         <span class="pill2" style="background:${ws};color:${w}">${cap}</span>
         <span class="fu-hari">Hari ${t.hari}</span>
@@ -2238,6 +2314,10 @@
           ${t.j.unit > 1 ? '· ' + fN(t.j.unit) + ' unit' : ''}
           · ${t.j.jalur === 'repeat' ? 'repeat' : 'baru'}</span>
         <span class="fu-judul">${esc(t.judul)}</span>
+        <button class="fu-ok ${sudah?'aktif':''}" data-ok="${esc(kunci)}"
+          data-nilai="${sudah ? 0 : 1}"
+          title="${sudah ? 'Batalkan tanda selesai' : 'Tandai follow-up hari ' + t.hari + ' sudah dikerjakan'}"
+        >${sudah ? I.check + ' Sudah' : 'Sudah'}</button>
         <span class="fu-tanda">${buka ? '&minus;' : '+'}</span>
       </div>
       ${buka ? `<div class="fu-isi">
@@ -2266,22 +2346,31 @@
     if (T.perkiraan) sisa.push(fN(T.perkiraan) + ' memakai tanggal terima perkiraan');
     const catatan = sisa.length
       ? `<div class="note" style="margin:-2px 0 10px">${sisa.join(' &middot; ')}</div>` : '';
-    if (!jum && !T.akanDatang.length) {
-      return `<div class="sec"><h4>Follow-up</h4></div>
-        <div class="panel"><div class="empty">
-          <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
-          <b>Tidak ada follow-up jatuh tempo</b><br>
-          Jadwal dimulai setelah paket diterima. Tidak ada yang jatuh tempo sekarang.
-          ${sisa.length ? '<br><span style="font-size:12px">' + sisa.join(' &middot; ')
-            + '</span>' : ''}</div></div>`;
-    }
     const bagian = (judul, arr, jenis) => arr.length
       ? `<div class="sec"><h4>${judul}</h4><span class="note">${fN(arr.length)} pelanggan</span></div>
          <div class="panel tight">${arr.map(t => kartuTugas(t, jenis)).join('')}</div>`
       : '';
+    // Tanda yang belum sempat naik ke server perlu dikatakan apa adanya,
+    // supaya CS tidak menyangka centangnya ikut pindah ke HP lain.
+    const cadangan = fuKeServer ? ''
+      : `<div class="note" style="margin:-2px 0 10px;color:var(--amber)">
+           Tanda selesai baru tersimpan di peramban ini saja</div>`;
+    if (!jum && !T.akanDatang.length) {
+      return `<div class="sec"><h4>Follow-up</h4>
+          ${T.selesai.length ? '<span class="note">' + fN(T.selesai.length)
+            + ' sudah dikerjakan</span>' : ''}</div>
+        ${cadangan}
+        <div class="panel"><div class="empty">
+          <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
+          <b>${T.selesai.length ? 'Semua follow-up sudah dikerjakan' : 'Tidak ada follow-up jatuh tempo'}</b><br>
+          Jadwal dimulai setelah paket diterima. Tidak ada yang jatuh tempo sekarang.
+          ${sisa.length ? '<br><span style="font-size:12px">' + sisa.join(' &middot; ')
+            + '</span>' : ''}</div></div>
+        ${bagian('Sudah dikerjakan', T.selesai, 'selesai')}`;
+    }
     return `<div class="sec"><h4>Follow-up</h4>
         <span class="note">dihitung sejak paket diterima &middot; pelanggan repeat lebih longgar</span></div>
-      ${catatan}
+      ${catatan}${cadangan}
       <div class="kpis tiga">
         ${kpi(I.alert, T.terlewat.length?'var(--red)':'var(--muted)',
           T.terlewat.length?'var(--red-soft)':'var(--line-2)','Terlewat',fN(T.terlewat.length),'')}
@@ -2291,7 +2380,8 @@
       </div>
       ${bagian('Terlewat', T.terlewat, 'terlewat')}
       ${bagian('Hari ini', T.hariIni, 'hariIni')}
-      ${bagian('Akan datang', T.akanDatang, 'akanDatang')}`;
+      ${bagian('Akan datang', T.akanDatang, 'akanDatang')}
+      ${bagian('Sudah dikerjakan', T.selesai, 'selesai')}`;
   }
 
   // ---------- halaman Customer Service ----------
@@ -3399,6 +3489,15 @@
       }
       document.querySelectorAll('.kal-hari.terpilih').forEach(x=>x.classList.remove('terpilih'));
       sel.classList.add('terpilih');
+      return;
+    }
+    // Tombol "Sudah" diperiksa lebih dulu daripada kartunya, karena tombolnya
+    // berada di dalam kartu dan tidak boleh ikut membuka atau menutup isinya.
+    const ok = e.target.closest('button[data-ok]');
+    if (ok) {
+      const nilai = ok.dataset.nilai === '1';
+      ok.disabled = true;
+      fuTandai(ok.dataset.ok, nilai).then(render).catch(render);
       return;
     }
     const salin = e.target.closest('button[data-salin]');
