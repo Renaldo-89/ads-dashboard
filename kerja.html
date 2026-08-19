@@ -520,6 +520,8 @@
   table.dt.pesanan td.kurir { max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink-2); font-weight:500; }
   table.dt.pesanan td.resi { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; white-space:nowrap; }
   table.dt.pesanan td.resi-kosong { color:var(--red); font-weight:600; font-size:11.5px; white-space:nowrap; }
+  /* penanda kecil bahwa nomor resinya diambil dari Everpro, bukan Globemerce */
+  .resi-ep { color:var(--toska); font-weight:700; margin-left:5px; cursor:help; }
   table.dt.pesanan td.num.uang { font-weight:600; }
   table.dt .pill2 { display:inline-block; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
 
@@ -3444,6 +3446,19 @@
     // ---- daftar pesanan dalam bentuk tabel ----
     const pil = (t,c,s) => `<span class="pill2" style="background:${s};color:${c}">${t}</span>`;
     const kosongResi = r => !r || /not\s*generated/i.test(String(r));
+
+    // Pesanan Sameday/Instant tidak punya nomor resi di Globemerce — kolom itu
+    // di sana malah berisi nama penerima, jadi sudah dibuang di Worker.
+    // Nomor resi aslinya ada di Everpro (mis. GK-11-889811931 untuk Go Send),
+    // dicocokkan lewat nomor order. Yang dari Everpro diberi tanda titik
+    // supaya jelas asalnya bukan dari Globemerce.
+    const selResi = (o, kir) => {
+      if (!kosongResi(o.resi)) return '<td class="resi">' + esc(o.resi) + '</td>';
+      if (kir && kir.resi) return '<td class="resi">' + esc(kir.resi)
+        + '<span class="resi-ep" title="Nomor resi dari Everpro">&bull;</span></td>';
+      return '<td class="resi-kosong">belum ada resi</td>';
+    };
+
     const pk = petaKirim();
     const adaKirim = kirimAktif().length > 0;
     const tabel = `<div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
@@ -3461,10 +3476,8 @@
         if (adaKirim) {
           if (kir) { const [c,s] = WARNA_KIRIM(kir.status);
             const [ccb,,tcb] = WARNA_CASHBACK(kir.cashback_status);
-            const resiEp = kosongResi(o.resi) && kir.resi ? kir.resi : null;
             selKirim = '<td class="ctr"><span class="pill2" style="background:'+s+';color:'+c+'">'
               + esc(kir.status||'—') + '</span>'
-              + (resiEp ? '<br><span style="font-size:10px;color:var(--muted)">'+esc(resiEp)+'</span>' : '')
               + (kir.cashback ? '<br><span style="font-size:10px;color:'+ccb+'">cashback '
                   + esc(String(tcb).toLowerCase()) + '</span>' : '') + '</td>';
           } else selKirim = '<td class="ctr"><span style="color:var(--faint);font-size:11px">—</span></td>';
@@ -3475,9 +3488,7 @@
           <td class="nama" title="${esc(o.pembeli||'')}">${esc(o.pembeli||'—')}</td>
           <td class="prod">${(o.produk||[]).map(p=>esc(p.nama)+' <span style="color:var(--faint)">×'+fN(p.jumlah)+'</span>').join('<br>')||'—'}</td>
           <td class="kurir" title="${esc(o.kurir||'')}">${esc(o.kurir||'—')}</td>
-          ${kosongResi(o.resi)
-            ? '<td class="resi-kosong">not generated yet</td>'
-            : '<td class="resi">'+esc(o.resi)+'</td>'}
+          ${selResi(o, kir)}
           ${selKirim}
           <td class="ctr">${pil(esc(o.status||'—'), selesai?'var(--green-ink)':'var(--amber-ink)', selesai?'var(--green-soft)':'var(--amber-soft)')}</td>
           <td class="ctr">${pil(ulangi?'Repeat':'Baru', ulangi?'var(--toska)':'var(--amber)', ulangi?'var(--toska-soft)':'var(--amber-soft)')}</td>
