@@ -376,6 +376,21 @@
   .chips.sub button.on { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600;
     box-shadow:0 4px 12px rgba(30,27,57,.22); }
 
+  /* rentang tanggal yang diketik sendiri, di ujung deretan chip periode */
+  .tgl-bebas { flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
+    padding:4px 5px 4px 9px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel); margin-left:5px; }
+  .tgl-bebas.on { border-color:var(--violet); box-shadow:0 0 0 2px var(--violet-soft); }
+  .tgl-bebas input { border:none; background:transparent; color:var(--ink-2);
+    font-family:inherit; font-size:12.5px; font-weight:600; padding:3px 2px;
+    min-width:112px; }
+  .tgl-bebas input:focus { outline:none; color:var(--violet); }
+  .tgl-pisah { color:var(--faint); font-size:12px; }
+  .tgl-bebas button { padding:6px 12px; font-size:12px; }
+  @media (max-width:620px) {
+    .tgl-bebas input { min-width:104px; font-size:12px; }
+  }
+
   .body { padding:22px 28px 60px; max-width:1180px; }
   .page { display:none; } .page.on { display:block; }
 
@@ -683,6 +698,9 @@
   const sum = (r,k) => r.reduce((a,x)=>a+(Number(x[k])||0),0);
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const sd  = d => { const p=String(d).split('-'); return p.length===3?p[2]+'/'+p[1]:d; };
+  // "1 Agu 2026" — dipakai untuk label rentang yang diketik sendiri
+  const sdPanjang = d => { const p=String(d).split('-');
+    return p.length===3 ? Number(p[2])+' '+BLN[Number(p[1])-1]+' '+p[0] : String(d); };
   const BLN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const BLNP = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -717,6 +735,14 @@
     const n0 = new Date();
     if (p==='today') return { from:iso(n0), to:iso(n0), label:'Hari ini', days:1 };
     if (p==='yesterday') { const y=new Date(n0); y.setDate(y.getDate()-1); return { from:iso(y), to:iso(y), label:'Kemarin', days:1 }; }
+    // r:2026-08-01:2026-08-12  — rentang yang diketik sendiri.
+    // Satu hari saja cukup mengisi tanggal yang sama di kedua kotak.
+    if (String(p).startsWith('r:')) {
+      const [f, t] = p.slice(2).split(':');
+      const hari = Math.round((new Date(t+'T00:00:00') - new Date(f+'T00:00:00')) / 86400000) + 1;
+      return { from:f, to:t, days:Math.max(1, hari),
+        label: f === t ? sdPanjang(f) : sdPanjang(f) + ' – ' + sdPanjang(t) };
+    }
     if (String(p).startsWith('m:')) {
       const [y,mo] = p.slice(2).split('-').map(Number);
       const f = new Date(y, mo-1, 1);
@@ -1160,9 +1186,31 @@
         const v = 'm:'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
         html += '<button class="bulan" data-p="'+v+'">'+BLN[d.getMonth()]+' '+String(d.getFullYear()).slice(2)+'</button>';
       }
+      // Kotak tanggal untuk periode yang tidak tercakup chip di atas.
+      // Isi tanggal yang sama di keduanya kalau hanya ingin melihat satu hari.
+      html += `<span class="tgl-bebas">
+        <input type="date" id="tgl-dari" max="${iso(n0)}" aria-label="Tanggal mulai">
+        <span class="tgl-pisah">&ndash;</span>
+        <input type="date" id="tgl-sampai" max="${iso(n0)}" aria-label="Tanggal akhir">
+        <button id="tgl-pakai" type="button">Terapkan</button>
+      </span>`;
       el.innerHTML = html; el.dataset.built = '1';
     }
-    el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.p===period));
+    el.querySelectorAll('button[data-p]').forEach(b=>b.classList.toggle('on', b.dataset.p===period));
+
+    // Kotak tanggal ikut menyala kalau rentang bebas sedang dipakai, dan
+    // isinya disamakan dengan periode aktif supaya tidak membingungkan.
+    const bebas = String(period||'').startsWith('r:');
+    const kotak = el.querySelector('.tgl-bebas');
+    if (kotak) {
+      kotak.classList.toggle('on', bebas);
+      if (bebas) {
+        const [f, t] = period.slice(2).split(':');
+        const a = el.querySelector('#tgl-dari'), b = el.querySelector('#tgl-sampai');
+        if (a && !a.matches(':focus')) a.value = f;
+        if (b && !b.matches(':focus')) b.value = t;
+      }
+    }
   }
 
   function buildFilters() {
@@ -1290,6 +1338,10 @@
     const p = String(period||'');
     if (p === 'today') return 'hari ini';
     if (p === 'yesterday') return 'kemarin';
+    if (p.startsWith('r:')) {
+      const [f, t] = p.slice(2).split(':');
+      return f === t ? sdPanjang(f) : sdPanjang(f) + ' – ' + sdPanjang(t);
+    }
     if (p.startsWith('m:')) {
       const [th, bl] = p.slice(2).split('-');
       return BLN[Number(bl)-1] + ' ' + th;
@@ -3486,9 +3538,36 @@
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
   });
   document.getElementById('periods').addEventListener('click', e=>{
+    // Tombol Terapkan diperiksa lebih dulu; dia tidak punya data-p.
+    if (e.target.closest('#tgl-pakai')) { pakaiRentangBebas(); return; }
     const b = e.target.closest('button[data-p]'); if(!b) return;
     period = b.dataset.p; buildPeriods(); muat();
   });
+  // Enter di salah satu kotak tanggal sama dengan menekan Terapkan
+  document.getElementById('periods').addEventListener('keydown', e=>{
+    if (e.key !== 'Enter') return;
+    if (!e.target.closest('#tgl-dari, #tgl-sampai')) return;
+    e.preventDefault(); pakaiRentangBebas();
+  });
+
+  // Rentang yang diketik sendiri. Urutan tanggal dibalik kalau tertukar,
+  // dan tanggal akhir tidak boleh melewati hari ini karena datanya belum ada.
+  function pakaiRentangBebas() {
+    const a = document.getElementById('tgl-dari');
+    const b = document.getElementById('tgl-sampai');
+    if (!a || !b) return;
+    let f = a.value, t = b.value;
+    if (!f && !t) return;
+    if (!f) f = t;
+    if (!t) t = f;
+    if (f > t) { const s = f; f = t; t = s; }
+    const kini = iso(new Date());
+    if (t > kini) t = kini;
+    if (f > kini) f = kini;
+    a.value = f; b.value = t;
+    period = 'r:' + f + ':' + t;
+    buildPeriods(); muat();
+  }
   document.getElementById('akun-chips').addEventListener('click', e=>{
     const b = e.target.closest('button[data-akun]'); if(!b) return;
     fAkun = b.dataset.akun; fKmp = 'all';
