@@ -349,6 +349,9 @@
   .quote { margin-top:auto; padding:13px; border-radius:13px; background:var(--blue-soft); }
   .quote .k { font-size:10px; font-weight:700; color:var(--blue); letter-spacing:.5px; margin:0 0 6px; }
   .quote p { font-size:12px; line-height:1.55; color:var(--ink-2); margin:0; font-weight:500; }
+  /* semangat harian untuk CS, dibedakan warnanya dari catatan biasa */
+  .quote.semangat { background:var(--violet-soft); }
+  .quote.semangat .k { color:var(--violet); }
 
   /* ---------- main ---------- */
   main { margin-left:var(--sb); min-height:100vh; }
@@ -1470,7 +1473,76 @@
   // pengamanan sebenarnya ada di Worker, yang menolak data lain dengan 403.
   const menuBoleh = m => AKU.peran === 'admin' || m.id === 'cs';
 
+  // ---------- semangat harian ----------
+  // Satu kalimat per hari untuk tiap CS. Sengaja tidak berganti tiap kali
+  // halaman dimuat: kalau berubah terus, kalimatnya jadi tidak berarti apa-apa.
+  // Nada sengaja dijaga tenang dan tentang cara kerja, bukan tuntutan angka.
+  const MOTIVASI = [
+    'Satu chat yang benar-benar didengar lebih berharga daripada sepuluh chat yang buru-buru.',
+    'Pelanggan ingat bagaimana kamu memperlakukan mereka, bukan seberapa cepat kamu membalas.',
+    'Follow-up bukan menagih. Itu memastikan orang yang percaya padamu tidak merasa ditinggal.',
+    'Hari yang sepi bukan hari yang gagal. Kadang yang tumbuh hari ini belum kelihatan.',
+    'Tanya kabarnya dulu sebelum tanya pesanannya. Urutannya penting.',
+    'Kamu tidak sedang menjual botol. Kamu sedang menemani orang yang ingin membaik.',
+    'Kalau bingung mau mulai dari mana, mulai dari yang paling lama tidak dihubungi.',
+    'Jawaban jujur "saya cek dulu ya" lebih dipercaya daripada jawaban cepat yang keliru.',
+    'Pelanggan repeat itu hasil dari perhatian bulan lalu, bukan promo hari ini.',
+    'Tidak semua orang akan membalas. Itu bukan tentang kamu.',
+    'Sebut namanya. Kalimat yang sama terasa berbeda kalau ada namanya.',
+    'Selesaikan satu tugas sampai tuntas sebelum membuka yang berikutnya.',
+    'Kalau pelanggan mengeluh, itu tandanya dia masih peduli. Yang diam justru sudah pergi.',
+    'Menolak menjanjikan hasil instan itu bukan kehilangan penjualan, itu menjaga kepercayaan.',
+    'Catat hal kecil tentang pelangganmu. Bulan depan itu yang membedakan.',
+    'Kerja yang rapi hari ini membuat kamu tidak kelabakan minggu depan.',
+    'Kamu boleh istirahat sebentar. Daftar ini tidak akan lari.',
+    'Kalimat pendek yang jelas mengalahkan paragraf panjang yang membingungkan.',
+    'Dengar dulu sampai selesai. Sering jawabannya sudah ada di ceritanya.',
+    'Yang kamu kejar bukan angka hari ini, tapi orang yang kembali bulan depan.',
+    'Kalau ragu boleh menawarkan atau tidak, tanya dirimu: ini membantu dia atau membantu targetku?',
+    'Ucapan terima kasih yang tulus tidak pernah terasa berlebihan.',
+    'Pelanggan yang merasa diingat jarang pindah ke tempat lain.',
+    'Kesalahan yang diakui lebih cepat selesai daripada kesalahan yang ditutupi.',
+    'Mulai dari yang terlewat. Rasa lega setelahnya membuat sisanya lebih ringan.',
+    'Tidak apa-apa kalau hari ini hanya sedikit yang beres, asal yang sedikit itu beres benar.',
+    'Sabar bukan berarti lambat. Sabar berarti tidak memaksa orang mengambil keputusan.',
+    'Orang membeli dari orang yang mereka percaya, bukan dari yang paling sering mengirim pesan.',
+    'Kalau ada yang bertanya soal keluhan kesehatan, arahkan ke dokter. Itu bentuk peduli, bukan menghindar.',
+    'Sekali lagi hari ini: baca pesannya pelan-pelan sebelum membalas.',
+    'Tugas yang ditunda tidak hilang, cuma jadi lebih berat besok.',
+    'Kabar baik dari pelanggan itu hasil kerjamu juga. Boleh ikut senang.',
+    'Kalau merasa jenuh, ganti urutan kerjanya. Kadang itu cukup.',
+    'Setiap orang di daftarmu pernah memutuskan untuk percaya. Perlakukan seperti itu.',
+    'Tanya "sudah dicoba dari kapan?" sebelum menyimpulkan apa pun.',
+    'Kejujuran soal apa yang tidak bisa kamu janjikan justru membuat janjimu bernilai.',
+    'Hari ini cukup jadi lebih baik sedikit dari kemarin. Tidak perlu lebih dari itu.',
+    'Balasan yang lambat tapi tepat lebih baik daripada cepat tapi asal.',
+    'Kalau kamu tidak tahu jawabannya, bilang tidak tahu lalu cari tahu. Itu profesional.',
+    'Yang membuat pelanggan bertahan biasanya hal kecil yang kamu anggap biasa saja.',
+  ];
+
+  // Sebaran tetap dari tanggal + nama pengguna, jadi tiap CS bisa dapat
+  // kalimat berbeda di hari yang sama, tapi tidak berubah sepanjang hari itu.
+  function nomorAcak(teks) {
+    let h = 2166136261;
+    const s = String(teks);
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return Math.abs(h | 0);
+  }
+  const motivasiHariIni = () =>
+    MOTIVASI[nomorAcak(tglLokal() + '|' + (PENGGUNA || '')) % MOTIVASI.length];
+
+  // Blok catatan di kaki menu. Untuk CS diganti jadi semangat harian; catatan
+  // soal ROAS memang tidak ada gunanya buat mereka.
+  function pasangCatatan() {
+    const kotak = document.querySelector('.quote');
+    if (!kotak) return;
+    if (AKU.peran !== 'cs') return;
+    kotak.classList.add('semangat');
+    kotak.innerHTML = '<p class="k">SEMANGAT HARI INI</p><p>' + esc(motivasiHariIni()) + '</p>';
+  }
+
   function buildNav() {
+    pasangCatatan();
     [1,2,3].forEach(g=>{
       document.getElementById('nav'+g).innerHTML = MENU.filter(m=>m.g===g && menuBoleh(m)).map(m=>{
         let tag='';
