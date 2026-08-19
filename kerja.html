@@ -349,9 +349,11 @@
   .quote { margin-top:auto; padding:13px; border-radius:13px; background:var(--blue-soft); }
   .quote .k { font-size:10px; font-weight:700; color:var(--blue); letter-spacing:.5px; margin:0 0 6px; }
   .quote p { font-size:12px; line-height:1.55; color:var(--ink-2); margin:0; font-weight:500; }
-  /* semangat harian untuk CS, dibedakan warnanya dari catatan biasa */
+  /* semangat harian: ungu untuk CS, hijau untuk pemilik */
   .quote.semangat { background:var(--violet-soft); }
   .quote.semangat .k { color:var(--violet); }
+  .quote.semangat.pemilik { background:var(--green-soft); }
+  .quote.semangat.pemilik .k { color:var(--green); }
 
   /* ---------- main ---------- */
   main { margin-left:var(--sb); min-height:100vh; }
@@ -1520,6 +1522,52 @@
     'Yang membuat pelanggan bertahan biasanya hal kecil yang kamu anggap biasa saja.',
   ];
 
+  // Untuk pemilik usaha. Temanya uang, keputusan, membangun, dan kerja keras
+  // yang bisa dijalani lama. Bukan gaya "gaspol tanpa tidur" yang cuma enak
+  // dibaca sehari lalu bikin habis di bulan ketiga.
+  const MOTIVASI_ADMIN = [
+    'Uang masuk bukan keuntungan. Keuntungan itu yang tersisa setelah semuanya dibayar.',
+    'Bisnis yang sehat dibangun dari pelanggan yang kembali, bukan dari iklan yang mahal.',
+    'Angka yang kamu hindari melihatnya biasanya angka yang paling perlu kamu lihat.',
+    'Biaya kecil yang berulang tiap hari lebih berbahaya daripada biaya besar yang sekali.',
+    'Kalau tidak diukur, itu bukan strategi. Itu harapan.',
+    'Naikkan margin sebelum menaikkan omzet. Omzet besar dengan margin tipis cuma menambah kerja.',
+    'Yang membuat usaha bertahan bukan hari terbaiknya, tapi seberapa siap ia di hari terburuknya.',
+    'Keputusan yang ditunda tetap sebuah keputusan, dan biasanya yang paling mahal.',
+    'Satu proses yang dirapikan hari ini menghemat ratusan jam tahun depan.',
+    'Kerja keras tanpa arah cuma capek yang terlihat produktif.',
+    'Pelanggan lama jauh lebih murah daripada pelanggan baru. Perlakukan sesuai nilainya.',
+    'Kalau semuanya penting, berarti tidak ada yang penting. Pilih.',
+    'Sisihkan dulu, sisanya baru dipakai. Kebalikannya jarang berhasil.',
+    'Bertumbuh terlalu cepat tanpa sistem itu bukan sukses, itu utang yang belum ditagih.',
+    'Delegasikan pekerjaan yang bisa dikerjakan orang lain 80% sebaik kamu.',
+    'Iklan tidak memperbaiki produk yang tidak dicari orang. Ia hanya mempercepat kesimpulannya.',
+    'Modal terbesarmu bukan uang, tapi jam yang kamu habiskan hari ini.',
+    'Konsisten yang biasa saja mengalahkan luar biasa yang sesekali.',
+    'Uang mengikuti masalah yang benar-benar terselesaikan.',
+    'Hitung ulang harga pokokmu. Yang terasa untung sering ternyata tidak.',
+    'Jangan bersaing di harga kalau kamu bisa bersaing di pelayanan.',
+    'Rekrut lambat, latih serius. Timmu yang menentukan batas atas usahamu.',
+    'Yang tidak bisa kamu tinggalkan seminggu itu bukan bisnis, itu pekerjaan.',
+    'Kesalahan yang dicatat berubah jadi pelajaran. Yang tidak dicatat berubah jadi kebiasaan.',
+    'Cari tahu dari mana pelanggan terbaikmu datang, lalu perbesar pintu itu.',
+    'Disiplin di hari yang membosankan menentukan hasil di hari yang menentukan.',
+    'Arus kas mengalahkan laba di atas kertas. Yang membayar gaji adalah uang yang benar-benar ada.',
+    'Kalau kamu tidak tahu pelanggan mana yang paling menguntungkan, kamu sedang menebak.',
+    'Berhenti mengejar semua peluang. Sebagian besar hanya gangguan yang berpakaian rapi.',
+    'Sukses jangka panjang biasanya membosankan dilihat dari luar.',
+    'Perbaiki kebocoran sebelum menambah air. Ongkir, retur, dan diskon diam-diam memakan margin.',
+    'Kerja keras itu perlu, tapi istirahat yang cukup yang membuatmu bisa mengulanginya besok.',
+    'Ukur satu angka yang paling menentukan, lalu jaga angka itu setiap hari.',
+    'Reputasi dibangun bertahun-tahun dan bisa habis dalam satu keputusan malas.',
+    'Kalau timmu tidak tahu apa yang penting minggu ini, itu bukan salah mereka.',
+    'Uang yang datang cepat biasanya pergi cepat. Yang dibangun pelan cenderung bertahan.',
+    'Jangan hanya melihat total penjualan. Lihat siapa yang membeli lagi.',
+    'Sistem yang membosankan mengalahkan semangat yang meledak-ledak.',
+    'Tidak semua pertumbuhan layak dikejar. Ada yang harganya lebih mahal dari hasilnya.',
+    'Hari ini pilih satu hal yang kalau beres, sisanya jadi lebih mudah.',
+  ];
+
   // Sebaran tetap dari tanggal + nama pengguna, jadi tiap CS bisa dapat
   // kalimat berbeda di hari yang sama, tapi tidak berubah sepanjang hari itu.
   function nomorAcak(teks) {
@@ -1528,16 +1576,17 @@
     for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
     return Math.abs(h | 0);
   }
-  const motivasiHariIni = () =>
-    MOTIVASI[nomorAcak(tglLokal() + '|' + (PENGGUNA || '')) % MOTIVASI.length];
+  const motivasiHariIni = () => {
+    const daftar = AKU.peran === 'cs' ? MOTIVASI : MOTIVASI_ADMIN;
+    return daftar[nomorAcak(tglLokal() + '|' + (PENGGUNA || '')) % daftar.length];
+  };
 
-  // Blok catatan di kaki menu. Untuk CS diganti jadi semangat harian; catatan
-  // soal ROAS memang tidak ada gunanya buat mereka.
+  // Blok catatan di kaki menu, isinya menyesuaikan siapa yang masuk.
   function pasangCatatan() {
     const kotak = document.querySelector('.quote');
     if (!kotak) return;
-    if (AKU.peran !== 'cs') return;
     kotak.classList.add('semangat');
+    kotak.classList.toggle('pemilik', AKU.peran !== 'cs');
     kotak.innerHTML = '<p class="k">SEMANGAT HARI INI</p><p>' + esc(motivasiHariIni()) + '</p>';
   }
 
