@@ -357,8 +357,8 @@
   /* Dibuat untuk difoto: warnanya tetap gelap di mode terang maupun gelap,
      tidak ada angka penjualan di dalamnya, dan kalimatnya besar supaya
      terbaca waktu dipasang jadi story. */
-  .smg { position:relative; overflow:hidden; border-radius:22px; margin-bottom:20px;
-    padding:30px 30px 26px; color:#fff; isolation:isolate;
+  .smg { position:relative; overflow:hidden; border-radius:18px; margin-bottom:18px;
+    padding:20px 24px 17px; color:#fff; isolation:isolate;
     background:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 52%,#312E81 100%);
     box-shadow:0 18px 40px -16px rgba(76,29,149,.6); }
   .smg-hias { position:absolute; inset:0; z-index:-1; pointer-events:none;
@@ -373,32 +373,34 @@
       radial-gradient(circle at 6% 96%, rgba(45,212,191,.42), transparent 55%); }
   .smg-pemilik .smg-titik { background:#FDE68A; box-shadow:0 0 0 4px rgba(253,230,138,.22); }
   .smg-isi { position:relative; }
-  .smg-kop { display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:800;
-    letter-spacing:1.4px; color:rgba(255,255,255,.82); margin-bottom:16px; }
-  .smg-titik { width:7px; height:7px; border-radius:50%; background:#A7F3D0;
-    box-shadow:0 0 0 4px rgba(167,243,208,.22); }
-  .smg-kata { margin:0; font-size:25px; line-height:1.42; font-weight:700;
-    letter-spacing:-.4px; max-width:22ch; text-wrap:balance;
-    text-shadow:0 2px 14px rgba(30,20,70,.28); }
+  .smg-kop { display:flex; align-items:center; gap:7px; font-size:9.5px; font-weight:800;
+    letter-spacing:1.3px; color:rgba(255,255,255,.8); margin-bottom:10px; }
+  .smg-titik { width:6px; height:6px; border-radius:50%; background:#A7F3D0;
+    box-shadow:0 0 0 3px rgba(167,243,208,.22); }
+  .smg-kata { margin:0; font-size:20px; line-height:1.36; font-weight:700;
+    letter-spacing:-.35px; max-width:62ch; text-wrap:balance;
+    text-shadow:0 2px 12px rgba(30,20,70,.26); }
   .smg-kaki { display:flex; align-items:center; justify-content:space-between;
-    gap:14px; margin-top:22px; padding-top:16px; flex-wrap:wrap;
-    border-top:1px solid rgba(255,255,255,.2); }
-  .smg-tgl { font-size:12px; font-weight:600; color:rgba(255,255,255,.86); }
-  .smg-cap { font-size:12px; font-weight:800; letter-spacing:2px; color:rgba(255,255,255,.6); }
-  .smg-unduh { position:absolute; top:20px; right:20px; display:inline-flex; align-items:center;
-    gap:6px; border:1px solid rgba(255,255,255,.34); background:rgba(255,255,255,.14);
-    color:#fff; padding:7px 13px; border-radius:999px; font-size:11.5px; font-weight:700;
+    gap:12px; margin-top:13px; padding-top:11px; flex-wrap:wrap;
+    border-top:1px solid rgba(255,255,255,.18); }
+  .smg-tgl { font-size:11px; font-weight:600; color:rgba(255,255,255,.84); }
+  .smg-cap { font-size:11px; font-weight:800; letter-spacing:2px; color:rgba(255,255,255,.55); }
+  .smg-unduh { position:absolute; top:14px; right:14px; display:inline-flex; align-items:center;
+    gap:5px; border:1px solid rgba(255,255,255,.32); background:rgba(255,255,255,.14);
+    color:#fff; padding:5px 11px; border-radius:999px; font-size:10.5px; font-weight:700;
     font-family:inherit; cursor:pointer; backdrop-filter:blur(6px);
     transition:background .15s, border-color .15s; }
   .smg-unduh:hover { background:rgba(255,255,255,.26); border-color:rgba(255,255,255,.6); }
-  .smg-unduh svg { width:14px; height:14px; }
+  .smg-unduh svg { width:13px; height:13px; }
   @media (max-width:620px) {
-    .smg { padding:26px 22px 22px; border-radius:20px; }
-    .smg-kata { font-size:21px; max-width:none; }
-    .smg-unduh { position:static; margin-top:18px; width:100%; justify-content:center;
-      padding:11px 14px; font-size:12.5px; }
-    .smg-kaki { margin-top:18px; }
+    .smg { padding:18px 18px 15px; border-radius:16px; }
+    .smg-kata { font-size:17px; max-width:none; padding-right:0; }
+    .smg-unduh { position:static; margin-top:12px; width:100%; justify-content:center;
+      padding:9px 14px; font-size:11.5px; }
+    .smg-kaki { margin-top:11px; }
   }
+  /* di layar lebar kalimatnya jangan menabrak tombol simpan */
+  @media (min-width:621px) { .smg-kata { padding-right:170px; } }
 
   /* ---------- main ---------- */
   main { margin-left:var(--sb); min-height:100vh; }
