@@ -365,6 +365,13 @@
     background:
       radial-gradient(circle at 88% 12%, rgba(56,189,248,.55), transparent 58%),
       radial-gradient(circle at 6% 96%, rgba(236,72,153,.42), transparent 55%); }
+  /* varian pemilik: hijau tua keemasan, supaya tidak kembar dengan punya CS */
+  .smg-pemilik { background:linear-gradient(135deg,#34D399 0%,#0F766E 50%,#052E2B 100%);
+    box-shadow:0 18px 40px -16px rgba(6,78,59,.6); }
+  .smg-pemilik .smg-hias { background:
+      radial-gradient(circle at 88% 12%, rgba(251,191,36,.45), transparent 58%),
+      radial-gradient(circle at 6% 96%, rgba(45,212,191,.42), transparent 55%); }
+  .smg-pemilik .smg-titik { background:#FDE68A; box-shadow:0 0 0 4px rgba(253,230,138,.22); }
   .smg-isi { position:relative; }
   .smg-kop { display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:800;
     letter-spacing:1.4px; color:rgba(255,255,255,.82); margin-bottom:16px; }
@@ -1624,15 +1631,11 @@
     return daftar[nomorAcak(tglLokal() + '|' + (PENGGUNA || '')) % daftar.length];
   };
 
-  // Blok catatan di kaki menu. Untuk pemilik cukup di sini. Untuk CS
-  // dipindah jadi kartu besar di atas halamannya, supaya enak difoto.
+  // Catatan kecil di kaki menu tidak dipakai lagi: semangat harian sudah
+  // punya kartunya sendiri di atas halaman, yang jauh lebih enak difoto.
   function pasangCatatan() {
     const kotak = document.querySelector('.quote');
-    if (!kotak) return;
-    if (AKU.peran === 'cs') { kotak.style.display = 'none'; return; }
-    kotak.style.display = '';
-    kotak.classList.add('semangat', 'pemilik');
-    kotak.innerHTML = '<p class="k">SEMANGAT HARI INI</p><p>' + esc(motivasiHariIni()) + '</p>';
+    if (kotak) kotak.style.display = 'none';
   }
 
   // ---------- kartu semangat, dibuat untuk difoto ----------
@@ -1645,9 +1648,13 @@
     return HARI_ID[d.getDay()] + ', ' + d.getDate() + ' ' + BLNP[d.getMonth()] + ' ' + d.getFullYear();
   }
 
+  // Warna dibedakan per peran supaya kalau dua orang memasang story di hari
+  // yang sama, kartunya tidak kembar.
+  const pemilik = () => AKU.peran !== 'cs';
+
   function kartuSemangat() {
     const kata = motivasiHariIni();
-    return `<div class="smg" id="smg">
+    return `<div class="smg ${pemilik() ? 'smg-pemilik' : ''}" id="smg">
       <div class="smg-hias"></div>
       <div class="smg-isi">
         <div class="smg-kop">
@@ -1686,10 +1693,17 @@
     c.width = L; c.height = T;
     const x = c.getContext('2d');
 
+    // ungu untuk CS, hijau tua keemasan untuk pemilik
+    const pal = pemilik()
+      ? { a:'#34D399', b:'#0F766E', c:'#052E2B',
+          c1:'rgba(251,191,36,ALPHA)', k1:'.5', c2:'rgba(45,212,191,ALPHA)', k2:'.45' }
+      : { a:'#A78BFA', b:'#7C3AED', c:'#2E1065',
+          c1:'rgba(56,189,248,ALPHA)', k1:'.6', c2:'rgba(236,72,153,ALPHA)', k2:'.45' };
+
     const g = x.createLinearGradient(0, 0, L * .35, T);
-    g.addColorStop(0, '#A78BFA');
-    g.addColorStop(.45, '#7C3AED');
-    g.addColorStop(1, '#2E1065');
+    g.addColorStop(0, pal.a);
+    g.addColorStop(.45, pal.b);
+    g.addColorStop(1, pal.c);
     x.fillStyle = g; x.fillRect(0, 0, L, T);
 
     // dua bulatan cahaya supaya latarnya tidak terasa datar
@@ -1699,8 +1713,8 @@
       b.addColorStop(1, warna.replace('ALPHA', '0'));
       x.fillStyle = b; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
     };
-    bulat(L * .86, T * .13, 640, 'rgba(56,189,248,ALPHA)', '.6');
-    bulat(L * .05, T * .72, 700, 'rgba(236,72,153,ALPHA)', '.45');
+    bulat(L * .86, T * .13, 640, pal.c1, pal.k1);
+    bulat(L * .05, T * .72, 700, pal.c2, pal.k2);
 
     const tepi = 96, lebar = L - tepi * 2;
 
@@ -1874,7 +1888,8 @@
     const ctr = t.impressions>0 ? t.clicks/t.impressions*100 : 0;
     const cpc = t.clicks>0 ? t.spend/t.clicks : 0;
 
-    return heroGMV()
+    return kartuSemangat()
+      + heroGMV()
       + blokTantangan()
       + blokPendapatan(t, p)
       + kalenderLaba()
