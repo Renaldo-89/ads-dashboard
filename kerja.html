@@ -194,7 +194,7 @@
   .stok-kotak button:disabled, .stok-aksi button:disabled { opacity:.55; cursor:default; }
   .stok-aksi { display:flex; gap:9px; justify-content:flex-end; padding:12px 2px 2px;
     flex-wrap:wrap; }
-  .stok-aksi #tambah-produk { background:var(--panel); border:1px solid var(--line);
+  .stok-aksi #batal-order { background:var(--panel); border:1px solid var(--line);
     color:var(--ink-2); }
   .stok-pesan { border-radius:12px; padding:11px 14px; font-size:12.5px; font-weight:600;
     margin-bottom:14px; }
@@ -205,11 +205,22 @@
     font-family:inherit; }
   .stok-hapus:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
   .stok-hapus:disabled { opacity:.4; cursor:default; }
-  table.dt.tprod input { width:100%; box-sizing:border-box; border:1px solid var(--line);
-    background:var(--bg); color:var(--ink); border-radius:8px; padding:6px 8px;
-    font-size:12px; font-family:inherit; font-weight:600; min-width:80px; }
-  table.dt.tprod input:focus { outline:none; border-color:var(--violet); }
-  table.dt.tprod input[type="number"] { text-align:right; }
+  /* pratinjau pesanan yang sedang dicek sebelum dicatat masuk */
+  .stok-pratinjau { border:1px solid var(--violet); background:var(--violet-soft);
+    border-radius:16px; padding:15px 16px 13px; margin-bottom:16px; }
+  .stok-pratinjau .k { font-size:10px; font-weight:800; letter-spacing:1px;
+    color:var(--violet); margin:0 0 11px; }
+  .stok-ringkas { display:flex; flex-wrap:wrap; gap:8px 22px; margin-bottom:11px; }
+  .stok-ringkas span { font-size:12.5px; font-weight:600; color:var(--ink-2); }
+  .stok-ringkas b { display:block; font-size:9.5px; font-weight:800; letter-spacing:.6px;
+    color:var(--faint); margin-bottom:2px; }
+  .stok-produk { margin:0 0 12px; padding-left:18px; }
+  .stok-produk li { font-size:12.5px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
+  .stok-segar { margin-left:auto; border:1px solid var(--line); background:var(--panel);
+    color:var(--ink-2); padding:5px 12px; border-radius:9px; font-size:11.5px;
+    font-weight:700; font-family:inherit; cursor:pointer; }
+  .stok-segar:hover { border-color:var(--violet); color:var(--violet); }
+  .stok-segar:disabled { opacity:.5; cursor:default; }
 
   /* ---------- kalender laba harian ---------- */
   .kal-bungkus { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(268px,100%),1fr)); gap:18px; }
@@ -917,27 +928,33 @@
   // penjualan berbentuk sama seperti sumber lain, lalu ikut mengalir ke omzet,
   // produk terjual, gross profit, dan laba — tanpa rumus khusus di banyak tempat.
   // Harga jual, HPP, dan GMV point diambil dari daftar produk yang diatur admin.
+  // Ongkir sengaja TIDAK dipotong di sini. Kiriman ini punya resi Everpro,
+  // jadi ongkirnya sudah ikut terhitung di biayaKirim() bersama kiriman lain.
+  // Kalau dipotong dua kali, labanya jadi terlalu kecil.
+  //
+  // GMV juga tidak ikut ke Overview — hanya dipakai untuk peringkat CS, sesuai
+  // permintaan: GMV stok retur milik CS yang mengerjakannya, bukan tambahan
+  // GMV pribadi.
   function barisRetur(dari, sampai) {
-    const daftar = (D.stok && D.stok.pakai) || [];
+    const daftar = (D.stok && D.stok.keluar) || [];
     if (!daftar.length) return [];
-    const P = new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
     const out = [];
     for (const x of daftar) {
       const t = String(x.tgl || '');
       if (!t || (dari && t < dari) || (sampai && t > sampai)) continue;
-      const p = P.get(x.produk);
-      if (!p) continue;                       // produk sudah dihapus dari daftar
       const j = Math.max(0, Number(x.jumlah) || 0);
       if (!j) continue;
+      const omzet = Number(x.omzet) || 0;
+      const hpp = Number(x.hpp) || 0;
       out.push({
         date: t, granularity: 'daily',
         orders: 1, units: j,
-        revenue: p.harga * j,
-        cogs: p.hpp * j,
-        gross_profit: (p.harga - p.hpp) * j,
+        revenue: omzet,
+        cogs: hpp,
+        gross_profit: omzet - hpp,
         customers_new: 0, customers_repeat: 0,
-        _retur: true, pv: p.pv * j,
-        agen: String(x.agen || ''), produk_kode: p.kode, produk_nama: p.nama,
+        _retur: true, pv: Number(x.pv) || 0,
+        agen: String(x.agen || ''), produk_nama: String(x.produk || ''),
       });
     }
     return out;
@@ -1908,13 +1925,11 @@
   // ---------- halaman ----------
   // ---- GMV personal & grup, dipakai di Overview dan halaman Globemerce ----
   const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
+  // GMV di sini sengaja hanya dari Globemerce. GMV barang keluar dari stok
+  // retur tidak ditambahkan, karena itu milik CS yang mengerjakannya dan
+  // sudah dihitung di peringkat CS.
   function heroGMV() {
-    const r = rentangKini();
-    // GMV dari pemakaian stok retur dihitung dari GMV point tiap produk
-    // dikali jumlahnya, lalu ditambahkan ke GMV personal.
-    const gmvRetur = barisRetur(r && r.from, r && r.to)
-      .reduce((a, x) => a + (Number(x.pv) || 0), 0);
-    if (!(D.gmv||[]).length && !gmvRetur) return '';
+    if (!(D.gmv||[]).length) return '';
     const g = (D.gmv||[]).reduce((a,x)=>({
       personal: a.personal + (Number(x.gmv_personal)||0),
       group: a.group + (Number(x.gmv_group)||0),
@@ -3023,186 +3038,209 @@
   }
 
   // ---------- halaman Personal Admin: stok barang retur ----------
-  // Dua pencatatan. "Masuk" adalah barang retur yang diterima kembali;
-  // "pakai" adalah barang itu dikirim ulang atas nama CS tertentu. Penjualan
-  // dari pemakaian tidak lewat Globemerce, jadi dari sinilah omzet, GMV, dan
-  // labanya masuk ke laporan — lihat barisRetur().
+  // Alurnya dua langkah dan sedikit sekali diketik.
+  //
+  // Barang masuk: cukup nomor pesanan Globemerce. Nama produk, jumlah, harga,
+  // dan HPP ditarik Worker dari pesanan itu — bukan diketik ulang, jadi tidak
+  // bisa salah ketik dan personal admin tidak perlu tahu HPP-nya.
+  //
+  // Barang keluar: pilih produk dari sisa stok, isi pembeli baru dan resinya,
+  // lalu tentukan CS yang berhak atas penjualannya. Status kiriman ditarik
+  // dari Everpro lewat nomor resi.
   let stokPesan = null;        // { jenis:'ok'|'galat', teks }
+  let stokPratinjau = null;    // hasil cek nomor order sebelum disimpan
 
-  const petaProduk = () => new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
+  const bolehUang = () => AKU.peran === 'admin';
 
+  // Sisa stok per nama produk: seluruh yang masuk dikurangi yang sudah keluar.
   function sisaStok() {
     const m = new Map();
-    for (const p of ((D.stok && D.stok.produk) || []))
-      m.set(p.kode, { kode: p.kode, nama: p.nama, masuk: 0, pakai: 0, pv: p.pv, harga: p.harga });
     for (const x of ((D.stok && D.stok.masuk) || [])) {
-      const a = m.get(x.produk); if (a) a.masuk += Number(x.jumlah) || 0;
+      for (const p of (x.produk || [])) {
+        const n = String(p.nama || '').trim();
+        if (!n) continue;
+        if (!m.has(n)) m.set(n, { nama: n, masuk: 0, keluar: 0 });
+        m.get(n).masuk += Number(p.jumlah) || 0;
+      }
     }
-    for (const x of ((D.stok && D.stok.pakai) || [])) {
-      const a = m.get(x.produk); if (a) a.pakai += Number(x.jumlah) || 0;
+    for (const x of ((D.stok && D.stok.keluar) || [])) {
+      const n = String(x.produk || '').trim();
+      if (!n) continue;
+      if (!m.has(n)) m.set(n, { nama: n, masuk: 0, keluar: 0 });
+      m.get(n).keluar += Number(x.jumlah) || 0;
     }
-    return [...m.values()].map(a => ({ ...a, sisa: a.masuk - a.pakai }));
+    return [...m.values()].map(a => ({ ...a, sisa: a.masuk - a.keluar }))
+      .sort((a, b) => b.sisa - a.sisa || a.nama.localeCompare(b.nama));
   }
 
-  // Nama CS diambil dari ringkasan tim supaya pilihannya selalu mengikuti
-  // nama Sender yang benar-benar dipakai di Globemerce.
+  // Nama CS diambil dari ringkasan tim supaya ejaannya persis sama dengan
+  // kolom Sender di Globemerce.
   function daftarAgen() {
     const s = new Set();
     for (const x of (D.tim || [])) {
       const n = String(x.agen || '').trim();
       if (n && !BUKAN_CS[n.toUpperCase()]) s.add(n);
     }
-    for (const x of ((D.stok && D.stok.pakai) || [])) {
+    for (const x of ((D.stok && D.stok.keluar) || [])) {
       const n = String(x.agen || '').trim();
       if (n) s.add(n);
     }
     return [...s].sort((a, b) => a.localeCompare(b));
   }
 
+  const WARNA_STOK = kel =>
+    kel === 'terkirim' ? ['var(--green)', 'var(--green-soft)']
+    : /retur|batal|hilang|gagal/.test(String(kel || '')) ? ['var(--red)', 'var(--red-soft)']
+    : kel ? ['var(--amber-ink)', 'var(--amber-soft)']
+    : ['var(--muted)', 'var(--line-2)'];
+
   function pgStok() {
-    const produk = (D.stok && D.stok.produk) || [];
-    const bolehHarga = AKU.peran === 'admin';
+    const uang = bolehUang();
     const pesan = stokPesan
       ? `<div class="stok-pesan ${stokPesan.jenis}">${esc(stokPesan.teks)}</div>` : '';
 
-    if (!produk.length) {
-      return `<div class="sec"><h4>Personal Admin</h4><span class="note">stok barang retur</span></div>
-        ${pesan}
-        <div class="panel"><div class="empty">
-          <div class="big" style="background:var(--amber-soft);color:var(--amber)">${I.kotak}</div>
-          <b>Daftar produk belum diisi</b><br>
-          ${bolehHarga
-            ? 'Isi dulu daftar produk beserta harga jual, HPP, dan GMV point di bawah.'
-            : 'Minta super admin mengisi daftar produk dulu. Setelah itu kamu bisa mencatat barang retur masuk dan pemakaiannya.'}
-        </div></div>
-        ${bolehHarga ? blokDaftarProduk() : ''}`;
-    }
-
     const sisa = sisaStok();
+    const adaSisa = sisa.filter(x => x.sisa > 0);
     const totalSisa = sisa.reduce((a, x) => a + x.sisa, 0);
-    const opsiProduk = produk.map(p =>
-      `<option value="${esc(p.kode)}">${esc(p.nama)}</option>`).join('');
     const agen = daftarAgen();
 
-    const kartuSisa = `<div class="kpis">
+    const kartuSisa = sisa.length ? `<div class="kpis">
       ${sisa.map(x => kpi(I.kotak, x.sisa > 0 ? 'var(--green)' : 'var(--muted)',
         x.sisa > 0 ? 'var(--green-soft)' : 'var(--line-2)',
         x.nama, fN(x.sisa) + ' pcs',
-        'masuk ' + fN(x.masuk) + ' · dipakai ' + fN(x.pakai))).join('')}
-    </div>`;
+        'masuk ' + fN(x.masuk) + ' · keluar ' + fN(x.keluar))).join('')}
+    </div>` : '';
 
-    const form = `<div class="stok-form">
-      <form class="stok-kotak" data-form="masuk">
-        <p class="k">CATAT BARANG RETUR MASUK</p>
-        <div class="baris">
-          <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
-          <label>Produk<select name="produk" required>${opsiProduk}</select></label>
-          <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
-        </div>
-        <div class="baris">
-          <label>Resi asal <span>opsional</span><input name="resi" placeholder="nomor resi paket retur"></label>
-          <label>Alasan <span>opsional</span><input name="alasan" placeholder="alamat tidak ditemukan, ditolak, dll"></label>
-        </div>
-        <button type="submit">Simpan barang masuk</button>
-      </form>
+    // ---- pratinjau pesanan yang sedang dicek ----
+    const pv = stokPratinjau;
+    const blokPratinjau = pv ? `<div class="stok-pratinjau">
+      <p class="k">PESANAN #${esc(pv.no)} DITEMUKAN</p>
+      <div class="stok-ringkas">
+        <span><b>Tanggal</b>${sd(pv.tgl)}</span>
+        <span><b>Pembeli asal</b>${esc(pv.pembeli || '—')}</span>
+        <span><b>CS asal</b>${esc(pv.agen || '—')}</span>
+        <span><b>Resi asal</b>${esc(pv.resi || '—')}</span>
+        ${uang ? '<span><b>Omzet</b>' + fC(pv.omzet) + '</span>' : ''}
+      </div>
+      <ul class="stok-produk">${(pv.produk || []).map(p =>
+        `<li>${esc(p.nama)} <b>×${fN(p.jumlah)}</b></li>`).join('')}</ul>
+      <div class="stok-aksi">
+        <button type="button" id="batal-order">Batal</button>
+        <button type="button" id="simpan-order">Catat sebagai barang masuk</button>
+      </div>
+    </div>` : '';
 
-      <form class="stok-kotak" data-form="pakai">
-        <p class="k">PAKAI STOK RETUR UNTUK PENGIRIMAN</p>
-        <div class="baris">
-          <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
-          <label>Produk<select name="produk" required>${opsiProduk}</select></label>
-          <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
-        </div>
-        <div class="baris">
-          <label>Atas nama CS<select name="agen" required>
-            <option value="">— pilih CS —</option>
-            ${agen.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}
-          </select></label>
-          <label>Pembeli <span>opsional</span><input name="pembeli" placeholder="nama pembeli"></label>
-          <label>Resi baru <span>opsional</span><input name="resi" placeholder="resi pengiriman"></label>
-        </div>
-        <button type="submit">Simpan pemakaian</button>
-      </form>
-    </div>`;
+    const formMasuk = `<form class="stok-kotak" data-form="cekorder">
+      <p class="k">BARANG RETUR MASUK</p>
+      <div class="baris">
+        <label>Nomor order Globemerce
+          <input name="no_order" inputmode="numeric" placeholder="2515557" required></label>
+        <label>Tanggal terima<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
+      </div>
+      <div class="baris">
+        <label>Alasan retur <span>opsional</span>
+          <input name="alasan" placeholder="alamat tidak ditemukan, ditolak, dll"></label>
+      </div>
+      <button type="submit">Cek pesanan</button>
+      <p class="note" style="margin:9px 0 0">Nama produk, jumlah, dan nilainya ditarik sendiri dari
+        Globemerce. Kamu hanya perlu nomor ordernya.</p>
+    </form>`;
 
-    const P = petaProduk();
-    const barisPakai = ((D.stok && D.stok.pakai) || []).slice().reverse().slice(0, 60);
-    const barisMasuk = ((D.stok && D.stok.masuk) || []).slice().reverse().slice(0, 60);
-    const nama = k => (P.get(k) || {}).nama || k;
-    const nilai = (k, j) => { const p = P.get(k); return p ? p.harga * j : 0; };
+    const formKeluar = `<form class="stok-kotak" data-form="keluar">
+      <p class="k">BARANG KELUAR KE PEMBELI BARU</p>
+      <div class="baris">
+        <label>Tanggal kirim<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
+        <label>Produk<select name="produk" required>
+          ${adaSisa.length
+            ? adaSisa.map(x => `<option value="${esc(x.nama)}">${esc(x.nama)} — sisa ${x.sisa}</option>`).join('')
+            : '<option value="">belum ada stok</option>'}
+        </select></label>
+        <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
+      </div>
+      <div class="baris">
+        <label>Nama pembeli<input name="pembeli" placeholder="nama penerima" required></label>
+        <label>Nomor HP <span>opsional</span><input name="telepon" inputmode="tel" placeholder="08xx"></label>
+      </div>
+      <div class="baris">
+        <label>Alamat <span>opsional</span><input name="alamat" placeholder="kota atau alamat singkat"></label>
+        <label>Nomor resi<input name="resi" placeholder="resi pengiriman baru"></label>
+      </div>
+      <div class="baris">
+        <label>Penjualan masuk ke CS<select name="agen" required>
+          <option value="">— pilih CS —</option>
+          ${agen.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}
+        </select></label>
+      </div>
+      <button type="submit" ${adaSisa.length ? '' : 'disabled'}>Simpan barang keluar</button>
+      <p class="note" style="margin:9px 0 0">Status kiriman ditarik dari Everpro lewat nomor resi.
+        Resi boleh diisi belakangan.</p>
+    </form>`;
 
-    const tabelPakai = barisPakai.length ? `
-      <div class="sec"><h4>Pemakaian stok retur</h4>
-        <span class="note">${fN(barisPakai.length)} catatan terakhir</span></div>
+    // ---- tabel barang keluar ----
+    const keluar = ((D.stok && D.stok.keluar) || []).slice().reverse().slice(0, 80);
+    const tabelKeluar = keluar.length ? `
+      <div class="sec"><h4>Barang keluar</h4>
+        <span class="note">${fN(keluar.length)} catatan terakhir</span>
+        <button class="stok-segar" id="segarkan-status">Segarkan status</button></div>
       <div class="panel tight"><div class="scroll-x"><table class="dt">
-        <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jumlah</th><th>CS</th>
-          <th>Pembeli</th><th>Resi</th>${bolehHarga?'<th class="num">Omzet</th>':''}<th></th></tr></thead>
-        <tbody>${barisPakai.map(x => `<tr>
-          <td class="tgl">${sd(x.tgl)}</td>
-          <td>${esc(nama(x.produk))}</td>
-          <td class="num">${fN(x.jumlah)}</td>
-          <td>${esc(x.agen || '—')}</td>
-          <td class="nama">${esc(x.pembeli || '—')}</td>
-          <td class="resi">${esc(x.resi || '—')}</td>
-          ${bolehHarga?'<td class="num uang">'+fC(nilai(x.produk, x.jumlah))+'</td>':''}
-          <td class="ctr"><button class="stok-hapus" data-hapus="pakai:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
-        </tr>`).join('')}</tbody></table></div></div>` : '';
+        <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jml</th><th>Pembeli</th>
+          <th>CS</th><th>Resi</th><th class="ctr">Status</th>
+          ${uang ? '<th class="num">Omzet</th><th class="num">Ongkir</th><th class="num">Laba</th>' : ''}
+          <th></th></tr></thead>
+        <tbody>${keluar.map(x => {
+          const [c, s] = WARNA_STOK(x.kelompok);
+          return `<tr>
+            <td class="tgl">${sd(x.tgl)}</td>
+            <td>${esc(x.produk)}</td>
+            <td class="num">${fN(x.jumlah)}</td>
+            <td class="nama">${esc(x.pembeli || '—')}</td>
+            <td>${esc(x.agen || '—')}</td>
+            <td class="resi">${esc(x.resi || '—')}</td>
+            <td class="ctr"><span class="pill2" style="background:${s};color:${c}">${esc(x.status || 'belum ada resi')}</span></td>
+            ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>'
+              + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
+              + '<td class="num uang" style="color:' + ((x.laba || 0) >= 0 ? 'var(--green)' : 'var(--red)') + '">'
+              + fC(x.laba || 0) + '</td>' : ''}
+            <td class="ctr"><button class="stok-hapus" data-hapus="keluar:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
+          </tr>`; }).join('')}</tbody></table></div></div>` : '';
 
-    const tabelMasuk = barisMasuk.length ? `
+    // ---- tabel barang masuk ----
+    const masuk = ((D.stok && D.stok.masuk) || []).slice().reverse().slice(0, 80);
+    const tabelMasuk = masuk.length ? `
       <div class="sec"><h4>Barang retur masuk</h4>
-        <span class="note">${fN(barisMasuk.length)} catatan terakhir</span></div>
+        <span class="note">${fN(masuk.length)} catatan terakhir</span></div>
       <div class="panel tight"><div class="scroll-x"><table class="dt">
-        <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jumlah</th>
-          <th>Resi asal</th><th>Alasan</th><th>Dicatat</th><th></th></tr></thead>
-        <tbody>${barisMasuk.map(x => `<tr>
+        <thead><tr><th>Tanggal</th><th>No order</th><th>Produk</th><th class="num">Jml</th>
+          <th>Pembeli asal</th><th>Alasan</th>${uang ? '<th class="num">Nilai</th>' : ''}
+          <th>Dicatat</th><th></th></tr></thead>
+        <tbody>${masuk.map(x => `<tr>
           <td class="tgl">${sd(x.tgl)}</td>
-          <td>${esc(nama(x.produk))}</td>
-          <td class="num">${fN(x.jumlah)}</td>
-          <td class="resi">${esc(x.resi || '—')}</td>
+          <td class="no">#${esc(x.no_order)}</td>
+          <td>${(x.produk || []).map(p => esc(p.nama) + ' <span style="color:var(--faint)">×' + fN(p.jumlah) + '</span>').join('<br>')}</td>
+          <td class="num">${fN(x.unit)}</td>
+          <td class="nama">${esc(x.pembeli_asal || '—')}</td>
           <td>${esc(x.alasan || '—')}</td>
+          ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>' : ''}
           <td><span class="note">${esc(x.oleh || '')}</span></td>
           <td class="ctr"><button class="stok-hapus" data-hapus="masuk:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
         </tr>`).join('')}</tbody></table></div></div>` : '';
 
-    return `<div class="sec"><h4>Sisa stok retur</h4>
-        <span class="note">${fN(totalSisa)} produk siap dipakai</span></div>
+    const kosong = (!masuk.length && !keluar.length) ? `
+      <div class="panel"><div class="empty">
+        <div class="big" style="background:var(--amber-soft);color:var(--amber)">${I.kotak}</div>
+        <b>Belum ada catatan stok retur</b><br>
+        Mulai dengan memasukkan nomor order pesanan yang barangnya kembali.
+      </div></div>` : '';
+
+    return `<div class="sec"><h4>Stok barang retur</h4>
+        <span class="note">${fN(totalSisa)} produk siap dikirim ulang</span></div>
       ${pesan}
       ${kartuSisa}
-      ${form}
-      ${tabelPakai}
-      ${tabelMasuk}
-      ${bolehHarga ? blokDaftarProduk() : ''}`;
-  }
-
-  // Daftar produk hanya bisa diubah super admin. Angka di sinilah yang dipakai
-  // menghitung omzet, HPP, dan GMV tiap pemakaian stok retur.
-  function blokDaftarProduk() {
-    const produk = (D.stok && D.stok.produk) || [];
-    const baris = p => `<tr>
-      <td><input name="kode" value="${esc(p.kode||'')}" placeholder="EROJAN" maxlength="24"></td>
-      <td><input name="nama" value="${esc(p.nama||'')}" placeholder="EROJAN 1 Botol" maxlength="60"></td>
-      <td><input name="harga" type="number" min="0" step="1000" value="${Number(p.harga)||0}"></td>
-      <td><input name="hpp" type="number" min="0" step="1000" value="${Number(p.hpp)||0}"></td>
-      <td><input name="pv" type="number" min="0" step="1" value="${Number(p.pv)||0}"></td>
-      <td class="ctr"><button type="button" class="stok-hapus" data-baris="1" title="Hapus baris">&times;</button></td>
-    </tr>`;
-    return `<div class="sec"><h4>Daftar produk</h4>
-        <span class="note">harga jual, HPP, dan GMV point per satu produk</span></div>
-      <form class="panel tight" id="form-produk">
-        <div class="scroll-x"><table class="dt tprod">
-          <thead><tr><th>Kode</th><th>Nama tampil</th><th class="num">Harga jual</th>
-            <th class="num">HPP</th><th class="num">GMV point</th><th></th></tr></thead>
-          <tbody id="baris-produk">${(produk.length ? produk : [{}]).map(baris).join('')}</tbody>
-        </table></div>
-        <div class="stok-aksi">
-          <button type="button" id="ambil-produk">Ambil dari Globemerce</button>
-          <button type="button" id="tambah-produk">+ Tambah baris</button>
-          <button type="submit">Simpan daftar produk</button>
-        </div>
-        <p class="note" style="padding:0 2px 4px">Ambil dari Globemerce mengisi tabel ini dari
-          pesanan 120 hari terakhir: harga, HPP, dan GMV point diambil dari nilai tengah tiap produk.
-          Periksa dulu angkanya, baru simpan.</p>
-      </form>`;
+      ${blokPratinjau}
+      <div class="stok-form">${formMasuk}${formKeluar}</div>
+      ${kosong}
+      ${tabelKeluar}
+      ${tabelMasuk}`;
   }
 
   // ---------- halaman Customer Service ----------
@@ -4321,97 +4359,75 @@
   }
 
   async function muatStok() {
-    if (AKU.peran !== 'admin' && AKU.peran !== 'pa' && AKU.peran !== 'cs') return;
-    if (!D.stok) D.stok = { produk: [], masuk: [], pakai: [] };
+    if (!D.stok) D.stok = { masuk: [], keluar: [] };
     try {
-      const [rp, rd] = await Promise.all([
-        ambil(PROXY + '?stok=produk'),
-        ambil(PROXY + '?stok=data'),
-      ]);
-      if (rp.status === 200) { const j = await rp.json(); if (Array.isArray(j.data)) D.stok.produk = j.data; }
-      if (rd.status === 200) {
-        const j = await rd.json();
-        if (j && j.data) { D.stok.masuk = j.data.masuk || []; D.stok.pakai = j.data.pakai || []; }
+      const r = await ambil(PROXY + '?stok=data');
+      if (r.status === 200) {
+        const j = await r.json();
+        if (j && j.data) { D.stok.masuk = j.data.masuk || []; D.stok.keluar = j.data.keluar || []; }
       }
     } catch (e) { /* KV belum siap; halaman tetap tampil apa adanya */ }
     render();
   }
 
-  // Isi tabel daftar produk dari pesanan Globemerce. Sengaja tidak langsung
-  // disimpan: angkanya perkiraan dari nilai tengah, jadi perlu dilihat dulu.
-  async function usulkanProduk() {
-    stokPesan = null;
-    let usul = null;
+  // Cek nomor order dulu, tampilkan isinya, baru disimpan kalau sudah cocok.
+  async function cekOrder(no, tgl, alasan) {
+    stokPesan = null; stokPratinjau = null;
     try {
-      const r = await ambil(PROXY + '?stok=usul');
+      const r = await ambil(PROXY + '?stok=order&no=' + encodeURIComponent(no));
       const j = await r.json();
       if (!r.ok || (j && j.error)) {
-        stokPesan = { jenis: 'galat', teks: (j && j.error) || ('Gagal mengambil (' + r.status + ')') };
-      } else usul = j.data || [];
+        stokPesan = { jenis: 'galat', teks: (j && j.error) || ('Gagal mencari (' + r.status + ')') };
+      } else {
+        stokPratinjau = { ...j.data, _tgl: tgl, _alasan: alasan };
+      }
     } catch (e) {
       stokPesan = { jenis: 'galat', teks: 'Tidak bisa menghubungi server.' };
     }
-    if (!usul) { render(); return; }
-    if (!usul.length) {
-      stokPesan = { jenis: 'galat', teks: 'Tidak ada produk yang bisa dihitung dari pesanan Globemerce.' };
-      render(); return;
-    }
-    // Produk yang sudah ada di daftar dipertahankan angkanya; yang baru ditambahkan.
-    const lama = new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
-    const gabung = usul.map(u => lama.get(u.kode) || u);
-    for (const [k, v] of lama) if (!usul.some(u => u.kode === k)) gabung.push(v);
-    D.stok.produk = gabung;
-    stokPesan = { jenis: 'ok', teks: fN(usul.length) + ' produk terbaca dari Globemerce. '
-      + 'Periksa angkanya, lalu tekan Simpan daftar produk.' };
     render();
   }
 
-  function tambahBarisProduk() {
-    const tbody = document.getElementById('baris-produk');
-    if (!tbody) return;
-    const tr = tbody.children[0].cloneNode(true);
-    tr.querySelectorAll('input').forEach(i => { i.value = i.type === 'number' ? 0 : ''; });
-    tbody.appendChild(tr);
-    const p = tr.querySelector('input'); if (p) p.focus();
+  async function simpanOrderMasuk() {
+    if (!stokPratinjau) return;
+    const p = stokPratinjau;
+    const hasil = await kirimStok('masuk', { no_order: p.no, tgl: p._tgl, alasan: p._alasan });
+    if (hasil) {
+      stokPratinjau = null;
+      stokPesan = { jenis: 'ok', teks: 'Pesanan #' + p.no + ' tercatat masuk, '
+        + fN(hasil.unit) + ' produk kembali ke stok.' };
+    }
+    await muatStok();
+  }
+
+  async function segarkanStatus(tombol) {
+    if (tombol) { tombol.disabled = true; tombol.textContent = 'Memeriksa…'; }
+    const hasil = await kirimStok('segarkan', {});
+    if (hasil) stokPesan = { jenis: 'ok', teks: hasil.diperiksa
+      ? hasil.diperbarui + ' dari ' + hasil.diperiksa + ' kiriman diperbarui statusnya.'
+      : 'Tidak ada kiriman yang perlu diperiksa.' };
+    await muatStok();
   }
 
   document.getElementById('content').addEventListener('submit', async e => {
     const f = e.target.closest('form');
     if (!f) return;
     e.preventDefault();
-
-    if (f.id === 'form-produk') {
-      const daftar = [...f.querySelectorAll('#baris-produk tr')].map(tr => {
-        const v = n => (tr.querySelector('[name="' + n + '"]') || {}).value || '';
-        return { kode: v('kode').trim().toUpperCase(), nama: v('nama').trim(),
-          harga: Number(v('harga')) || 0, hpp: Number(v('hpp')) || 0, pv: Number(v('pv')) || 0 };
-      }).filter(p => p.kode && p.nama);
-      if (!daftar.length) {
-        stokPesan = { jenis: 'galat', teks: 'Isi minimal satu produk dengan kode dan nama.' };
-        render(); return;
-      }
-      const tombol = f.querySelector('button[type="submit"]');
-      if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
-      const hasil = await kirimStok('produk', daftar);
-      if (hasil) stokPesan = { jenis: 'ok', teks: 'Daftar produk tersimpan, ' + hasil.length + ' produk.' };
-      await muatStok();
-      return;
-    }
-
     const jenis = f.dataset.form;
-    if (jenis !== 'masuk' && jenis !== 'pakai') return;
     const data = Object.fromEntries(new FormData(f).entries());
     const tombol = f.querySelector('button[type="submit"]');
-    if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
-    const hasil = await kirimStok(jenis, data);
-    if (hasil) {
-      const P = petaProduk();
-      const n = (P.get(hasil.produk) || {}).nama || hasil.produk;
-      stokPesan = { jenis: 'ok', teks: jenis === 'masuk'
-        ? 'Tercatat: ' + hasil.jumlah + ' ' + n + ' masuk kembali.'
-        : 'Tercatat: ' + hasil.jumlah + ' ' + n + ' dipakai atas nama ' + hasil.agen + '.' };
+
+    if (jenis === 'cekorder') {
+      if (tombol) { tombol.disabled = true; tombol.textContent = 'Mencari…'; }
+      await cekOrder(String(data.no_order || '').replace(/\D/g, ''), data.tgl, data.alasan);
+      return;
     }
-    await muatStok();
+    if (jenis === 'keluar') {
+      if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
+      const hasil = await kirimStok('keluar', data);
+      if (hasil) stokPesan = { jenis: 'ok', teks: fN(hasil.jumlah) + ' ' + hasil.produk
+        + ' keluar untuk ' + (hasil.pembeli || 'pembeli baru') + ', penjualannya masuk ke ' + hasil.agen + '.' };
+      await muatStok();
+    }
   });
 
   const barisPeriode = document.getElementById('periods');
@@ -4508,22 +4524,10 @@
       kirimStok('hapus', { jenis, id }).then(muatStok);
       return;
     }
-    if (e.target.closest('#tambah-produk')) { tambahBarisProduk(); return; }
-    const ambilProduk = e.target.closest('#ambil-produk');
-    if (ambilProduk) {
-      ambilProduk.disabled = true;
-      ambilProduk.textContent = 'Mengambil…';
-      usulkanProduk();
-      return;
-    }
-    const hapusBaris = e.target.closest('button[data-baris]');
-    if (hapusBaris) {
-      const tr = hapusBaris.closest('tr');
-      const tbody = tr && tr.parentElement;
-      if (tbody && tbody.children.length > 1) tr.remove();
-      else if (tr) tr.querySelectorAll('input').forEach(i => { i.value = i.type === 'number' ? 0 : ''; });
-      return;
-    }
+    if (e.target.closest('#simpan-order')) { simpanOrderMasuk(); return; }
+    if (e.target.closest('#batal-order')) { stokPratinjau = null; stokPesan = null; render(); return; }
+    const segar = e.target.closest('#segarkan-status');
+    if (segar) { segarkanStatus(segar); return; }
     const unduh = e.target.closest('#smg-unduh');
     if (unduh) { simpanStory(unduh); return; }
     const ok = e.target.closest('button[data-ok]');
