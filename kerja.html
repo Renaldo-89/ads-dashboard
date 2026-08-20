@@ -1161,7 +1161,9 @@
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
     if (AKU.peran !== 'cs') muatGmvHarian();
-    if (AKU.peran === 'cs') isiTanggalKirim();
+    // Data follow-up punya rentangnya sendiri, jadi ditarik terpisah dan
+    // hanya sekali; ganti filter periode tidak membuatnya ditarik ulang.
+    if (AKU.peran === 'cs') muatDataFollowUp();
   }
 
   // ---------- mengisi tanggal paket diterima ----------
@@ -1171,9 +1173,10 @@
   // Dijalankan setelah halaman tampil, dan halamannya digambar ulang tiap
   // satu gelombang selesai supaya jadwalnya terlihat membaik sendiri.
   let isiKirimJalan = false;
-  async function isiTanggalKirim() {
+  async function isiTanggalKirim(daftar) {
     if (isiKirimJalan) return;
-    const perlu = (D.kirim || [])
+    const semua = daftar || D.kirim || [];
+    const perlu = semua
       .filter(x => x && x.kelompok === 'terkirim' && !x.tgl_kirim && x.resi)
       .map(x => x.resi);
     if (!perlu.length) return;
@@ -2714,6 +2717,52 @@
       + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   };
 
+  // ---------- data khusus follow-up ----------
+  // Follow-up sengaja tidak mengikuti filter periode di atas. CS menghubungi
+  // pelanggan dua bulan terakhir — bulan berjalan dan bulan sebelumnya — jadi
+  // kalau ikut filter, memilih "Hari ini" akan membuat semua tugasnya lenyap
+  // padahal pekerjaannya masih ada.
+  function rentangFollowUp() {
+    const n = new Date();
+    return { from: iso(new Date(n.getFullYear(), n.getMonth() - 1, 1)), to: tglLokal() };
+  }
+
+  let fuData = null;      // { memuat, rentang, pesanan[], kirim[] }
+
+  async function muatDataFollowUp() {
+    if (AKU.peran !== 'cs') return;
+    const r = rentangFollowUp();
+    const tanda = r.from + '|' + r.to;
+    if (fuData && (fuData.memuat || fuData.rentang === tanda)) return;
+    fuData = { memuat: true, rentang: tanda, pesanan: [], kirim: [] };
+    render();
+    let pesanan = [], kirim = [];
+    try {
+      const hasil = await Promise.all([
+        tarikSales('globemerce&detail=1', r.from, r.to).catch(() => []),
+        tarikSales('everpro&detail=1', r.from, r.to).catch(() => []),
+      ]);
+      pesanan = hasil[0] || [];
+      kirim = hasil[1] || [];
+    } catch (e) { /* biarkan kosong, tampilannya sudah menjelaskan sendiri */ }
+
+    // pengiriman dipetakan lebih dulu supaya tiap pesanan bisa menemukan
+    // tanggal terkirimnya lewat resi atau nomor order
+    const pk = new Map();
+    for (const x of kirim) {
+      if (dibatalkan(x)) continue;
+      for (const k of kunciKirim(x)) if (!pk.has(k)) pk.set(k, x);
+    }
+    const daftar = [];
+    for (const o of pesanan) {
+      if (BUKAN_CS[String(o.agen || '').trim().toUpperCase()]) continue;
+      daftar.push({ ...o, _kirim: cari(pk, kunciPesanan(o)) });
+    }
+    fuData = { memuat: false, rentang: tanda, pesanan: daftar, kirim };
+    render();
+    isiTanggalKirim(kirim);
+  }
+
   // Semua tugas dari pesanan yang boleh dilihat pengguna ini
   function tugasFollowUp(pesanan) {
     const hari = tglLokal();
@@ -2797,6 +2846,22 @@
     </div>`;
   }
 
+  // Judul yang menyebut bulan apa saja yang dicakup, supaya CS tahu daftarnya
+  // tidak ikut filter periode di atas.
+  function judulFollowUp() {
+    const n = new Date();
+    const lalu = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+    const namaBulan = d => BLNP[d.getMonth()]
+      + (d.getFullYear() === n.getFullYear() ? '' : ' ' + d.getFullYear());
+    return namaBulan(lalu) + ' & ' + namaBulan(n) + ' &middot; tidak ikut filter di atas';
+  }
+
+  function blokFollowUpMemuat() {
+    return `<div class="sec"><h4>Follow-up</h4>
+        <span class="note">${judulFollowUp()}</span></div>
+      <div class="panel"><div class="empty">Menyiapkan daftar follow-up dua bulan terakhir&hellip;</div></div>`;
+  }
+
   function blokFollowUp(pesanan) {
     const T = tugasFollowUp(pesanan);
     const jum = T.hariIni.length + T.terlewat.length;
@@ -2820,8 +2885,8 @@
            Tanda selesai baru tersimpan di peramban ini saja</div>`;
     if (!jum && !T.akanDatang.length) {
       return `<div class="sec"><h4>Follow-up</h4>
-          ${T.selesai.length ? '<span class="note">' + fN(T.selesai.length)
-            + ' sudah dikerjakan</span>' : ''}</div>
+          <span class="note">${judulFollowUp()}${T.selesai.length
+            ? ' &middot; ' + fN(T.selesai.length) + ' sudah dikerjakan' : ''}</span></div>
         ${cadangan}
         <div class="panel"><div class="empty">
           <div class="big" style="background:var(--green-soft);color:var(--green)">${I.up}</div>
@@ -2832,7 +2897,7 @@
         ${bagian('Sudah dikerjakan', T.selesai, 'selesai')}`;
     }
     return `<div class="sec"><h4>Follow-up</h4>
-        <span class="note">dihitung sejak paket diterima &middot; pelanggan repeat lebih longgar</span></div>
+        <span class="note">${judulFollowUp()}</span></div>
       ${catatan}${cadangan}
       <div class="kpis tiga">
         ${kpi(I.alert, T.terlewat.length?'var(--red)':'var(--muted)',
@@ -3088,7 +3153,10 @@
           ${adaOngkir?'<th class="num">Ongkir</th>':''}</tr></thead>
         <tbody>${baris}</tbody></table></div></div>`;
 
-    const fu = AKU.peran === 'cs' ? blokFollowUp(dipilihSemua) : '';
+    // Follow-up memakai daftar dua bulan terakhir, bukan daftar periode di atas.
+    const fu = AKU.peran === 'cs'
+      ? (fuData && fuData.memuat ? blokFollowUpMemuat() : blokFollowUp((fuData && fuData.pesanan) || []))
+      : '';
     const smg = AKU.peran === 'cs' ? kartuSemangat() : '';
     return smg + fu + kartu + blokOngkir + peringkat + tabel;
   }
