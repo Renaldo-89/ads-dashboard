@@ -2629,12 +2629,25 @@
   // Kembaliannya: '' berarti belum boleh dijadwalkan sama sekali.
   function mulaiFollowUp(o) {
     const k = o._kirim;
-    if (!k || String(k.kelompok || '') !== 'terkirim') return '';
-    if (k.tgl_kirim) return { tanggal: k.tgl_kirim, pasti: true };
-    // Sudah terkirim tapi Everpro tidak memberi tanggalnya. Daripada pesanan
-    // ini hilang dari daftar, dipakai perkiraan dari tanggal order dan ditandai.
-    const dasar = k.tanggal || o.tanggal;
-    return dasar ? { tanggal: tambahHari(dasar, TRANSIT_PERKIRAAN), pasti: false } : '';
+    const kel = String((k && k.kelompok) || '');
+
+    // Sudah sampai: pakai tanggal terimanya kalau diketahui.
+    if (kel === 'terkirim') {
+      if (k.tgl_kirim) return { tanggal: k.tgl_kirim, pasti: true };
+      const dasar = k.tanggal || o.tanggal;
+      return dasar ? { tanggal: tambahHari(dasar, TRANSIT_PERKIRAAN), pasti: false } : '';
+    }
+    // Retur, batal, hilang, gagal: tidak ada yang perlu ditindaklanjuti.
+    if (/retur|batal|hilang|gagal/.test(kel)) return '';
+    // Terlacak tapi masih di jalan: tunggu sampai dulu.
+    if (k) return '';
+
+    // Tidak ada catatannya di Everpro sama sekali. Ini terjadi pada kurir
+    // marketplace (JNT, Lion Parcel) yang memang tidak lewat Everpro. Kalau
+    // dilewati, pelanggan itu tidak akan pernah muncul di daftar siapa pun,
+    // padahal di catatan manual CS mereka tetap dihubungi. Jadi tetap
+    // dijadwalkan dengan tanggal perkiraan, dan diberi tanda.
+    return o.tanggal ? { tanggal: tambahHari(o.tanggal, TRANSIT_PERKIRAAN), pasti: false } : '';
   }
 
   function jadwalPesanan(o) {
@@ -2767,13 +2780,13 @@
   function tugasFollowUp(pesanan) {
     const hari = tglLokal();
     const keluar = { hariIni: [], terlewat: [], akanDatang: [], selesai: [],
-      tanpaJadwal: 0, belumSampai: 0, tanpaLacak: 0, perkiraan: 0 };
+      tanpaJadwal: 0, belumSampai: 0, gagalKirim: 0, perkiraan: 0 };
     for (const o of (pesanan || [])) {
       const j = jadwalPesanan(o);
       if (!j) {
-        const k = o._kirim;
-        if (!k) keluar.tanpaLacak++;
-        else if (String(k.kelompok || '') !== 'terkirim') keluar.belumSampai++;
+        const kel = String((o._kirim && o._kirim.kelompok) || '');
+        if (/retur|batal|hilang|gagal/.test(kel)) keluar.gagalKirim++;
+        else if (kel && kel !== 'terkirim') keluar.belumSampai++;
         else keluar.tanpaJadwal++;
         continue;
       }
@@ -2869,9 +2882,9 @@
     // daftarnya pendek karena paketnya belum sampai, bukan karena datanya hilang.
     const sisa = [];
     if (T.belumSampai) sisa.push(fN(T.belumSampai) + ' paket masih dalam perjalanan');
-    if (T.tanpaLacak) sisa.push(fN(T.tanpaLacak) + ' pesanan belum ada resinya di Everpro');
+    if (T.gagalKirim) sisa.push(fN(T.gagalKirim) + ' retur atau batal');
     if (T.tanpaJadwal) sisa.push(fN(T.tanpaJadwal) + ' tanpa jadwal (Coffiy atau produk tak dikenali)');
-    if (T.perkiraan) sisa.push(fN(T.perkiraan) + ' memakai tanggal terima perkiraan');
+    if (T.perkiraan) sisa.push(fN(T.perkiraan) + ' pakai tanggal terima perkiraan');
     const catatan = sisa.length
       ? `<div class="note" style="margin:-2px 0 10px">${sisa.join(' &middot; ')}</div>` : '';
     const bagian = (judul, arr, jenis) => arr.length
