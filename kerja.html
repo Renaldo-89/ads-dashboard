@@ -1919,19 +1919,32 @@
     tampilFilter();
     Object.values(charts).forEach(c=>c.destroy()); charts={};
     const el = document.getElementById('content');
-    if (page==='overview') el.innerHTML = pgOverview();
-    else if (page==='sales') el.innerHTML = pgSales();
-    else if (m.sales) el.innerHTML = pgSumber(m.sales);
-    else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
-    else if (page==='cs') el.innerHTML = pgCS();
-    else if (page==='retur') el.innerHTML = pgRetur();
-    else if (page==='stok') el.innerHTML = pgStok();
-    else if (page==='kampanye') el.innerHTML = pgKampanye();
-    else if (page==='lelang') el.innerHTML = pgLelang();
-    else if (page==='jam') el.innerHTML = pgJam();
-    else if (page==='katakunci') el.innerHTML = pgTerms();
-    else el.innerHTML = pgInsight();
-    afterRender();
+    // Satu halaman yang bermasalah tidak boleh mengosongkan seluruh dashboard.
+    // Tanpa pagar ini, satu galat kecil membuat layar putih tanpa keterangan
+    // apa pun, dan menu lain ikut tidak bisa dibuka.
+    try {
+      if (page==='overview') el.innerHTML = pgOverview();
+      else if (page==='sales') el.innerHTML = pgSales();
+      else if (m.sales) el.innerHTML = pgSumber(m.sales);
+      else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
+      else if (page==='cs') el.innerHTML = pgCS();
+      else if (page==='retur') el.innerHTML = pgRetur();
+      else if (page==='stok') el.innerHTML = pgStok();
+      else if (page==='kampanye') el.innerHTML = pgKampanye();
+      else if (page==='lelang') el.innerHTML = pgLelang();
+      else if (page==='jam') el.innerHTML = pgJam();
+      else if (page==='katakunci') el.innerHTML = pgTerms();
+      else el.innerHTML = pgInsight();
+    } catch (galat) {
+      console.error('Halaman ' + page + ' gagal digambar:', galat);
+      el.innerHTML = `<div class="panel"><div class="empty">
+        <div class="big" style="background:var(--red-soft);color:var(--red)">${I.alert}</div>
+        <b>Halaman ini gagal ditampilkan</b><br>
+        Menu lain masih bisa dibuka seperti biasa.
+        <br><span style="font-size:12px;color:var(--muted)">${esc(String(galat && galat.message || galat))}</span>
+      </div></div>`;
+    }
+    try { afterRender(); } catch (galat) { console.error('afterRender:', galat); }
     if (!gantiTema) jalankanAngka(el);
   }
 
@@ -1949,14 +1962,11 @@
       tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
       tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
     }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
-    g.personal += gmvRetur;
-    g.group += gmvRetur;
     return `<div class="gmv">
       <div class="gcard terang">
         <p class="k">GMV PERSONAL</p>
         <p class="v">${fGMV(g.personal)}<span class="u">GMV</span></p>
-        <p class="s">${gmvRetur ? 'Termasuk '+fGMV(gmvRetur)+' dari stok retur'
-          : (g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri')}</p>
+        <p class="s">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
       </div>
       <div class="gcard gelap">
         <p class="k">GMV GROUP</p>
