@@ -171,6 +171,46 @@
     .fu-ok { padding:5px 9px; }
   }
 
+  /* ---------- Personal Admin: stok barang retur ---------- */
+  .stok-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));
+    gap:14px; margin-bottom:20px; }
+  .stok-kotak { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:16px 16px 14px; }
+  .stok-kotak .k { font-size:10px; font-weight:800; letter-spacing:1px; color:var(--faint);
+    margin:0 0 12px; }
+  .stok-kotak .baris { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .stok-kotak label { flex:1 1 130px; min-width:0; display:flex; flex-direction:column;
+    gap:5px; font-size:11px; font-weight:700; color:var(--ink-2); }
+  .stok-kotak label span { font-weight:500; color:var(--faint); }
+  .stok-kotak input, .stok-kotak select {
+    border:1px solid var(--line); background:var(--bg); color:var(--ink);
+    border-radius:9px; padding:8px 10px; font-size:12.5px; font-family:inherit;
+    font-weight:600; min-width:0; width:100%; box-sizing:border-box; }
+  .stok-kotak input:focus, .stok-kotak select:focus { outline:none; border-color:var(--violet); }
+  .stok-kotak button[type="submit"], .stok-aksi button {
+    border:none; border-radius:10px; padding:9px 16px; font-size:12.5px; font-weight:700;
+    font-family:inherit; cursor:pointer; background:var(--grad); color:#fff; }
+  .stok-kotak button[type="submit"] { width:100%; margin-top:3px; }
+  .stok-kotak button:disabled, .stok-aksi button:disabled { opacity:.55; cursor:default; }
+  .stok-aksi { display:flex; gap:9px; justify-content:flex-end; padding:12px 2px 2px;
+    flex-wrap:wrap; }
+  .stok-aksi #tambah-produk { background:var(--panel); border:1px solid var(--line);
+    color:var(--ink-2); }
+  .stok-pesan { border-radius:12px; padding:11px 14px; font-size:12.5px; font-weight:600;
+    margin-bottom:14px; }
+  .stok-pesan.ok { background:var(--green-soft); color:var(--green); }
+  .stok-pesan.galat { background:var(--red-soft); color:var(--red); }
+  .stok-hapus { border:1px solid var(--line); background:var(--panel); color:var(--faint);
+    width:26px; height:26px; border-radius:8px; font-size:15px; line-height:1; cursor:pointer;
+    font-family:inherit; }
+  .stok-hapus:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
+  .stok-hapus:disabled { opacity:.4; cursor:default; }
+  table.dt.tprod input { width:100%; box-sizing:border-box; border:1px solid var(--line);
+    background:var(--bg); color:var(--ink); border-radius:8px; padding:6px 8px;
+    font-size:12px; font-family:inherit; font-weight:600; min-width:80px; }
+  table.dt.tprod input:focus { outline:none; border-color:var(--violet); }
+  table.dt.tprod input[type="number"] { text-align:right; }
+
   /* ---------- kalender laba harian ---------- */
   .kal-bungkus { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(268px,100%),1fr)); gap:18px; }
   .kal-judul { font-size:12.5px; font-weight:700; margin:0 0 10px; letter-spacing:-.1px; }
@@ -730,6 +770,7 @@
     check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
     kalender:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     unduh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 10.5L12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+    kotak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M3 8l9 4 9-4M12 12v8"/></svg>',
     sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     plug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6M15 3v6"/><path d="M6 9h12v3a6 6 0 0 1-12 0z"/><path d="M12 18v3"/></svg>',
     eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>',
@@ -749,6 +790,7 @@
     { g:1, id:'everpro',  lbl:'Everpro',     ic:I.plug,   t:'Everpro',    sales:'everpro' },
     { g:1, id:'cs',       lbl:'Customer Service', ic:I.cs, t:'Performa Customer Service' },
     { g:1, id:'retur',    lbl:'Data Return',      ic:I.balik, t:'Paket retur' },
+    { g:1, id:'stok',     lbl:'Personal Admin',   ic:I.kotak, t:'Stok barang retur' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -869,8 +911,51 @@
     return { orders:n('orders'), units:n('units'), revenue:n('revenue'), gross:gp,
       baru:n('customers_new'), repeat:n('customers_repeat') };
   };
-  const salesRows = () => SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
-  const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
+  // ---------- penjualan dari stok retur ----------
+  // Barang retur yang dikirim ulang tidak lewat Globemerce, jadi penjualannya
+  // tidak ada di sumber mana pun. Di sini catatannya diubah menjadi baris
+  // penjualan berbentuk sama seperti sumber lain, lalu ikut mengalir ke omzet,
+  // produk terjual, gross profit, dan laba — tanpa rumus khusus di banyak tempat.
+  // Harga jual, HPP, dan GMV point diambil dari daftar produk yang diatur admin.
+  function barisRetur(dari, sampai) {
+    const daftar = (D.stok && D.stok.pakai) || [];
+    if (!daftar.length) return [];
+    const P = new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
+    const out = [];
+    for (const x of daftar) {
+      const t = String(x.tgl || '');
+      if (!t || (dari && t < dari) || (sampai && t > sampai)) continue;
+      const p = P.get(x.produk);
+      if (!p) continue;                       // produk sudah dihapus dari daftar
+      const j = Math.max(0, Number(x.jumlah) || 0);
+      if (!j) continue;
+      out.push({
+        date: t, granularity: 'daily',
+        orders: 1, units: j,
+        revenue: p.harga * j,
+        cogs: p.hpp * j,
+        gross_profit: (p.harga - p.hpp) * j,
+        customers_new: 0, customers_repeat: 0,
+        _retur: true, pv: p.pv * j,
+        agen: String(x.agen || ''), produk_kode: p.kode, produk_nama: p.nama,
+      });
+    }
+    return out;
+  }
+  const rentangKini = () => (D._rentang && D._rentang.r) || null;
+
+  const salesRows = () => {
+    const dasar = SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
+    const r = rentangKini();
+    return r ? dasar.concat(barisRetur(r.from, r.to)) : dasar;
+  };
+  const salesRowsLalu = () => {
+    const dasar = SALES.flatMap(x => D.prevSales[x.id] || []);
+    const pr = D._rentang && D._rentang.pr;
+    return pr ? dasar.concat(barisRetur(pr.from, pr.to)) : dasar;
+  };
+  const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok')
+    || salesRows().length > 0;
 
   // ---------- keluar dan masa berlaku sesi ----------
   // Sesi berlaku 24 jam terhitung sejak masuk, bukan sampai pergantian tanggal.
@@ -1164,6 +1249,8 @@
     // Data follow-up punya rentangnya sendiri, jadi ditarik terpisah dan
     // hanya sekali; ganti filter periode tidak membuatnya ditarik ulang.
     if (AKU.peran === 'cs') muatDataFollowUp();
+    // Stok retur cukup ditarik sekali; isinya berubah lewat formulir sendiri.
+    if (!D.stok) muatStok();
   }
 
   // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
@@ -1501,7 +1588,11 @@
   // ---------- navigasi ----------
   // Peran cs hanya melihat menu Customer Service. Ini sekadar merapikan tampilan;
   // pengamanan sebenarnya ada di Worker, yang menolak data lain dengan 403.
-  const menuBoleh = m => AKU.peran === 'admin' || m.id === 'cs';
+  // admin melihat semuanya, cs hanya halamannya sendiri, personal admin
+  // hanya stok retur.
+  const menuBoleh = m => AKU.peran === 'admin'
+    || (AKU.peran === 'cs' && m.id === 'cs')
+    || (AKU.peran === 'pa' && m.id === 'stok');
 
   // ---------- semangat harian ----------
   // Satu kalimat per hari untuk tiap CS. Sengaja tidak berganti tiap kali
@@ -1787,6 +1878,7 @@
     // Peran cs dikunci di halamannya sendiri. Ini hanya merapikan tampilan;
     // yang benar-benar menahan data tetap Worker, yang menjawab 403.
     if (AKU.peran === 'cs' && page !== 'cs') page = 'cs';
+    if (AKU.peran === 'pa' && page !== 'stok') page = 'stok';
     const m = MENU.find(x=>x.id===page) || MENU[0];
     document.getElementById('ptitle').textContent = m.t;
     let crumb = rentang(period).label;
@@ -1803,6 +1895,7 @@
     else if (m.g===2) el.innerHTML = pgPlatform(m.plat);
     else if (page==='cs') el.innerHTML = pgCS();
     else if (page==='retur') el.innerHTML = pgRetur();
+    else if (page==='stok') el.innerHTML = pgStok();
     else if (page==='kampanye') el.innerHTML = pgKampanye();
     else if (page==='lelang') el.innerHTML = pgLelang();
     else if (page==='jam') el.innerHTML = pgJam();
@@ -1816,18 +1909,26 @@
   // ---- GMV personal & grup, dipakai di Overview dan halaman Globemerce ----
   const fGMV = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(n||0));
   function heroGMV() {
-    if (!(D.gmv||[]).length) return '';
-    const g = D.gmv.reduce((a,x)=>({
+    const r = rentangKini();
+    // GMV dari pemakaian stok retur dihitung dari GMV point tiap produk
+    // dikali jumlahnya, lalu ditambahkan ke GMV personal.
+    const gmvRetur = barisRetur(r && r.from, r && r.to)
+      .reduce((a, x) => a + (Number(x.pv) || 0), 0);
+    if (!(D.gmv||[]).length && !gmvRetur) return '';
+    const g = (D.gmv||[]).reduce((a,x)=>({
       personal: a.personal + (Number(x.gmv_personal)||0),
       group: a.group + (Number(x.gmv_group)||0),
       tinggiP: Math.max(a.tinggiP, Number(x.tertinggi_personal)||0),
       tinggiG: Math.max(a.tinggiG, Number(x.tertinggi_group)||0),
     }), { personal:0, group:0, tinggiP:0, tinggiG:0 });
+    g.personal += gmvRetur;
+    g.group += gmvRetur;
     return `<div class="gmv">
       <div class="gcard terang">
         <p class="k">GMV PERSONAL</p>
         <p class="v">${fGMV(g.personal)}<span class="u">GMV</span></p>
-        <p class="s">${g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri'}</p>
+        <p class="s">${gmvRetur ? 'Termasuk '+fGMV(gmvRetur)+' dari stok retur'
+          : (g.tinggiP?('Tertinggi '+fGMV(g.tinggiP)+' GMV'):'Penjualan atas namamu sendiri')}</p>
       </div>
       <div class="gcard gelap">
         <p class="k">GMV GROUP</p>
@@ -2179,7 +2280,8 @@
           pelanggan baru, pelanggan repeat, dan laba setelah biaya iklan.</div></div>`;
     }
     const s = aggSales(salesRows());
-    const sp = aggSales(SALES.flatMap(x => D.prevSales[x.id]||[]));
+    const sp = aggSales(salesRowsLalu());
+    const sr = aggSales(barisRetur(rentangKini() && rentangKini().from, rentangKini() && rentangKini().to));
     const bk = biayaKirim();
     const laba = s.gross - bk.bersih - t.spend;
     const labaLalu = sp.gross - (p.spend||0);
@@ -2221,6 +2323,9 @@
           'Ongkir '+fC(bk.ongkir)+' + fee COD '+fC(bk.feeCod)+' + asuransi '+fC(bk.asuransi)
             +' &minus; cashback '+fC(bk.cashback),
           fC(bk.bersih),'bersih',0):''}
+        ${sr.orders?li({c:'var(--amber)',s:'var(--amber-soft)',ini:'R'},'Dari stok retur',
+          fN(sr.orders)+' pengiriman &middot; '+fN(sr.units)+' produk &middot; gross profit '+fC(sr.gross),
+          fC(sr.revenue),'omzet',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
           unit>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
@@ -2917,6 +3022,185 @@
       ${bagian('Sudah dikerjakan', T.selesai, 'selesai')}`;
   }
 
+  // ---------- halaman Personal Admin: stok barang retur ----------
+  // Dua pencatatan. "Masuk" adalah barang retur yang diterima kembali;
+  // "pakai" adalah barang itu dikirim ulang atas nama CS tertentu. Penjualan
+  // dari pemakaian tidak lewat Globemerce, jadi dari sinilah omzet, GMV, dan
+  // labanya masuk ke laporan — lihat barisRetur().
+  let stokPesan = null;        // { jenis:'ok'|'galat', teks }
+
+  const petaProduk = () => new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
+
+  function sisaStok() {
+    const m = new Map();
+    for (const p of ((D.stok && D.stok.produk) || []))
+      m.set(p.kode, { kode: p.kode, nama: p.nama, masuk: 0, pakai: 0, pv: p.pv, harga: p.harga });
+    for (const x of ((D.stok && D.stok.masuk) || [])) {
+      const a = m.get(x.produk); if (a) a.masuk += Number(x.jumlah) || 0;
+    }
+    for (const x of ((D.stok && D.stok.pakai) || [])) {
+      const a = m.get(x.produk); if (a) a.pakai += Number(x.jumlah) || 0;
+    }
+    return [...m.values()].map(a => ({ ...a, sisa: a.masuk - a.pakai }));
+  }
+
+  // Nama CS diambil dari ringkasan tim supaya pilihannya selalu mengikuti
+  // nama Sender yang benar-benar dipakai di Globemerce.
+  function daftarAgen() {
+    const s = new Set();
+    for (const x of (D.tim || [])) {
+      const n = String(x.agen || '').trim();
+      if (n && !BUKAN_CS[n.toUpperCase()]) s.add(n);
+    }
+    for (const x of ((D.stok && D.stok.pakai) || [])) {
+      const n = String(x.agen || '').trim();
+      if (n) s.add(n);
+    }
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }
+
+  function pgStok() {
+    const produk = (D.stok && D.stok.produk) || [];
+    const bolehHarga = AKU.peran === 'admin';
+    const pesan = stokPesan
+      ? `<div class="stok-pesan ${stokPesan.jenis}">${esc(stokPesan.teks)}</div>` : '';
+
+    if (!produk.length) {
+      return `<div class="sec"><h4>Personal Admin</h4><span class="note">stok barang retur</span></div>
+        ${pesan}
+        <div class="panel"><div class="empty">
+          <div class="big" style="background:var(--amber-soft);color:var(--amber)">${I.kotak}</div>
+          <b>Daftar produk belum diisi</b><br>
+          ${bolehHarga
+            ? 'Isi dulu daftar produk beserta harga jual, HPP, dan GMV point di bawah.'
+            : 'Minta super admin mengisi daftar produk dulu. Tanpa itu, harga dan GMV pemakaian stok tidak bisa dihitung.'}
+        </div></div>
+        ${bolehHarga ? blokDaftarProduk() : ''}`;
+    }
+
+    const sisa = sisaStok();
+    const totalSisa = sisa.reduce((a, x) => a + x.sisa, 0);
+    const opsiProduk = produk.map(p =>
+      `<option value="${esc(p.kode)}">${esc(p.nama)}</option>`).join('');
+    const agen = daftarAgen();
+
+    const kartuSisa = `<div class="kpis">
+      ${sisa.map(x => kpi(I.kotak, x.sisa > 0 ? 'var(--green)' : 'var(--muted)',
+        x.sisa > 0 ? 'var(--green-soft)' : 'var(--line-2)',
+        x.nama, fN(x.sisa) + ' pcs',
+        'masuk ' + fN(x.masuk) + ' · dipakai ' + fN(x.pakai))).join('')}
+    </div>`;
+
+    const form = `<div class="stok-form">
+      <form class="stok-kotak" data-form="masuk">
+        <p class="k">CATAT BARANG RETUR MASUK</p>
+        <div class="baris">
+          <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
+          <label>Produk<select name="produk" required>${opsiProduk}</select></label>
+          <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
+        </div>
+        <div class="baris">
+          <label>Resi asal <span>opsional</span><input name="resi" placeholder="nomor resi paket retur"></label>
+          <label>Alasan <span>opsional</span><input name="alasan" placeholder="alamat tidak ditemukan, ditolak, dll"></label>
+        </div>
+        <button type="submit">Simpan barang masuk</button>
+      </form>
+
+      <form class="stok-kotak" data-form="pakai">
+        <p class="k">PAKAI STOK RETUR UNTUK PENGIRIMAN</p>
+        <div class="baris">
+          <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
+          <label>Produk<select name="produk" required>${opsiProduk}</select></label>
+          <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
+        </div>
+        <div class="baris">
+          <label>Atas nama CS<select name="agen" required>
+            <option value="">— pilih CS —</option>
+            ${agen.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}
+          </select></label>
+          <label>Pembeli <span>opsional</span><input name="pembeli" placeholder="nama pembeli"></label>
+          <label>Resi baru <span>opsional</span><input name="resi" placeholder="resi pengiriman"></label>
+        </div>
+        <button type="submit">Simpan pemakaian</button>
+      </form>
+    </div>`;
+
+    const P = petaProduk();
+    const barisPakai = ((D.stok && D.stok.pakai) || []).slice().reverse().slice(0, 60);
+    const barisMasuk = ((D.stok && D.stok.masuk) || []).slice().reverse().slice(0, 60);
+    const nama = k => (P.get(k) || {}).nama || k;
+    const nilai = (k, j) => { const p = P.get(k); return p ? p.harga * j : 0; };
+
+    const tabelPakai = barisPakai.length ? `
+      <div class="sec"><h4>Pemakaian stok retur</h4>
+        <span class="note">${fN(barisPakai.length)} catatan terakhir</span></div>
+      <div class="panel tight"><div class="scroll-x"><table class="dt">
+        <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jumlah</th><th>CS</th>
+          <th>Pembeli</th><th>Resi</th>${bolehHarga?'<th class="num">Omzet</th>':''}<th></th></tr></thead>
+        <tbody>${barisPakai.map(x => `<tr>
+          <td class="tgl">${sd(x.tgl)}</td>
+          <td>${esc(nama(x.produk))}</td>
+          <td class="num">${fN(x.jumlah)}</td>
+          <td>${esc(x.agen || '—')}</td>
+          <td class="nama">${esc(x.pembeli || '—')}</td>
+          <td class="resi">${esc(x.resi || '—')}</td>
+          ${bolehHarga?'<td class="num uang">'+fC(nilai(x.produk, x.jumlah))+'</td>':''}
+          <td class="ctr"><button class="stok-hapus" data-hapus="pakai:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
+        </tr>`).join('')}</tbody></table></div></div>` : '';
+
+    const tabelMasuk = barisMasuk.length ? `
+      <div class="sec"><h4>Barang retur masuk</h4>
+        <span class="note">${fN(barisMasuk.length)} catatan terakhir</span></div>
+      <div class="panel tight"><div class="scroll-x"><table class="dt">
+        <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jumlah</th>
+          <th>Resi asal</th><th>Alasan</th><th>Dicatat</th><th></th></tr></thead>
+        <tbody>${barisMasuk.map(x => `<tr>
+          <td class="tgl">${sd(x.tgl)}</td>
+          <td>${esc(nama(x.produk))}</td>
+          <td class="num">${fN(x.jumlah)}</td>
+          <td class="resi">${esc(x.resi || '—')}</td>
+          <td>${esc(x.alasan || '—')}</td>
+          <td><span class="note">${esc(x.oleh || '')}</span></td>
+          <td class="ctr"><button class="stok-hapus" data-hapus="masuk:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
+        </tr>`).join('')}</tbody></table></div></div>` : '';
+
+    return `<div class="sec"><h4>Sisa stok retur</h4>
+        <span class="note">${fN(totalSisa)} produk siap dipakai</span></div>
+      ${pesan}
+      ${kartuSisa}
+      ${form}
+      ${tabelPakai}
+      ${tabelMasuk}
+      ${bolehHarga ? blokDaftarProduk() : ''}`;
+  }
+
+  // Daftar produk hanya bisa diubah super admin. Angka di sinilah yang dipakai
+  // menghitung omzet, HPP, dan GMV tiap pemakaian stok retur.
+  function blokDaftarProduk() {
+    const produk = (D.stok && D.stok.produk) || [];
+    const baris = p => `<tr>
+      <td><input name="kode" value="${esc(p.kode||'')}" placeholder="EROJAN" maxlength="24"></td>
+      <td><input name="nama" value="${esc(p.nama||'')}" placeholder="EROJAN 1 Botol" maxlength="60"></td>
+      <td><input name="harga" type="number" min="0" step="1000" value="${Number(p.harga)||0}"></td>
+      <td><input name="hpp" type="number" min="0" step="1000" value="${Number(p.hpp)||0}"></td>
+      <td><input name="pv" type="number" min="0" step="1" value="${Number(p.pv)||0}"></td>
+      <td class="ctr"><button type="button" class="stok-hapus" data-baris="1" title="Hapus baris">&times;</button></td>
+    </tr>`;
+    return `<div class="sec"><h4>Daftar produk</h4>
+        <span class="note">harga jual, HPP, dan GMV point per satu produk</span></div>
+      <form class="panel tight" id="form-produk">
+        <div class="scroll-x"><table class="dt tprod">
+          <thead><tr><th>Kode</th><th>Nama tampil</th><th class="num">Harga jual</th>
+            <th class="num">HPP</th><th class="num">GMV point</th><th></th></tr></thead>
+          <tbody id="baris-produk">${(produk.length ? produk : [{}]).map(baris).join('')}</tbody>
+        </table></div>
+        <div class="stok-aksi">
+          <button type="button" id="tambah-produk">+ Tambah baris</button>
+          <button type="submit">Simpan daftar produk</button>
+        </div>
+      </form>`;
+  }
+
   // ---------- halaman Customer Service ----------
   // Nama CS dibaca dari kolom Sender di Globemerce (medan "agen").
   // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
@@ -2989,6 +3273,20 @@
       a.gmv    += Number(x.gmv) || 0;
       a.baru   += Number(x.baru) || 0;
       a.repeat += Number(x.repeat) || 0;
+    }
+    // Pemakaian stok retur ikut menambah penjualan CS yang memakainya,
+    // supaya peringkat dan total sales mencerminkan kerjanya yang sebenarnya.
+    const r = rentangKini();
+    for (const x of barisRetur(r && r.from, r && r.to)) {
+      const n = String(x.agen || '').trim();
+      if (!n || BUKAN_CS[n.toUpperCase()]) continue;
+      const kunci = namaCS(n);
+      if (!gabung.has(kunci)) gabung.set(kunci, {
+        nama: kunci, asli: [], order: 0, gmv: 0, baru: 0, repeat: 0 });
+      const a = gabung.get(kunci);
+      a.order += 1;
+      a.gmv += Number(x.pv) || 0;
+      a.retur = (a.retur || 0) + 1;
     }
     const baris = [...gabung.values()].sort((a, b) => b.gmv - a.gmv || b.order - a.order);
     const luar = (D.tim || []).filter(x => BUKAN_CS[String(x.agen || '').trim().toUpperCase()])
@@ -3996,6 +4294,93 @@
     if (butuhExtra()) muatExtra();
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
   });
+  // ---------- pengiriman dan pemuatan data stok retur ----------
+  async function kirimStok(jenis, isi) {
+    stokPesan = null;
+    try {
+      const r = await fetch(PROXY + '?stok=' + encodeURIComponent(jenis), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+          'X-Kunci': SANDI || '', 'X-Pengguna': PENGGUNA || '' },
+        body: JSON.stringify(isi),
+      });
+      const j = await r.json();
+      if (!r.ok || (j && j.error)) {
+        stokPesan = { jenis: 'galat', teks: (j && j.error) || ('Gagal menyimpan (' + r.status + ')') };
+        return null;
+      }
+      return j.data;
+    } catch (e) {
+      stokPesan = { jenis: 'galat', teks: 'Tidak bisa menghubungi server. Coba lagi.' };
+      return null;
+    }
+  }
+
+  async function muatStok() {
+    if (AKU.peran !== 'admin' && AKU.peran !== 'pa' && AKU.peran !== 'cs') return;
+    if (!D.stok) D.stok = { produk: [], masuk: [], pakai: [] };
+    try {
+      const [rp, rd] = await Promise.all([
+        ambil(PROXY + '?stok=produk'),
+        ambil(PROXY + '?stok=data'),
+      ]);
+      if (rp.status === 200) { const j = await rp.json(); if (Array.isArray(j.data)) D.stok.produk = j.data; }
+      if (rd.status === 200) {
+        const j = await rd.json();
+        if (j && j.data) { D.stok.masuk = j.data.masuk || []; D.stok.pakai = j.data.pakai || []; }
+      }
+    } catch (e) { /* KV belum siap; halaman tetap tampil apa adanya */ }
+    render();
+  }
+
+  function tambahBarisProduk() {
+    const tbody = document.getElementById('baris-produk');
+    if (!tbody) return;
+    const tr = tbody.children[0].cloneNode(true);
+    tr.querySelectorAll('input').forEach(i => { i.value = i.type === 'number' ? 0 : ''; });
+    tbody.appendChild(tr);
+    const p = tr.querySelector('input'); if (p) p.focus();
+  }
+
+  document.getElementById('content').addEventListener('submit', async e => {
+    const f = e.target.closest('form');
+    if (!f) return;
+    e.preventDefault();
+
+    if (f.id === 'form-produk') {
+      const daftar = [...f.querySelectorAll('#baris-produk tr')].map(tr => {
+        const v = n => (tr.querySelector('[name="' + n + '"]') || {}).value || '';
+        return { kode: v('kode').trim().toUpperCase(), nama: v('nama').trim(),
+          harga: Number(v('harga')) || 0, hpp: Number(v('hpp')) || 0, pv: Number(v('pv')) || 0 };
+      }).filter(p => p.kode && p.nama);
+      if (!daftar.length) {
+        stokPesan = { jenis: 'galat', teks: 'Isi minimal satu produk dengan kode dan nama.' };
+        render(); return;
+      }
+      const tombol = f.querySelector('button[type="submit"]');
+      if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
+      const hasil = await kirimStok('produk', daftar);
+      if (hasil) stokPesan = { jenis: 'ok', teks: 'Daftar produk tersimpan, ' + hasil.length + ' produk.' };
+      await muatStok();
+      return;
+    }
+
+    const jenis = f.dataset.form;
+    if (jenis !== 'masuk' && jenis !== 'pakai') return;
+    const data = Object.fromEntries(new FormData(f).entries());
+    const tombol = f.querySelector('button[type="submit"]');
+    if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
+    const hasil = await kirimStok(jenis, data);
+    if (hasil) {
+      const P = petaProduk();
+      const n = (P.get(hasil.produk) || {}).nama || hasil.produk;
+      stokPesan = { jenis: 'ok', teks: jenis === 'masuk'
+        ? 'Tercatat: ' + hasil.jumlah + ' ' + n + ' masuk kembali.'
+        : 'Tercatat: ' + hasil.jumlah + ' ' + n + ' dipakai atas nama ' + hasil.agen + '.' };
+    }
+    await muatStok();
+  });
+
   const barisPeriode = document.getElementById('periods');
 
   barisPeriode.addEventListener('click', e=>{
@@ -4083,6 +4468,22 @@
     }
     // Tombol "Sudah" diperiksa lebih dulu daripada kartunya, karena tombolnya
     // berada di dalam kartu dan tidak boleh ikut membuka atau menutup isinya.
+    const hapusStok = e.target.closest('button[data-hapus]');
+    if (hapusStok) {
+      const [jenis, id] = hapusStok.dataset.hapus.split(':');
+      hapusStok.disabled = true;
+      kirimStok('hapus', { jenis, id }).then(muatStok);
+      return;
+    }
+    if (e.target.closest('#tambah-produk')) { tambahBarisProduk(); return; }
+    const hapusBaris = e.target.closest('button[data-baris]');
+    if (hapusBaris) {
+      const tr = hapusBaris.closest('tr');
+      const tbody = tr && tr.parentElement;
+      if (tbody && tbody.children.length > 1) tr.remove();
+      else if (tr) tr.querySelectorAll('input').forEach(i => { i.value = i.type === 'number' ? 0 : ''; });
+      return;
+    }
     const unduh = e.target.closest('#smg-unduh');
     if (unduh) { simpanStory(unduh); return; }
     const ok = e.target.closest('button[data-ok]');
