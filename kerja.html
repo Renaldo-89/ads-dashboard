@@ -961,18 +961,31 @@
   }
   const rentangKini = () => (D._rentang && D._rentang.r) || null;
 
-  const salesRows = () => {
-    const dasar = SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
-    const r = rentangKini();
-    return r ? dasar.concat(barisRetur(r.from, r.to)) : dasar;
-  };
-  const salesRowsLalu = () => {
-    const dasar = SALES.flatMap(x => D.prevSales[x.id] || []);
-    const pr = D._rentang && D._rentang.pr;
-    return pr ? dasar.concat(barisRetur(pr.from, pr.to)) : dasar;
-  };
-  const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok')
-    || salesRows().length > 0;
+  // Baris penjualan Overview tetap murni dari Globemerce dan Everpro.
+  // Barang keluar dari stok retur TIDAK dicampur ke sini: omzet, produk
+  // terjual, dan total transaksi di Overview harus tetap seperti sebelumnya.
+  // Labanya dihitung terpisah lewat labaRetur(), lalu ditambahkan ke
+  // "Laba setelah iklan".
+  const salesRows = () =>
+    SALES.flatMap(s => (D.sales[s.id] && D.sales[s.id].status==='ok') ? D.sales[s.id].rows : []);
+  const salesRowsLalu = () => SALES.flatMap(x => D.prevSales[x.id] || []);
+  const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
+
+  // Laba kotor barang keluar: omzet dikurangi HPP.
+  //
+  // Ongkir sengaja tidak dipotong di sini. Kiriman ini punya resi Everpro,
+  // jadi ongkirnya sudah ikut terhitung di Biaya pengiriman bersama kiriman
+  // lain. Kalau dipotong lagi di sini, ongkirnya terhitung dua kali.
+  function labaRetur(dari, sampai) {
+    let omzet = 0, hpp = 0, unit = 0, n = 0;
+    for (const x of barisRetur(dari, sampai)) {
+      omzet += Number(x.revenue) || 0;
+      hpp += Number(x.cogs) || 0;
+      unit += Number(x.units) || 0;
+      n++;
+    }
+    return { omzet, hpp, unit, n, laba: omzet - hpp };
+  }
 
   // ---------- keluar dan masa berlaku sesi ----------
   // Sesi berlaku 24 jam terhitung sejak masuk, bukan sampai pergantian tanggal.
@@ -2296,10 +2309,14 @@
     }
     const s = aggSales(salesRows());
     const sp = aggSales(salesRowsLalu());
-    const sr = aggSales(barisRetur(rentangKini() && rentangKini().from, rentangKini() && rentangKini().to));
+    const rk = rentangKini(), rp = D._rentang && D._rentang.pr;
+    const lr = labaRetur(rk && rk.from, rk && rk.to);
+    const lrLalu = labaRetur(rp && rp.from, rp && rp.to);
     const bk = biayaKirim();
-    const laba = s.gross - bk.bersih - t.spend;
-    const labaLalu = sp.gross - (p.spend||0);
+    // Profit produk retur ditambahkan di sini, bukan dicampur ke gross profit,
+    // supaya angka omzet dan gross profit di atas tetap murni dari Globemerce.
+    const laba = s.gross + lr.laba - bk.bersih - t.spend;
+    const labaLalu = sp.gross + lrLalu.laba - (p.spend||0);
     const bulanan = salesRows().some(r=>r.granularity==='monthly');
     const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
     const roas = t.spend>0 && s.revenue>0 ? s.revenue/t.spend : 0;
@@ -2321,6 +2338,8 @@
         ${kpi(I.up,'var(--toska)','var(--toska-soft)','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
         ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
         ${kpi(I.up,'var(--violet)','var(--violet-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
+        ${lr.n?kpi(I.kotak,'var(--amber)','var(--amber-soft)','Profit produk retur',fC(lr.laba),
+          delta(lr.laba, lrLalu.laba, false)):''}
       </div>
 
       <div class="laba ${laba>=0?'untung':'rugi'}">
@@ -2328,7 +2347,7 @@
         <div class="laba-b">
           <p class="k">LABA SETELAH IKLAN</p>
           <p class="v">${fC(laba)}</p>
-          <p class="s">Gross profit ${fC(s.gross)}${adaKirim()?' &minus; kirim '+fC(bk.bersih):''} &minus; iklan ${fC(t.spend)}</p>
+          <p class="s">Gross profit ${fC(s.gross)}${lr.n?' + retur '+fC(lr.laba):''}${adaKirim()?' &minus; kirim '+fC(bk.bersih):''} &minus; iklan ${fC(t.spend)}</p>
         </div>
         <div class="laba-d">${delta(laba, labaLalu, false) || ''}</div>
       </div>
@@ -2338,9 +2357,10 @@
           'Ongkir '+fC(bk.ongkir)+' + fee COD '+fC(bk.feeCod)+' + asuransi '+fC(bk.asuransi)
             +' &minus; cashback '+fC(bk.cashback),
           fC(bk.bersih),'bersih',0):''}
-        ${sr.orders?li({c:'var(--amber)',s:'var(--amber-soft)',ini:'R'},'Dari stok retur',
-          fN(sr.orders)+' pengiriman &middot; '+fN(sr.units)+' produk &middot; gross profit '+fC(sr.gross),
-          fC(sr.revenue),'omzet',0):''}
+        ${lr.n?li({c:'var(--amber)',s:'var(--amber-soft)',ini:'R'},'Profit produk retur',
+          fN(lr.n)+' pengiriman &middot; '+fN(lr.unit)+' produk &middot; omzet '+fC(lr.omzet)
+            +' &minus; HPP '+fC(lr.hpp)+' &middot; tidak masuk omzet dan GMV di atas',
+          fC(lr.laba),'laba',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
           unit>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
