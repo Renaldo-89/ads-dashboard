@@ -3073,7 +3073,7 @@
           <b>Daftar produk belum diisi</b><br>
           ${bolehHarga
             ? 'Isi dulu daftar produk beserta harga jual, HPP, dan GMV point di bawah.'
-            : 'Minta super admin mengisi daftar produk dulu. Tanpa itu, harga dan GMV pemakaian stok tidak bisa dihitung.'}
+            : 'Minta super admin mengisi daftar produk dulu. Setelah itu kamu bisa mencatat barang retur masuk dan pemakaiannya.'}
         </div></div>
         ${bolehHarga ? blokDaftarProduk() : ''}`;
     }
@@ -3195,9 +3195,13 @@
           <tbody id="baris-produk">${(produk.length ? produk : [{}]).map(baris).join('')}</tbody>
         </table></div>
         <div class="stok-aksi">
+          <button type="button" id="ambil-produk">Ambil dari Globemerce</button>
           <button type="button" id="tambah-produk">+ Tambah baris</button>
           <button type="submit">Simpan daftar produk</button>
         </div>
+        <p class="note" style="padding:0 2px 4px">Ambil dari Globemerce mengisi tabel ini dari
+          pesanan 120 hari terakhir: harga, HPP, dan GMV point diambil dari nilai tengah tiap produk.
+          Periksa dulu angkanya, baru simpan.</p>
       </form>`;
   }
 
@@ -4333,6 +4337,35 @@
     render();
   }
 
+  // Isi tabel daftar produk dari pesanan Globemerce. Sengaja tidak langsung
+  // disimpan: angkanya perkiraan dari nilai tengah, jadi perlu dilihat dulu.
+  async function usulkanProduk() {
+    stokPesan = null;
+    let usul = null;
+    try {
+      const r = await ambil(PROXY + '?stok=usul');
+      const j = await r.json();
+      if (!r.ok || (j && j.error)) {
+        stokPesan = { jenis: 'galat', teks: (j && j.error) || ('Gagal mengambil (' + r.status + ')') };
+      } else usul = j.data || [];
+    } catch (e) {
+      stokPesan = { jenis: 'galat', teks: 'Tidak bisa menghubungi server.' };
+    }
+    if (!usul) { render(); return; }
+    if (!usul.length) {
+      stokPesan = { jenis: 'galat', teks: 'Tidak ada produk yang bisa dihitung dari pesanan Globemerce.' };
+      render(); return;
+    }
+    // Produk yang sudah ada di daftar dipertahankan angkanya; yang baru ditambahkan.
+    const lama = new Map(((D.stok && D.stok.produk) || []).map(p => [p.kode, p]));
+    const gabung = usul.map(u => lama.get(u.kode) || u);
+    for (const [k, v] of lama) if (!usul.some(u => u.kode === k)) gabung.push(v);
+    D.stok.produk = gabung;
+    stokPesan = { jenis: 'ok', teks: fN(usul.length) + ' produk terbaca dari Globemerce. '
+      + 'Periksa angkanya, lalu tekan Simpan daftar produk.' };
+    render();
+  }
+
   function tambahBarisProduk() {
     const tbody = document.getElementById('baris-produk');
     if (!tbody) return;
@@ -4476,6 +4509,13 @@
       return;
     }
     if (e.target.closest('#tambah-produk')) { tambahBarisProduk(); return; }
+    const ambilProduk = e.target.closest('#ambil-produk');
+    if (ambilProduk) {
+      ambilProduk.disabled = true;
+      ambilProduk.textContent = 'Mengambil…';
+      usulkanProduk();
+      return;
+    }
     const hapusBaris = e.target.closest('button[data-baris]');
     if (hapusBaris) {
       const tr = hapusBaris.closest('tr');
