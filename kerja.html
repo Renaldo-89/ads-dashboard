@@ -2499,12 +2499,23 @@
           + 'arahkan ke dokter sebelum melanjutkan konsumsi.',
   };
 
+  // Satu pesanan bisa berisi lebih dari satu produk, misalnya EROJAN + Coffiy.
+  // Sebelumnya pesanan campuran begitu ikut terbuang, karena Coffiy kebetulan
+  // ada di urutan pertama daftar dan langsung menang. Di catatan asli CS,
+  // pesanan campuran tetap ditindaklanjuti mengikuti produk utamanya — dari
+  // 16 pesanan campuran di berkas mereka, 12 punya tanggal mulai. Jadi produk
+  // yang dilewati hanya dipakai kalau memang tidak ada produk lain.
   function kenaliProduk(o) {
+    let cadangan = null;
     for (const p of (o.produk || [])) {
       const n = String(p.nama || '');
-      for (const d of PRODUK) if (d.pola.test(n)) return d;
+      for (const d of PRODUK) {
+        if (!d.pola.test(n)) continue;
+        if (d.lewati) { if (!cadangan) cadangan = d; continue; }
+        return d;
+      }
     }
-    return null;
+    return cadangan;
   }
 
   const tambahHari = (tgl, n) => tglLokal(new Date(tgl + 'T00:00:00').getTime() + n * 864e5);
