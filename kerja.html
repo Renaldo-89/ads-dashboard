@@ -1166,40 +1166,11 @@
     if (AKU.peran === 'cs') muatDataFollowUp();
   }
 
-  // ---------- mengisi tanggal paket diterima ----------
-  // Daftar pengiriman Everpro tidak memuat tanggal terkirim; tanggalnya hanya
-  // ada di riwayat pelacakan, satu permintaan untuk satu resi. Worker
-  // menyimpan hasilnya permanen, jadi beban ini hanya terasa sekali saja.
-  // Dijalankan setelah halaman tampil, dan halamannya digambar ulang tiap
-  // satu gelombang selesai supaya jadwalnya terlihat membaik sendiri.
-  let isiKirimJalan = false;
-  async function isiTanggalKirim(daftar) {
-    if (isiKirimJalan) return;
-    const semua = daftar || D.kirim || [];
-    const perlu = semua
-      .filter(x => x && x.kelompok === 'terkirim' && !x.tgl_kirim && x.resi)
-      .map(x => x.resi);
-    if (!perlu.length) return;
-    isiKirimJalan = true;
-    try {
-      // 25 sekali jalan, mengikuti batas yang dipakai Worker. Dibatasi empat
-      // gelombang per pemuatan supaya tidak menahan sisa halaman terlalu lama;
-      // sisanya menyusul saat halaman dibuka lagi.
-      for (let i = 0; i < perlu.length && i < 100; i += 25) {
-        const kelompok = perlu.slice(i, i + 25);
-        const r = await ambil(PROXY + '?kirim=1&no=' + encodeURIComponent(kelompok.join(',')));
-        if (r.status !== 200) break;              // KV belum siap, hentikan diam-diam
-        const j = await r.json();
-        const peta = (j && j.data) || {};
-        let dapat = 0;
-        for (const x of (D.kirim || [])) {
-          if (x && x.resi && peta[x.resi] && !x.tgl_kirim) { x.tgl_kirim = peta[x.resi]; dapat++; }
-        }
-        if (dapat) render();
-      }
-    } catch (e) { /* diam saja, halaman tetap jalan dengan perkiraan */ }
-    finally { isiKirimJalan = false; }
-  }
+  // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
+  // di sini, lalu dibuang. Semua alamat pelacakan yang dicoba menjawab 404,
+  // jadi tiap pemuatan halaman menghabiskan 25 permintaan dan enam detik
+  // untuk hasil kosong. Tanggal terima sekarang diperkirakan dari tanggal
+  // order, lihat TRANSIT_PERKIRAAN.
 
   // ---------- data berat: lelang, per jam, kata kunci ----------
   // tiap halaman hanya butuh satu kumpulan data berat, jadi ditarik terpisah
@@ -2484,9 +2455,17 @@
   // longgar karena sudah tahu cara pakai. Coffiy tidak dijadwalkan.
   // Lama pakai dihitung jumlah unit x 30 hari.
   const HARI_PER_UNIT = 30;
-  // Dipakai hanya kalau Everpro bilang paket sudah terkirim tapi tidak
-  // menyebutkan tanggalnya. Angka perkiraan, dan barisnya diberi tanda.
-  const TRANSIT_PERKIRAAN = 3;
+  // Jarak dari tanggal order ke tanggal barang diterima.
+  //
+  // Everpro tidak menyediakan tanggal terima: kolomnya tidak ada di daftar
+  // pengiriman, dan semua alamat pelacakan yang dicoba menjawab 404. Tanggal
+  // pickup ada, tapi setelah diukur ternyata sama saja dengan tanggal order.
+  //
+  // Jadi dipakai angka tetap, dan angkanya diukur dari catatan asli CS:
+  // 53 pesanan yang bisa dicocokkan dengan berkas TRACKING TANGGAL FU
+  // memberi rata-rata 2,23 hari dan median 2 hari. Dengan +2, 85% jadwal
+  // meleset paling jauh satu hari; +1 atau +3 keduanya turun ke sekitar 60%.
+  const TRANSIT_PERKIRAAN = 2;
 
   const PRODUK = [
     { kode:'COFFIY', pola:/coffi?y/i, label:'Coffiy',  bidang:null, lewati:true },
@@ -2773,7 +2752,6 @@
     }
     fuData = { memuat: false, rentang: tanda, pesanan: daftar, kirim };
     render();
-    isiTanggalKirim(kirim);
   }
 
   // Semua tugas dari pesanan yang boleh dilihat pengguna ini
@@ -2848,7 +2826,7 @@
       ${buka ? `<div class="fu-isi">
         <div class="fu-baris"><b>Telepon</b><span>${o.telepon ? esc(o.telepon) : '—'}
           &middot; order #${esc(o.no)} &middot; beli ${sd(o.tanggal)}
-          &middot; diterima ${sd(t.j.terima)}${t.j.pasti ? '' : ' (perkiraan)'}
+          &middot; diterima ${t.j.pasti ? '' : '&plusmn;'}${sd(t.j.terima)}
           &middot; habis ${sd(t.j.habis)}</span></div>
         <div class="fu-baris"><b>Tugas</b><ul>${t.tugas.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
         <div class="fu-baris"><b>Contoh chat</b><pre class="fu-chat">${esc(t.chat)}</pre>
@@ -2884,7 +2862,10 @@
     if (T.belumSampai) sisa.push(fN(T.belumSampai) + ' paket masih dalam perjalanan');
     if (T.gagalKirim) sisa.push(fN(T.gagalKirim) + ' retur atau batal');
     if (T.tanpaJadwal) sisa.push(fN(T.tanpaJadwal) + ' tanpa jadwal (Coffiy atau produk tak dikenali)');
-    if (T.perkiraan) sisa.push(fN(T.perkiraan) + ' pakai tanggal terima perkiraan');
+    // Ditulis sekali di sini, bukan di tiap kartu, karena hampir semua tanggal
+    // memang perkiraan — kalau ditandai satu per satu malah jadi berisik.
+    if (T.perkiraan) sisa.push('tanggal terima diperkirakan ' + TRANSIT_PERKIRAAN
+      + ' hari setelah order, ditandai &plusmn;');
     const catatan = sisa.length
       ? `<div class="note" style="margin:-2px 0 10px">${sisa.join(' &middot; ')}</div>` : '';
     const bagian = (judul, arr, jenis) => arr.length
