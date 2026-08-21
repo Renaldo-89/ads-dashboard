@@ -971,20 +971,24 @@
   const salesRowsLalu = () => SALES.flatMap(x => D.prevSales[x.id] || []);
   const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
-  // Laba kotor barang keluar: omzet dikurangi HPP.
+  // Laba barang keluar dari stok retur = omzetnya, tanpa dipotong HPP.
   //
-  // Ongkir sengaja tidak dipotong di sini. Kiriman ini punya resi Everpro,
-  // jadi ongkirnya sudah ikut terhitung di Biaya pengiriman bersama kiriman
-  // lain. Kalau dipotong lagi di sini, ongkirnya terhitung dua kali.
+  // HPP barang itu sudah keluar sekali waktu pesanan aslinya dibuat dan sudah
+  // ikut terhitung di gross profit periode itu. Memotongnya lagi di sini sama
+  // dengan membayar modal dua kali untuk barang yang sama.
+  //
+  // Ongkir juga tidak dipotong di sini. Kiriman ini punya resi Everpro, jadi
+  // ongkirnya sudah ikut di Biaya pengiriman bersama kiriman lain.
+  //
+  // Periodenya mengikuti tanggal barang dipakai, bukan tanggal barang kembali.
   function labaRetur(dari, sampai) {
-    let omzet = 0, hpp = 0, unit = 0, n = 0;
+    let omzet = 0, unit = 0, n = 0;
     for (const x of barisRetur(dari, sampai)) {
       omzet += Number(x.revenue) || 0;
-      hpp += Number(x.cogs) || 0;
       unit += Number(x.units) || 0;
       n++;
     }
-    return { omzet, hpp, unit, n, laba: omzet - hpp };
+    return { omzet, unit, n, laba: omzet };
   }
 
   // ---------- keluar dan masa berlaku sesi ----------
@@ -2368,8 +2372,8 @@
             +' &minus; cashback '+fC(bk.cashback),
           fC(bk.bersih),'bersih',0):''}
         ${lr.n?li({c:'var(--amber)',s:'var(--amber-soft)',ini:'R'},'Profit produk retur',
-          fN(lr.n)+' pengiriman &middot; '+fN(lr.unit)+' produk &middot; omzet '+fC(lr.omzet)
-            +' &minus; HPP '+fC(lr.hpp)+' &middot; tidak masuk omzet dan GMV di atas',
+          fN(lr.n)+' pengiriman &middot; '+fN(lr.unit)+' produk &middot; mengikuti bulan barang dipakai'
+            +' &middot; HPP tidak dipotong lagi, sudah terhitung di penjualan pertama',
           fC(lr.laba),'laba',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
@@ -3292,8 +3296,7 @@
             <td class="ctr"><span class="pill2" style="background:${s};color:${c}">${esc(x.status || 'belum ada resi')}</span></td>
             ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>'
               + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
-              + '<td class="num uang" style="color:' + ((x.laba || 0) >= 0 ? 'var(--green)' : 'var(--red)') + '">'
-              + fC(x.laba || 0) + '</td>' : ''}
+              + '<td class="num uang" style="color:var(--green)">' + fC(x.omzet) + '</td>' : ''}
             <td class="ctr"><button class="stok-hapus" data-hapus="keluar:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
           </tr>`; }).join('')}</tbody></table></div></div>` : '';
 
