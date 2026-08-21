@@ -3102,6 +3102,42 @@
     return ('PWP ' + kata.join(' ')).trim();
   }
 
+  // Sisa per catatan masuk, dipecah per baris produk di dalamnya.
+  // Inilah yang dipakai formulir barang keluar: yang dipilih bukan sekadar
+  // nama produk, tapi barang dari pesanan retur mana.
+  //
+  // Catatan keluar lama yang belum menyimpan masuk_id tetap dihitung, dibagi
+  // dari batch terlama, supaya sisa stoknya tidak terlihat lebih banyak dari
+  // kenyataan.
+  function batchStok() {
+    const masuk = (D.stok && D.stok.masuk) || [];
+    const keluar = (D.stok && D.stok.keluar) || [];
+    const out = [];
+    for (const m of masuk) {
+      for (const p of (m.produk || [])) {
+        const jumlah = Number(p.jumlah) || 0;
+        if (!jumlah) continue;
+        const pakai = keluar
+          .filter(x => x.masuk_id === m.id && x.produk === p.nama)
+          .reduce((a, x) => a + (Number(x.jumlah) || 0), 0);
+        out.push({ masukId: m.id, no_order: m.no_order, tgl: m.tgl,
+          nama: p.nama, jumlah, pakai, sisa: jumlah - pakai });
+      }
+    }
+    // catatan keluar tanpa masuk_id: dikurangkan dari batch terlama
+    for (const x of keluar) {
+      if (x.masuk_id) continue;
+      let sisaKurang = Number(x.jumlah) || 0;
+      for (const b of out) {
+        if (b.nama !== x.produk || b.sisa <= 0) continue;
+        const ambil = Math.min(b.sisa, sisaKurang);
+        b.pakai += ambil; b.sisa -= ambil; sisaKurang -= ambil;
+        if (sisaKurang <= 0) break;
+      }
+    }
+    return out;
+  }
+
   // Sisa stok per nama produk: seluruh yang masuk dikurangi yang sudah keluar.
   function sisaStok() {
     const m = new Map();
@@ -3150,7 +3186,8 @@
       ? `<div class="stok-pesan ${stokPesan.jenis}">${esc(stokPesan.teks)}</div>` : '';
 
     const sisa = sisaStok();
-    const adaSisa = sisa.filter(x => x.sisa > 0);
+    const batch = batchStok();
+    const batchAda = batch.filter(b => b.sisa > 0);
     const totalSisa = sisa.reduce((a, x) => a + x.sisa, 0);
     const agen = daftarAgen();
 
@@ -3200,9 +3237,10 @@
       <p class="k">BARANG KELUAR KE PEMBELI BARU</p>
       <div class="baris">
         <label>Tanggal kirim<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
-        <label>Produk<select name="produk" required>
-          ${adaSisa.length
-            ? adaSisa.map(x => `<option value="${esc(x.nama)}">${esc(namaProdukRapi(x.nama))} — sisa ${x.sisa}</option>`).join('')
+        <label>Ambil dari stok retur<select name="batch" required>
+          ${batchAda.length
+            ? batchAda.map(b => `<option value="${esc(b.masukId + '|' + b.nama)}">#${esc(b.no_order)}
+                — ${esc(namaProdukRapi(b.nama))} — sisa ${b.sisa}</option>`).join('')
             : '<option value="">belum ada stok</option>'}
         </select></label>
         <label>Jumlah<input type="number" name="jumlah" min="1" step="1" value="1" required></label>
@@ -3221,7 +3259,7 @@
           ${agen.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}
         </select></label>
       </div>
-      <button type="submit" ${adaSisa.length ? '' : 'disabled'}>Simpan barang keluar</button>
+      <button type="submit" ${batchAda.length ? '' : 'disabled'}>Simpan barang keluar</button>
       <p class="note" style="margin:9px 0 0">Status kiriman ditarik dari Everpro lewat nomor resi.
         Resi boleh diisi belakangan.</p>
     </form>`;
@@ -3234,7 +3272,7 @@
         <button class="stok-segar" id="segarkan-status">Segarkan status</button></div>
       <div class="panel tight"><div class="scroll-x"><table class="dt">
         <thead><tr><th>Tanggal</th><th>Produk</th><th class="num">Jml</th><th>Pembeli</th>
-          <th>CS</th><th>Resi</th><th class="ctr">Status</th>
+          <th>CS</th><th>Dari retur</th><th>Resi</th><th class="ctr">Status</th>
           ${uang ? '<th class="num">Omzet</th><th class="num">Ongkir</th><th class="num">Laba</th>' : ''}
           <th></th></tr></thead>
         <tbody>${keluar.map(x => {
@@ -3245,6 +3283,7 @@
             <td class="num">${fN(x.jumlah)}</td>
             <td class="nama">${esc(x.pembeli || '—')}</td>
             <td>${esc(x.agen || '—')}</td>
+            <td class="no">${x.dari_order ? '#' + esc(x.dari_order) : '—'}</td>
             <td class="resi">${esc(x.resi || '—')}</td>
             <td class="ctr"><span class="pill2" style="background:${s};color:${c}">${esc(x.status || 'belum ada resi')}</span></td>
             ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>'
@@ -3261,14 +3300,23 @@
         <span class="note">${fN(masuk.length)} catatan terakhir</span></div>
       <div class="panel tight"><div class="scroll-x"><table class="dt">
         <thead><tr><th>Tanggal</th><th>No order</th><th>Produk</th><th class="num">Jml</th>
-          <th>Pembeli asal</th><th>Alasan</th>${uang ? '<th class="num">Nilai</th>' : ''}
-          <th>Dicatat</th><th></th></tr></thead>
+          <th class="ctr">Stok</th><th>Pembeli asal</th><th>Alasan</th>
+          ${uang ? '<th class="num">Nilai</th>' : ''}<th>Dicatat</th><th></th></tr></thead>
         <tbody>${masuk.map(x => `<tr>
           <td class="tgl">${sd(x.tgl)}</td>
           <td class="no">#${esc(x.no_order)}</td>
           <td>${(x.produk || []).map(p => esc(namaProdukRapi(p.nama))
             + ' <span style="color:var(--faint)">×' + fN(p.jumlah) + '</span>').join('<br>')}</td>
           <td class="num">${fN(x.unit)}</td>
+          <td class="ctr">${(() => {
+            const b = batch.filter(y => y.masukId === x.id);
+            const total = b.reduce((a, y) => a + y.jumlah, 0);
+            const pakai = b.reduce((a, y) => a + y.pakai, 0);
+            if (!total) return '<span class="note">—</span>';
+            if (pakai >= total) return pil('Sudah terpakai','var(--muted)','var(--line-2)');
+            if (pakai > 0) return pil('Terpakai ' + fN(pakai) + '/' + fN(total),'var(--amber-ink)','var(--amber-soft)');
+            return pil('Tersedia','var(--green)','var(--green-soft)');
+          })()}</td>
           <td class="nama">${esc(x.pembeli_asal || '—')}</td>
           <td>${esc(x.alasan || '—')}</td>
           ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>' : ''}
@@ -4474,6 +4522,12 @@
     }
     if (jenis === 'keluar') {
       if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
+      // Pilihan batch memuat dua hal sekaligus: catatan masuk mana dan
+      // produk yang mana di dalamnya.
+      const [masukId, namaProduk] = String(data.batch || '').split('|');
+      delete data.batch;
+      data.masuk_id = masukId || '';
+      data.produk = namaProduk || '';
       const hasil = await kirimStok('keluar', data);
       if (hasil) stokPesan = { jenis: 'ok', teks: fN(hasil.jumlah) + ' ' + hasil.produk
         + ' keluar untuk ' + (hasil.pembeli || 'pembeli baru') + ', penjualannya masuk ke ' + hasil.agen + '.' };
