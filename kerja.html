@@ -953,7 +953,7 @@
         cogs: hpp,
         gross_profit: omzet - hpp,
         customers_new: 0, customers_repeat: 0,
-        _retur: true, pv: Number(x.pv) || 0,
+        _retur: true, pv: Number(x.pv) || 0, ongkir: Number(x.ongkir) || 0,
         agen: String(x.agen || ''), produk_nama: String(x.produk || ''),
       });
     }
@@ -977,18 +977,21 @@
   // ikut terhitung di gross profit periode itu. Memotongnya lagi di sini sama
   // dengan membayar modal dua kali untuk barang yang sama.
   //
-  // Ongkir juga tidak dipotong di sini. Kiriman ini punya resi Everpro, jadi
-  // ongkirnya sudah ikut di Biaya pengiriman bersama kiriman lain.
+  // Ongkir DIPOTONG di sini, dan sebagai gantinya resi kiriman ini dikeluarkan
+  // dari Biaya pengiriman — lihat resiStokRetur(). Dengan begitu ongkirnya
+  // tetap terhitung sekali, tapi terlihat di tempat yang masuk akal: menempel
+  // pada pengiriman yang menimbulkannya.
   //
   // Periodenya mengikuti tanggal barang dipakai, bukan tanggal barang kembali.
   function labaRetur(dari, sampai) {
-    let omzet = 0, unit = 0, n = 0;
+    let omzet = 0, ongkir = 0, unit = 0, n = 0;
     for (const x of barisRetur(dari, sampai)) {
       omzet += Number(x.revenue) || 0;
+      ongkir += Number(x.ongkir) || 0;
       unit += Number(x.units) || 0;
       n++;
     }
-    return { omzet, unit, n, laba: omzet };
+    return { omzet, ongkir, unit, n, laba: omzet - ongkir };
   }
 
   // ---------- keluar dan masa berlaku sesi ----------
@@ -2051,8 +2054,21 @@
   // sebagai cashback. Medan "harga" di Everpro adalah total tagihan kirim,
   // bukan harga produk. Yang jadi beban nyata: tagihan dikurangi cashback.
   // Cashback yang statusnya dibatalkan tidak dihitung sebagai pengurang.
+  // Resi milik pengiriman stok retur. Ongkirnya dihitung langsung di laba
+  // barang keluar, jadi harus dikeluarkan dari Biaya pengiriman — kalau ikut,
+  // ongkir yang sama terpotong dua kali dari laba.
+  function resiStokRetur() {
+    const s = new Set();
+    for (const x of ((D.stok && D.stok.keluar) || [])) {
+      const r = bersihResi(x.resi);
+      if (r) s.add(r);
+    }
+    return s;
+  }
+
   function biayaKirim(rows) {
-    const K = rows || kirimAktif();
+    const buang = resiStokRetur();
+    const K = (rows || kirimAktif()).filter(x => !buang.has(bersihResi(x.resi)));
     let tagihan = 0, ongkir = 0, feeCod = 0, asuransi = 0, diskon = 0, cashback = 0;
     for (const x of K) {
       tagihan  += Number(x.harga) || 0;
@@ -2372,8 +2388,9 @@
             +' &minus; cashback '+fC(bk.cashback),
           fC(bk.bersih),'bersih',0):''}
         ${lr.n?li({c:'var(--amber)',s:'var(--amber-soft)',ini:'R'},'Profit produk retur',
-          fN(lr.n)+' pengiriman &middot; '+fN(lr.unit)+' produk &middot; mengikuti bulan barang dipakai'
-            +' &middot; HPP tidak dipotong lagi, sudah terhitung di penjualan pertama',
+          fN(lr.n)+' pengiriman &middot; '+fN(lr.unit)+' produk &middot; omzet '+fC(lr.omzet)
+            +' &minus; ongkir '+fC(lr.ongkir)+' &middot; HPP tidak dipotong lagi, sudah terhitung'
+            +' di penjualan pertama',
           fC(lr.laba),'laba',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
@@ -3296,7 +3313,8 @@
             <td class="ctr"><span class="pill2" style="background:${s};color:${c}">${esc(x.status || 'belum ada resi')}</span></td>
             ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>'
               + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
-              + '<td class="num uang" style="color:var(--green)">' + fC(x.omzet) + '</td>' : ''}
+              + '<td class="num uang" style="color:' + (((x.omzet||0)-(x.ongkir||0)) >= 0 ? 'var(--green)' : 'var(--red)')
+                + '">' + fC((x.omzet||0) - (x.ongkir||0)) + '</td>' : ''}
             <td class="ctr"><button class="stok-hapus" data-hapus="keluar:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
           </tr>`; }).join('')}</tbody></table></div></div>` : '';
 
