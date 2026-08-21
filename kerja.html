@@ -3107,6 +3107,14 @@
 
   const bolehUang = () => AKU.peran === 'admin';
 
+  // Sebagian baris pesanan Globemerce bukan barang: COURIER CHARGES, potongan
+  // ongkir, dan sejenisnya. Worker sudah menyaringnya untuk pencatatan baru,
+  // tapi catatan yang terlanjur tersimpan masih memuatnya — jadi disaring lagi
+  // di sini supaya tidak muncul sebagai stok yang seolah bisa dikirim ulang.
+  const POLA_BUKAN_BARANG = /(courier|ongkir|shipping|freight|discount|diskon|voucher|potongan|admin\s*fee|biaya)/i;
+  const barangFisik = nama => !POLA_BUKAN_BARANG.test(String(nama || ''));
+  const produkFisik = x => (x.produk || []).filter(p => barangFisik(p.nama));
+
   // Nama produk Globemerce ditulis untuk sistem, bukan untuk dibaca orang:
   // "INID-COFFIY 5s(PWP)_AUG/24". Yang dirapikan hanya tampilannya — nama
   // aslinya tetap dipakai untuk mencocokkan stok, supaya tidak ada barang
@@ -3139,7 +3147,7 @@
     const keluar = (D.stok && D.stok.keluar) || [];
     const out = [];
     for (const m of masuk) {
-      for (const p of (m.produk || [])) {
+      for (const p of produkFisik(m)) {
         const jumlah = Number(p.jumlah) || 0;
         if (!jumlah) continue;
         const pakai = keluar
@@ -3167,7 +3175,7 @@
   function sisaStok() {
     const m = new Map();
     for (const x of ((D.stok && D.stok.masuk) || [])) {
-      for (const p of (x.produk || [])) {
+      for (const p of produkFisik(x)) {
         const n = String(p.nama || '').trim();
         if (!n) continue;
         if (!m.has(n)) m.set(n, { nama: n, masuk: 0, keluar: 0 });
@@ -3234,7 +3242,7 @@
         <span><b>Resi asal</b>${esc(pv.resi || '—')}</span>
         ${uang ? '<span><b>Omzet</b>' + fC(pv.omzet) + '</span>' : ''}
       </div>
-      <ul class="stok-produk">${(pv.produk || []).map(p =>
+      <ul class="stok-produk">${produkFisik(pv).map(p =>
         `<li>${esc(namaProdukRapi(p.nama))} <b>×${fN(p.jumlah)}</b></li>`).join('')}</ul>
       <div class="stok-aksi">
         <button type="button" id="batal-order">Batal</button>
@@ -3330,9 +3338,9 @@
         <tbody>${masuk.map(x => `<tr>
           <td class="tgl">${sd(x.tgl)}</td>
           <td class="no">#${esc(x.no_order)}</td>
-          <td>${(x.produk || []).map(p => esc(namaProdukRapi(p.nama))
+          <td>${produkFisik(x).map(p => esc(namaProdukRapi(p.nama))
             + ' <span style="color:var(--faint)">×' + fN(p.jumlah) + '</span>').join('<br>')}</td>
-          <td class="num">${fN(x.unit)}</td>
+          <td class="num">${fN(produkFisik(x).reduce((a, p) => a + (Number(p.jumlah) || 0), 0))}</td>
           <td class="ctr">${(() => {
             const b = batch.filter(y => y.masukId === x.id);
             const total = b.reduce((a, y) => a + y.jumlah, 0);
