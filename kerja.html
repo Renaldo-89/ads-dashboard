@@ -216,6 +216,10 @@
     color:var(--faint); margin-bottom:2px; }
   .stok-produk { margin:0 0 12px; padding-left:18px; }
   .stok-produk li { font-size:12.5px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
+  /* penanda barang bonus PWP: ikut jadi stok, tapi bukan produk utama */
+  .stok-bonus { display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.5px;
+    text-transform:uppercase; padding:1px 6px; border-radius:999px;
+    background:var(--amber-soft); color:var(--amber-ink); vertical-align:middle; }
   .stok-segar { margin-left:auto; border:1px solid var(--line); background:var(--panel);
     color:var(--ink-2); padding:5px 12px; border-radius:9px; font-size:11.5px;
     font-weight:700; font-family:inherit; cursor:pointer; }
@@ -3153,7 +3157,8 @@
         ${uang ? '<span><b>Omzet</b>' + fC(pv.omzet) + '</span>' : ''}
       </div>
       <ul class="stok-produk">${(pv.produk || []).map(p =>
-        `<li>${esc(p.nama)} <b>×${fN(p.jumlah)}</b></li>`).join('')}</ul>
+        `<li>${esc(p.nama)} <b>×${fN(p.jumlah)}</b>${p.bonus
+          ? ' <span class="stok-bonus">bonus</span>' : ''}</li>`).join('')}</ul>
       <div class="stok-aksi">
         <button type="button" id="batal-order">Batal</button>
         <button type="button" id="simpan-order">Catat sebagai barang masuk</button>
@@ -3246,7 +3251,9 @@
         <tbody>${masuk.map(x => `<tr>
           <td class="tgl">${sd(x.tgl)}</td>
           <td class="no">#${esc(x.no_order)}</td>
-          <td>${(x.produk || []).map(p => esc(p.nama) + ' <span style="color:var(--faint)">×' + fN(p.jumlah) + '</span>').join('<br>')}</td>
+          <td>${(x.produk || []).map(p => esc(p.nama)
+            + ' <span style="color:var(--faint)">×' + fN(p.jumlah) + '</span>'
+            + (p.bonus ? ' <span class="stok-bonus">bonus</span>' : '')).join('<br>')}</td>
           <td class="num">${fN(x.unit)}</td>
           <td class="nama">${esc(x.pembeli_asal || '—')}</td>
           <td>${esc(x.alasan || '—')}</td>
