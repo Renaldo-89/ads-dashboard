@@ -2378,6 +2378,10 @@
       </div>`;
   }
 
+  // Label bulat kecil. Dulu hanya ada di dalam pgSumber, jadi halaman lain
+  // yang memakainya langsung gagal. Sekarang dipakai bersama.
+  const pil = (t,c,s) => `<span class="pill2" style="background:${s};color:${c}">${t}</span>`;
+
   const sc = (ic,c,s,k,v) => `<div class="sc"><div class="ic" style="background:${s};color:${c}">${ic}</div>
     <div style="min-width:0"><p class="k">${k}</p><p class="v">${v}</p></div></div>`;
 
@@ -3956,7 +3960,6 @@
     const gmvHero = heroGMV();
 
     // ---- daftar pesanan dalam bentuk tabel ----
-    const pil = (t,c,s) => `<span class="pill2" style="background:${s};color:${c}">${t}</span>`;
     const kosongResi = r => !r || /not\s*generated/i.test(String(r));
 
     // Pesanan Sameday/Instant tidak punya nomor resi di Globemerce — kolom itu
