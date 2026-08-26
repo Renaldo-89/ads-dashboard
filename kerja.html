@@ -2082,6 +2082,11 @@
   function resiStokRetur() {
     const s = new Set();
     for (const x of ((D.stok && D.stok.keluar) || [])) {
+      // Pengiriman yang bukan penjualan (KIRIM JOGJA) sengaja TIDAK dikeluarkan
+      // dari sini. Dia tidak punya laba tempat ongkirnya bisa dipotong, jadi
+      // ongkirnya dibiarkan mengalir ke Biaya pengiriman seperti kiriman biasa —
+      // uangnya memang keluar, dan harus terlihat di pembukuan.
+      if (tanpaPenjualan(x.agen)) continue;
       const r = bersihResi(x.resi);
       if (r) s.add(r);
     }
