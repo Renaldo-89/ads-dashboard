@@ -942,6 +942,10 @@
     for (const x of daftar) {
       const t = String(x.tgl || '');
       if (!t || (dari && t < dari) || (sampai && t > sampai)) continue;
+      // KIRIM JOGJA dan sejenisnya: barangnya keluar, tapi bukan penjualan.
+      // Dilewati di sini sekaligus menghapusnya dari omzet, laba, GMV, dan
+      // peringkat CS — semuanya berangkat dari fungsi ini.
+      if (tanpaPenjualan(x.agen)) continue;
       const j = Math.max(0, Number(x.jumlah) || 0);
       if (!j) continue;
       const omzet = Number(x.omzet) || 0;
@@ -3236,7 +3240,11 @@
       const n = String(x.agen || '').trim();
       if (n) s.add(n);
     }
-    return [...s].sort((a, b) => a.localeCompare(b));
+    const daftar = [...s].sort((a, b) => a.localeCompare(b));
+    // Tujuan khusus ditaruh di bawah, dipisah, supaya tidak tertukar
+    // dengan nama CS sungguhan saat dipilih buru-buru.
+    for (const k of AGEN_TANPA_PENJUALAN) if (!daftar.includes(k)) daftar.push(k);
+    return daftar;
   }
 
   const WARNA_STOK = kel =>
@@ -3347,14 +3355,19 @@
             <td>${esc(namaProdukRapi(x.produk))}</td>
             <td class="num">${fN(x.jumlah)}</td>
             <td class="nama">${esc(x.pembeli || '—')}</td>
-            <td>${esc(x.agen || '—')}</td>
+            <td>${esc(x.agen || '—')}${tanpaPenjualan(x.agen)
+              ? ' <span class="note">bukan CS</span>' : ''}</td>
             <td class="no">${x.dari_order ? '#' + esc(x.dari_order) : '—'}</td>
             <td class="resi">${esc(x.resi || '—')}</td>
             <td class="ctr"><span class="pill2" style="background:${s};color:${c}">${esc(x.status || 'belum ada resi')}</span></td>
-            ${uang ? '<td class="num uang">' + fC(x.omzet) + '</td>'
-              + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
-              + '<td class="num uang" style="color:' + (((x.omzet||0)-(x.ongkir||0)) >= 0 ? 'var(--green)' : 'var(--red)')
-                + '">' + fC((x.omzet||0) - (x.ongkir||0)) + '</td>' : ''}
+            ${uang ? (tanpaPenjualan(x.agen)
+              ? '<td class="num" style="color:var(--faint)">—</td>'
+                + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
+                + '<td class="num" style="color:var(--faint)">bukan penjualan</td>'
+              : '<td class="num uang">' + fC(x.omzet) + '</td>'
+                + '<td class="num uang">' + (x.ongkir ? fC(x.ongkir) : '—') + '</td>'
+                + '<td class="num uang" style="color:' + (((x.omzet||0)-(x.ongkir||0)) >= 0 ? 'var(--green)' : 'var(--red)')
+                  + '">' + fC((x.omzet||0) - (x.ongkir||0)) + '</td>') : ''}
             <td class="ctr"><button class="stok-hapus" data-hapus="keluar:${esc(x.id)}" title="Hapus catatan">&times;</button></td>
           </tr>`; }).join('')}</tbody></table></div></div>` : '';
 
@@ -3417,7 +3430,14 @@
   const NAMA_CS = { yara: 'Lili', riana: 'Intan', intan: 'Intan' };
   // Bukan Customer Service. Disembunyikan dari peringkat, tapi tetap dihitung di catatan
   // supaya total di halaman ini masih bisa dicocokkan dengan halaman Globemerce.
-  const BUKAN_CS = { NANDA: 'order sendiri', DINDA: 'advertiser' };
+  const BUKAN_CS = { NANDA: 'order sendiri', DINDA: 'advertiser',
+    'KIRIM JOGJA': 'kirim internal' };
+
+  // Tujuan pengiriman yang bukan penjualan. Stoknya tetap berkurang, tapi
+  // tidak ada omzet, laba, maupun GMV yang tercatat, dan tidak masuk ke
+  // penjualan CS mana pun.
+  const AGEN_TANPA_PENJUALAN = new Set(['KIRIM JOGJA']);
+  const tanpaPenjualan = agen => AGEN_TANPA_PENJUALAN.has(String(agen || '').trim().toUpperCase());
   const namaCS = n => {
     const t = String(n || '').trim();
     return NAMA_CS[t] || NAMA_CS[t.toLowerCase()] || (t || '(tanpa nama)');
