@@ -1288,6 +1288,7 @@
     if (AKU.peran === 'cs') muatDataFollowUp();
     // Stok retur cukup ditarik sekali; isinya berubah lewat formulir sendiri.
     if (!D.stok) muatStok();
+    muatSemangat();
   }
 
   // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
@@ -1736,10 +1737,27 @@
     for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
     return Math.abs(h | 0);
   }
+  // Kalimat hari ini. Yang dipakai lebih dulu adalah karangan AI dari Worker;
+  // daftar bawaan hanya cadangan kalau AI belum siap atau gagal, supaya
+  // kartunya tidak pernah kosong.
+  let semangatAI = null;      // { teks } | { gagal:true }
+
   const motivasiHariIni = () => {
+    if (semangatAI && semangatAI.teks) return semangatAI.teks;
     const daftar = AKU.peran === 'cs' ? MOTIVASI : MOTIVASI_ADMIN;
     return daftar[nomorAcak(tglLokal() + '|' + (PENGGUNA || '')) % daftar.length];
   };
+
+  async function muatSemangat() {
+    if (semangatAI) return;
+    semangatAI = { memuat: true };
+    try {
+      const r = await ambil(PROXY + '?semangat=1');
+      const j = await r.json();
+      semangatAI = (j && j.data && j.data.teks) ? { teks: j.data.teks } : { gagal: true };
+    } catch (e) { semangatAI = { gagal: true }; }
+    render();
+  }
 
   // Catatan kecil di kaki menu tidak dipakai lagi: semangat harian sudah
   // punya kartunya sendiri di atas halaman, yang jauh lebih enak difoto.
