@@ -64,6 +64,71 @@ jobs:
           printf '{"updated_at":"%s","timezone":"Asia/Jakarta"}\n' "$(date '+%Y-%m-%d %H:%M')" > data/meta.json
           cat data/meta.json
 
+      # Arsip yang menumpuk, tidak pernah menggeser data lama keluar.
+      #
+      # daily.json hanya memuat 60 hari terakhir: tiap hari, satu hari terlama
+      # terdorong keluar dan hilang selamanya. Selama Windsor masih bisa
+      # membacanya itu tidak masalah — tapi kalau akun iklan ditangguhkan dan
+      # Windsor kehilangan akses, riwayat lamanya tidak ada di mana pun lagi.
+      #
+      # Arsip ini menggabungkan tiap tarikan baru ke berkas yang sudah ada,
+      # ditandai tanggal + akun + kampanye. Angka yang sudah ada diperbarui
+      # kalau Windsor merevisinya, dan baris lama tidak pernah dibuang.
+      - name: Arsipkan riwayat iklan
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone, timedelta
+
+          ARSIP = 'data/riwayat-iklan.json'
+
+          def baca(p):
+              if not os.path.exists(p): return None
+              try:
+                  with open(p, encoding='utf-8') as f: return json.load(f)
+              except Exception: return None
+
+          def barisnya(d):
+              if d is None: return []
+              r = d.get('data') if isinstance(d, dict) else d
+              return r if isinstance(r, list) else []
+
+          baru = barisnya(baca('data/daily.json'))
+          if not baru:
+              print('daily.json kosong atau gagal dibaca — arsip tidak disentuh.')
+              raise SystemExit(0)
+
+          lama = barisnya(baca(ARSIP))
+          kunci = lambda x: (
+              str(x.get('date') or ''),
+              str(x.get('account_id') or ''),
+              str(x.get('campaign') or ''),
+          )
+
+          gabung = {kunci(x): x for x in lama if x.get('date')}
+          sebelum = len(gabung)
+          for x in baru:
+              if x.get('date'): gabung[kunci(x)] = x
+
+          hasil = sorted(gabung.values(), key=kunci)
+          wib = timezone(timedelta(hours=7))
+          isi = {
+              'updated_at': datetime.now(wib).strftime('%Y-%m-%d %H:%M'),
+              'timezone': 'Asia/Jakarta',
+              'catatan': 'Arsip menumpuk. Baris lama tidak pernah dibuang walau Windsor kehilangan akses ke akunnya.',
+              'jumlah': len(hasil),
+              'data': hasil,
+          }
+          with open(ARSIP, 'w', encoding='utf-8') as f:
+              json.dump(isi, f, ensure_ascii=False, separators=(',', ':'))
+
+          tgl = sorted({x['date'] for x in hasil if x.get('date')})
+          akun = sorted({str(x.get('account_id') or '') for x in hasil})
+          print(f'arsip: {sebelum} -> {len(hasil)} baris (+{len(hasil)-sebelum})')
+          print(f'rentang: {tgl[0] if tgl else "-"} .. {tgl[-1] if tgl else "-"}')
+          print(f'akun: {", ".join(akun)}')
+          PY
+
       - name: Commit and push
         run: |
           git config user.name  "github-actions[bot]"
