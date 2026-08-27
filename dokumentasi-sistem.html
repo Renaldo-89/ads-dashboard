@@ -99,11 +99,11 @@
 <div class="wrap">
 
 <header class="top">
-  <p class="eyebrow">DOKUMENTASI SISTEM · DIPERBARUI 7 AGUSTUS 2026</p>
-  <h1>Dashboard Iklan &amp; Penjualan</h1>
-  <p class="lead">Ringkasan lengkap sumber data, penyimpanan, alur, berkas, dan keputusan teknis
-  di balik dashboard milik Renald. Halaman ini dibuat untuk dibaca manusia sekaligus dipakai
-  sebagai bekal konteks saat memulai sesi Claude yang baru.</p>
+  <p class="eyebrow">DOKUMENTASI SISTEM · DIPERBARUI 27 AGUSTUS 2026</p>
+  <h1>Hiro Dashboard</h1>
+  <p class="lead">Sumber data, alur, keputusan teknis, dan cara merawat dashboard milik Renald.
+  Ditulis untuk dibaca manusia — dan untuk dipakai sebagai bekal konteks kalau suatu saat
+  pekerjaan ini dilanjutkan orang lain, atau oleh Claude di sesi yang baru.</p>
 </header>
 
 <nav class="toc">
@@ -111,343 +111,389 @@
   <ol>
     <li><a href="#tujuan">Tujuan sistem</a></li>
     <li><a href="#peta">Peta besar</a></li>
+    <li><a href="#peran">Tiga peran pengguna</a></li>
     <li><a href="#sumber">Sumber data</a></li>
-    <li><a href="#infra">Infrastruktur</a></li>
     <li><a href="#berkas">Berkas dan perannya</a></li>
-    <li><a href="#rahasia">Kredensial</a></li>
-    <li><a href="#endpoint">Endpoint dan pemetaan</a></li>
-    <li><a href="#gabung">Penggabungan data</a></li>
+    <li><a href="#rahasia">Rahasia dan binding</a></li>
+    <li><a href="#rute">Rute Worker</a></li>
+    <li><a href="#uang">Cara angka uang dihitung</a></li>
+    <li><a href="#cs">Customer Service dan follow-up</a></li>
+    <li><a href="#stok">Personal Admin dan stok retur</a></li>
+    <li><a href="#otomatis">Yang berjalan sendiri</a></li>
     <li><a href="#rutin">Operasi rutin</a></li>
-    <li><a href="#batas">Batasan dan catatan</a></li>
-    <li><a href="#bekal">Bekal untuk sesi Claude baru</a></li>
+    <li><a href="#pelajaran">Pelajaran mahal</a></li>
+    <li><a href="#batas">Batasan yang diketahui</a></li>
   </ol>
 </nav>
 
 <!-- 1 -->
 <h2 id="tujuan"><span class="no">1</span>Tujuan sistem</h2>
 <p>Menyatukan biaya iklan dan hasil penjualan dalam satu layar, supaya terlihat laba yang sebenarnya —
-bukan sekadar klaim konversi dari masing-masing platform iklan yang sering tumpang tindih.</p>
+bukan klaim konversi masing-masing platform iklan yang sering tumpang tindih dan saling mengaku.</p>
+<p>Belakangan tujuannya melebar: mengukur kinerja tiap customer service, menjadwalkan follow-up
+pelanggan, dan mencatat stok barang retur yang dikirim ulang.</p>
+
 <div class="grid">
-  <div class="card"><p class="k">PERTANYAAN UTAMA</p><p class="v">Iklan menghasilkan laba?</p>
-    <p class="s">Gross profit dikurangi biaya iklan, bukan sekadar jumlah konversi.</p></div>
-  <div class="card"><p class="k">KEDUA</p><p class="v">Uang bocor di mana?</p>
-    <p class="s">Kampanye tanpa konversi, jam boros, kata kunci nol hasil, kiriman retur.</p></div>
-  <div class="card"><p class="k">KETIGA</p><p class="v">Pesanan sampai atau tidak?</p>
-    <p class="s">Status pengiriman dan pencairan cashback per pesanan.</p></div>
+  <div class="card"><p class="k">PERTANYAAN UTAMA</p><p class="v">Berapa laba sebenarnya?</p>
+    <p class="s">Omzet dikurangi HPP, ongkir, dan biaya iklan — dari sumber yang bisa dipertanggungjawabkan.</p></div>
+  <div class="card"><p class="k">PERTANYAAN KEDUA</p><p class="v">Iklannya berhasil atau tidak?</p>
+    <p class="s">ROAS iklan hanya menghitung omzet pelanggan baru. Pembelian ulang hasil kerja CS, bukan iklan.</p></div>
+  <div class="card"><p class="k">PERTANYAAN KETIGA</p><p class="v">CS mana yang bekerja?</p>
+    <p class="s">Peringkat, GMV, dan daftar follow-up per orang, dari kolom Sender di Globemerce.</p></div>
 </div>
 
 <!-- 2 -->
 <h2 id="peta"><span class="no">2</span>Peta besar</h2>
+<p>Dashboard adalah satu berkas HTML statis di GitHub Pages. Dia tidak pernah memegang kunci apa pun.
+Semua permintaan ke sumber data lewat Cloudflare Worker, dan Worker itulah yang menyimpan rahasianya.</p>
+
 <div class="alur">
-  <div class="step"><div class="n" style="background:var(--indigo)">1</div>
-    <h4>Sumber</h4><p>Google Ads, Globemerce, Everpro</p></div>
+  <div class="step"><span class="n">1</span><b>Peramban</b><p class="s">kerja.html di GitHub Pages</p></div>
   <div class="panah">→</div>
-  <div class="step"><div class="n" style="background:var(--ungu)">2</div>
-    <h4>Perantara</h4><p>Cloudflare Worker menyimpan kredensial dan menerjemahkan</p></div>
+  <div class="step"><span class="n">2</span><b>Cloudflare Worker</b><p class="s">ads-proxy · memegang semua kunci</p></div>
   <div class="panah">→</div>
-  <div class="step"><div class="n" style="background:var(--pink)">3</div>
-    <h4>Penyimpanan</h4><p>GitHub repo dan berkas JSON</p></div>
-  <div class="panah">→</div>
-  <div class="step"><div class="n" style="background:var(--hijau)">4</div>
-    <h4>Tampilan</h4><p>GitHub Pages, dibuka di HP dan komputer</p></div>
+  <div class="step"><span class="n">3</span><b>Sumber</b><p class="s">Windsor, Globemerce, Everpro, Workers AI</p></div>
 </div>
-<p>Ketiga sumber kini melewati satu perantara yang sama. Google Ads ditarik lewat Windsor.ai,
-Globemerce lewat token sesi, dan Everpro lewat API resminya. Berkas JSON di repo hanya tersisa
-sebagai cadangan bila salah satu jalur bermasalah.</p>
+
+<p>Worker juga menyimpan data milik sistem ini sendiri di Cloudflare KV: tanda follow-up selesai,
+stok barang retur, tanggal terkirim yang sudah pernah dicari, dan kalimat semangat harian.</p>
+
+<div class="catat"><b>Kenapa harus lewat Worker.</b> Kalau dashboard memanggil API langsung,
+kunci Globemerce dan Windsor harus ikut ke peramban — dan repo ini publik. Worker membuat kunci
+tetap di server, sekaligus jadi tempat menegakkan batas kewenangan tiap peran.</div>
 
 <!-- 3 -->
-<h2 id="sumber"><span class="no">3</span>Sumber data</h2>
-<div class="panel">
-<table>
-  <thead><tr><th>Sumber</th><th>Isi</th><th>Cara ambil</th><th>Status</th></tr></thead>
-  <tbody>
-    <tr><td><strong>Google Ads</strong><br><span style="color:var(--faint);font-size:12px">3 akun</span></td>
-      <td>Biaya, klik, tayangan, konversi, kampanye, pangsa tayang lelang, data per jam, kata kunci pencarian, jaringan iklan</td>
-      <td>Windsor.ai → Cloudflare Worker</td><td><span class="tag t-ok">aktif</span></td></tr>
-    <tr><td><strong>Globemerce</strong></td>
-      <td>Pesanan per hari, omzet, HPP, gross profit, produk, pembeli baru vs ulang, GMV personal dan grup</td>
-      <td>API langsung → Cloudflare Worker</td><td><span class="tag t-ok">aktif</span></td></tr>
-    <tr><td><strong>Everpro</strong></td>
-      <td>Pengiriman per pesanan, status paket, ongkir, cashback, dan pencairan COD</td>
-      <td>Everpro Open API → Cloudflare Worker</td><td><span class="tag t-ok">aktif</span></td></tr>
-    <tr><td><strong>Meta Ads</strong></td><td>Biaya dan konversi iklan Facebook/Instagram</td>
-      <td>Windsor.ai (siap, tinggal otorisasi)</td><td><span class="tag t-no">belum</span></td></tr>
-    <tr><td><strong>TikTok Ads</strong></td><td>Biaya dan konversi iklan TikTok</td>
-      <td>Windsor.ai (siap, tinggal otorisasi)</td><td><span class="tag t-no">belum</span></td></tr>
-    <tr><td><strong>TikTok Shop</strong></td><td>Omzet toko sebagai sumber ROAS</td>
-      <td>Windsor.ai (siap, tinggal otorisasi)</td><td><span class="tag t-no">belum</span></td></tr>
-  </tbody>
-</table>
-</div>
+<h2 id="peran"><span class="no">3</span>Tiga peran pengguna</h2>
+<p>Peran ditentukan Worker dari rahasia <code>PENGGUNA</code>, bukan dari peramban. Jadi tidak bisa
+dipalsukan dengan mengubah localStorage.</p>
 
-<h3>Akun Google Ads</h3>
-<div class="panel">
 <table>
-  <thead><tr><th>Nomor akun</th><th>Nama</th><th>Kampanye</th></tr></thead>
+  <thead><tr><th>Peran</th><th>Bisa melihat</th><th>Tidak bisa</th></tr></thead>
   <tbody>
-    <tr><td><code>136-395-5915</code></td><td>MY ADS</td><td>Erojan Sales For Echa Yudi</td></tr>
-    <tr><td><code>632-017-0821</code></td><td>MELI ADS</td><td>S-Glow Sales For Meli · DVN Sales For Meli</td></tr>
-    <tr><td><code>525-218-4635</code></td><td>DEA ADS</td><td>DVN Yara 8/7/26</td></tr>
+    <tr><td><code>admin</code><br><span class="tag t-info">super admin</span></td>
+      <td>Semua menu, semua angka uang, biaya iklan, laba, HPP.</td>
+      <td>—</td></tr>
+    <tr><td><code>cs</code><br><span class="tag t-ok">customer service</span></td>
+      <td>Hanya menu Customer Service: pelanggannya sendiri, peringkat tim, total ongkir, dan daftar follow-up.</td>
+      <td>Laba, HPP, biaya iklan, cashback, pelanggan CS lain.</td></tr>
+    <tr><td><code>pa</code><br><span class="tag t-warn">personal admin</span></td>
+      <td>Hanya menu Personal Admin: mencatat barang retur masuk dan keluar, melihat sisa stok dan status kiriman.</td>
+      <td>Semua angka uang. Omzet, HPP, ongkir, dan laba dibuang di Worker sebelum data dikirim.</td></tr>
   </tbody>
 </table>
-</div>
+
+<div class="catat aman"><b>Penegakannya di server, bukan di tampilan.</b> Menu yang disembunyikan
+hanya merapikan layar. Yang benar-benar menahan adalah Worker, yang menjawab 403 untuk jalur di luar
+kewenangan, dan membuang kolom uang dari jawabannya untuk peran <code>pa</code>. Dibuka lewat alat
+pengembang pun tidak ada angka di sana.</div>
+
+<h3>Bentuk rahasia PENGGUNA</h3>
+<pre><code>[
+ {"u":"renald","p":"SANDI","peran":"admin"},
+ {"u":"echa","p":"SANDI","peran":"cs","agen":"ECHA"},
+ {"u":"lili","p":"SANDI","peran":"cs","agen":"YARA"},
+ {"u":"intan","p":"SANDI","peran":"cs","agen":["INTAN","RIANA"]},
+ {"u":"Admin","p":"SANDI","peran":"pa"}
+]</code></pre>
+<p><code>u</code> nama untuk login, bebas. <code>agen</code> harus persis sama dengan nama di kolom
+Sender Globemerce — itu yang dipakai memilah pesanan milik siapa. Satu orang boleh punya beberapa
+nama Sender, ditulis sebagai daftar. Peran <code>pa</code> tidak perlu <code>agen</code>.</p>
 
 <!-- 4 -->
-<h2 id="infra"><span class="no">4</span>Infrastruktur</h2>
-<div class="grid">
-  <div class="card"><p class="k">REPOSITORY</p><p class="v">github.com/Renaldo-89/ads-dashboard</p>
-    <p class="s">Publik. Menyimpan halaman dashboard, skrip, dan berkas data.</p></div>
-  <div class="card"><p class="k">HOSTING</p><p class="v">renaldo-89.github.io/ads-dashboard</p>
-    <p class="s">GitHub Pages, dari branch <code>main</code> folder root.</p></div>
-  <div class="card"><p class="k">PERANTARA API</p><p class="v">ads-proxy.renaldo1600016091.workers.dev</p>
-    <p class="s">Cloudflare Worker. Menyimpan token dan meneruskan permintaan.</p></div>
-  <div class="card"><p class="k">FOLDER KERJA</p><p class="v">~/Documents/ads-dashboard</p>
-    <p class="s">Salinan repo di MacBook, tempat skrip Everpro dijalankan.</p></div>
-</div>
+<h2 id="sumber"><span class="no">4</span>Sumber data</h2>
+<table>
+  <thead><tr><th>Sumber</th><th>Isi</th><th>Cara masuk</th></tr></thead>
+  <tbody>
+    <tr><td><b>Windsor.ai</b></td>
+      <td>Biaya iklan Google Ads: harian, per jam, lelang, jaringan, kata kunci pencarian.
+        Tiga akun: MY ADS, MELI ADS, DEA ADS.</td>
+      <td>Worker meneruskan ke <code>connectors.windsor.ai</code>. Berlangganan berbayar —
+        paket gratis hanya mengizinkan satu akun.</td></tr>
+    <tr><td><b>Globemerce</b></td>
+      <td>Pesanan, omzet, HPP, GMV point, nama pembeli, kolom Sender sebagai nama CS.</td>
+      <td>Token sesi di <code>GLOBEMERCE_TOKEN</code>. Token ini kedaluwarsa berkala dan harus
+        diganti manual.</td></tr>
+    <tr><td><b>Everpro</b></td>
+      <td>Pengiriman: status, ongkir, fee COD, asuransi, cashback, retur.</td>
+      <td>Open API resmi, OAuth client credentials. Worker menukar token sendiri, berlaku 24 jam.</td></tr>
+    <tr><td><b>Workers AI</b></td>
+      <td>Kalimat semangat harian.</td>
+      <td>Binding <code>AI</code> di Worker. Gratis, jauh di bawah kuota.</td></tr>
+  </tbody>
+</table>
 
-<h3>Kenapa perlu Worker</h3>
-<p>Browser tidak boleh memanggil API Windsor.ai atau Globemerce secara langsung karena aturan
-lintas-domain, dan token tidak boleh ditanam di halaman publik. Worker menjadi perantara:
-token disimpan sebagai rahasia di Cloudflare, halaman hanya memanggil Worker.</p>
-
-<h3>Catatan sejarah Everpro</h3>
-<p>Semula Everpro ditarik memakai token sesi dari browser. Cara itu gagal dari Cloudflare Worker
-karena dashboard pelanggan Everpro dilindungi Bot Management dan menjawab permintaan dari pusat
-data dengan halaman tantangan <em>"Just a moment..."</em>, sehingga penarikan sempat dijalankan
-lewat skrip Python di MacBook.</p>
-<p>Sejak tersedianya <strong>Everpro Open API</strong>, cara itu ditinggalkan. Worker kini menukar
-sendiri client key dan client secret menjadi token berumur 24 jam, lalu memanggil endpoint resmi.
-Tidak ada lagi token yang perlu disalin manual, dan MacBook tidak perlu menyala.</p>
+<div class="catat"><b>Cashback Everpro ditarik manual.</b> Halaman saldo Everpro dilindungi
+perlindungan bot dan tidak punya endpoint resmi. Datanya diambil dengan menjalankan
+<code>ambil-cashback.js</code> di konsol peramban saat sedang membuka halaman My Balance,
+lalu hasilnya disimpan sebagai <code>data/everpro-cashback.json</code>. Berkas itu hanya berisi
+resi, nominal, dan tanggal — tidak ada nama atau alamat pembeli.</div>
 
 <!-- 5 -->
 <h2 id="berkas"><span class="no">5</span>Berkas dan perannya</h2>
-<div class="panel">
 <table>
-  <thead><tr><th>Berkas</th><th>Tempat</th><th>Peran</th></tr></thead>
+  <thead><tr><th>Berkas</th><th>Peran</th></tr></thead>
   <tbody>
-    <tr><td><code>index.html</code></td><td>repo</td>
-      <td>Dashboard gaya aplikasi ponsel. Fokus Google Ads. Metrik bisa diklik, grafik harian dan per jam, tab Lelang, Per jam, Kata kunci, dan Insight. Dipasang di layar utama iPhone.</td></tr>
-    <tr><td><code>kerja.html</code></td><td>repo</td>
-      <td>Dashboard kerja lengkap dengan sidebar. Berisi Overview, Sales, Globemerce, Everpro, halaman tiap platform iklan, serta Kampanye, Lelang, Per jam, Kata kunci, dan Insight.</td></tr>
-    <tr><td><code>worker.js</code></td><td>Cloudflare</td>
-      <td>Perantara. Meneruskan permintaan ke Windsor.ai, dan menerjemahkan API Globemerce menjadi bentuk yang dipakai dashboard.</td></tr>
-    <tr><td><code>everpro-sync.py</code></td><td>repo dan Mac</td>
-      <td><span class="tag t-no">pensiun</span> Cara lama menarik Everpro dari MacBook. Disimpan sebagai cadangan darurat.</td></tr>
-    <tr><td><code>everpro-auto.sh</code></td><td>repo dan Mac</td>
-      <td><span class="tag t-no">pensiun</span> Pembungkus skrip lama.</td></tr>
-    <tr><td><code>com.renaldo.everpro-sync.plist</code></td><td>~/Library/LaunchAgents</td>
-      <td><span class="tag t-no">pensiun</span> Penjadwal macOS, sudah dimatikan dengan <code>launchctl unload</code>.</td></tr>
-    <tr><td><code>.github/workflows/update-data.yml</code></td><td>repo</td>
-      <td>Robot GitHub. Tiap jam menarik data Google Ads dari Windsor sebagai cadangan bila Worker bermasalah.</td></tr>
-    <tr><td><code>data/daily.json</code> dan lainnya</td><td>repo</td>
-      <td>Cadangan data Google Ads hasil robot GitHub.</td></tr>
-    <tr><td><code>data/everpro*.json</code></td><td>repo</td>
-      <td><span class="tag t-no">cadangan</span> Sisa dari cara lama. Dashboard hanya membacanya bila API resmi gagal.</td></tr>
-    <tr><td><code>.env</code></td><td>Mac saja</td>
-      <td><span class="tag t-no">pensiun</span> Berisi token Everpro lama. Boleh dihapus.</td></tr>
-    <tr><td><code>icon-180.png</code>, <code>icon-512.png</code></td><td>repo</td>
-      <td>Ikon untuk layar utama iPhone.</td></tr>
+    <tr><td><code>kerja.html</code></td><td>Seluruh dashboard. Satu berkas, tanpa kerangka kerja,
+      tanpa proses bangun. Sekitar 275 KB.</td></tr>
+    <tr><td><code>worker.js</code></td><td>Cloudflare Worker. <b>Tidak ikut ke GitHub</b> — ada di
+      <code>.gitignore</code> karena memuat logika kewenangan. Deploy dengan menempel isinya ke
+      Edit code di dasbor Cloudflare.</td></tr>
+    <tr><td><code>index.html</code></td><td>Dashboard versi lama. Masih ada, tidak lagi dikembangkan.</td></tr>
+    <tr><td><code>data/riwayat-iklan.json</code></td><td>Arsip biaya iklan yang menumpuk. Baris lama
+      tidak pernah dibuang, jadi riwayat tetap ada walau akun iklan terputus dari Windsor.</td></tr>
+    <tr><td><code>data/daily.json</code> dan lainnya</td><td>Salinan data iklan 30–60 hari terakhir,
+      diperbarui robot GitHub tiap jam. Jendela bergulir: yang lama terdorong keluar.</td></tr>
+    <tr><td><code>data/everpro-cashback.json</code></td><td>Status pencairan cashback per resi.</td></tr>
+    <tr><td><code>.github/workflows/update-data.yml</code></td><td>Robot penarik data iklan, jalan
+      tiap jam di menit ke-5, sekaligus mengarsipkan riwayat.</td></tr>
+    <tr><td><code>ambil-cashback.js</code></td><td>Skrip konsol untuk menarik data cashback.</td></tr>
+    <tr><td><code>PANDUAN-DUPLIKASI.md</code></td><td>Panduan membangun ulang sistem ini dari nol.</td></tr>
   </tbody>
 </table>
-</div>
 
 <!-- 6 -->
-<h2 id="rahasia"><span class="no">6</span>Kredensial</h2>
-<div class="panel">
+<h2 id="rahasia"><span class="no">6</span>Rahasia dan binding</h2>
+<p>Semuanya di Cloudflare, pada Worker <code>ads-proxy</code>. Tidak ada satu pun yang berada di repo.</p>
 <table>
-  <thead><tr><th>Nama</th><th>Disimpan di</th><th>Untuk apa</th><th>Umur</th></tr></thead>
+  <thead><tr><th>Nama</th><th>Jenis</th><th>Isi</th></tr></thead>
   <tbody>
-    <tr><td><code>WINDSOR_API_KEY</code></td><td>Cloudflare Secret</td><td>Menarik data iklan lewat Windsor.ai</td><td>Panjang</td></tr>
-    <tr><td><code>GLOBEMERCE_TOKEN</code></td><td>Cloudflare Secret</td><td>Memanggil gateway.globemerce.com</td><td><span class="tag t-warn">token sesi, bisa kedaluwarsa</span></td></tr>
-    <tr><td><code>EVERPRO_CLIENT_KEY</code><br><code>EVERPRO_CLIENT_SECRET</code></td><td>Cloudflare Secret</td>
-      <td>Ditukar Worker menjadi token untuk Everpro Open API</td><td><span class="tag t-ok">permanen</span></td></tr>
-    <tr><td><code>EVERPRO_BASE</code> <span style="color:var(--faint)">(opsional)</span></td><td>Cloudflare Secret</td>
-      <td>Mengganti alamat dasar API bila berbeda dari <code>client-api.everpro.id</code></td><td>—</td></tr>
-    <tr><td><code>EVERPRO_TOKEN</code></td><td>—</td><td><span class="tag t-no">tidak dipakai lagi</span> Boleh dihapus.</td><td>—</td></tr>
-    <tr><td>Token GitHub</td><td>Keychain macOS</td><td>Push dari Terminal</td><td>Tanpa kedaluwarsa</td></tr>
+    <tr><td><code>PENGGUNA</code></td><td>Secret</td><td>Daftar akun dan perannya, satu JSON.</td></tr>
+    <tr><td><code>WINDSOR_API_KEY</code></td><td>Secret</td><td>Kunci Windsor.ai.</td></tr>
+    <tr><td><code>GLOBEMERCE_TOKEN</code></td><td>Secret</td><td>Token sesi Globemerce.</td></tr>
+    <tr><td><code>EVERPRO_CLIENT_KEY</code></td><td>Secret</td><td>Kredensial Everpro Open API.</td></tr>
+    <tr><td><code>EVERPRO_CLIENT_SECRET</code></td><td>Secret</td><td>Kredensial Everpro Open API.</td></tr>
+    <tr><td><code>EVERPRO_CALLBACK_KEY</code></td><td>Secret</td><td>Kunci panggilan balik Everpro.
+      Opsional — hanya perlu kalau callback real-time didaftarkan.</td></tr>
+    <tr><td><code>TANDA_FU</code></td><td>Binding KV</td><td>Penyimpanan sistem. Namespace <code>hiro-follow-up</code>.</td></tr>
+    <tr><td><code>AI</code></td><td>Binding Workers AI</td><td>Untuk kalimat semangat harian.</td></tr>
   </tbody>
 </table>
-</div>
-<div class="catat penting"><p><strong>Cara memperbarui token yang kedaluwarsa.</strong>
-Buka situsnya di Chrome, tekan Cmd+Option+I, tab Network, klik salah satu permintaan ke
-<code>/api/</code>, bagian Request Headers, salin nilai <code>authorization</code>.
-Untuk Globemerce bisa juga lewat Console: <code>copy(JSON.parse(localStorage.getItem('authState.token')))</code>.
-Tempel ke Cloudflare Secret, dan untuk Everpro juga ke <code>.env</code> di Mac.
-Jangan pernah menempelkan isi token ke ruang obrolan.</p></div>
+
+<h3>Kunci di dalam KV</h3>
+<table>
+  <thead><tr><th>Awalan</th><th>Isi</th></tr></thead>
+  <tbody>
+    <tr><td><code>fu:&lt;pengguna&gt;</code></td><td>Tanda follow-up yang sudah dikerjakan CS itu.</td></tr>
+    <tr><td><code>stok:masuk</code></td><td>Barang retur yang diterima kembali.</td></tr>
+    <tr><td><code>stok:keluar</code></td><td>Barang retur yang dikirim ulang.</td></tr>
+    <tr><td><code>tk:&lt;resi&gt;</code></td><td>Tanggal terkirim yang sudah pernah dicari, disimpan permanen.</td></tr>
+    <tr><td><code>smg:&lt;tanggal&gt;:&lt;peran&gt;:&lt;pengguna&gt;</code></td><td>Kalimat semangat hari itu, berlaku 3 hari.</td></tr>
+  </tbody>
+</table>
+
+<div class="catat penting"><b>Mengubah rahasia di Cloudflare butuh dua langkah.</b> Menyimpan saja
+tidak cukup — perubahannya baru aktif setelah versi baru diterbitkan. Cara paling pasti: setelah
+menyimpan rahasia, buka <b>Edit code</b> lalu tekan <b>Deploy</b> tanpa mengubah apa pun.</div>
 
 <!-- 7 -->
-<h2 id="endpoint"><span class="no">7</span>Endpoint dan pemetaan</h2>
-
-<h3>Windsor.ai — iklan</h3>
-<pre><code>GET https://connectors.windsor.ai/google_ads
-    ?api_key=…&amp;fields=account_id,account_name,campaign,date,spend,clicks,
-     impressions,conversions&amp;date_from=YYYY-MM-DD&amp;date_to=YYYY-MM-DD</code></pre>
-<p>Kolom tambahan yang dipakai: <code>hour</code> untuk grafik per jam,
-<code>search_term</code> untuk kata kunci, <code>ad_network_type</code> dan <code>device</code>
-untuk jaringan, serta lima kolom pangsa tayang untuk analisis lelang
-(<code>search_impression_share</code>, <code>search_rank_lost_impression_share</code>,
-<code>search_budget_lost_impression_share</code>, <code>top_impression_percentage</code>,
-<code>absolute_top_impression_percentage</code>).</p>
-
-<h3>Globemerce</h3>
-<pre><code>Base: https://gateway.globemerce.com
-Header: Authorization: Bearer &lt;token&gt;
-
-/myorder/all/listing?periodFrom=&amp;periodTo=&amp;client_code=All&amp;page_size=&amp;page=
-/dashboard/total_sales?year=&amp;month=      → GMV personal dan grup
-/dashboard/total_profit?year=            → omzet, HPP, gross profit per bulan
-/dashboard/repeat_order?year=            → pembeli baru vs ulang per bulan</code></pre>
-<div class="panel">
+<h2 id="rute"><span class="no">7</span>Rute Worker</h2>
 <table>
-  <thead><tr><th>Kolom Globemerce</th><th>Arti</th></tr></thead>
+  <thead><tr><th>Rute</th><th>Fungsi</th><th>Siapa</th></tr></thead>
   <tbody>
-    <tr><td><code>total_price</code></td><td>Omzet, harga jual ke pembeli</td></tr>
-    <tr><td><code>total_product_cost</code> / <code>non_cod_billing</code></td><td>HPP</td></tr>
-    <tr><td><code>total_profit</code> / <code>non_cod_profit</code></td><td>Gross profit</td></tr>
-    <tr><td><code>is_repeating</code></td><td>0 pembeli baru, 1 pembeli ulang</td></tr>
-    <tr><td><code>total_pv</code> dan <code>group_pv</code></td><td>GMV personal dan GMV grup</td></tr>
-    <tr><td><code>order_detail[]</code></td><td>Produk, jumlah, harga, modal</td></tr>
-    <tr><td><code>tracking_code</code></td><td>Nomor resi, kunci penggabungan</td></tr>
+    <tr><td><code>?aku=1</code></td><td>Menanyakan peran dan nama agen.</td><td>semua</td></tr>
+    <tr><td><code>?connector=…</code></td><td>Meneruskan ke Windsor.ai.</td><td>admin</td></tr>
+    <tr><td><code>?sales=globemerce</code></td><td>Rekap bulanan. Tambah <code>&amp;detail=1</code>
+      untuk daftar pesanan, <code>&amp;cs=1</code> untuk ringkasan tim, <code>&amp;gmv=1</code> untuk GMV harian.</td>
+      <td>admin, cs terbatas</td></tr>
+    <tr><td><code>?sales=everpro</code></td><td>Rekap pengiriman. <code>&amp;detail=1</code> untuk daftar.</td><td>admin, cs terbatas</td></tr>
+    <tr><td><code>?fu=1</code> / <code>?fu=simpan</code></td><td>Membaca dan menyimpan tanda follow-up selesai.</td><td>cs, admin</td></tr>
+    <tr><td><code>?kirim=1&amp;no=…</code></td><td>Tanggal terkirim untuk sekumpulan resi.</td><td>cs, admin</td></tr>
+    <tr><td><code>?stok=order&amp;no=…</code></td><td>Mencari satu pesanan Globemerce dari nomornya.</td><td>admin, pa</td></tr>
+    <tr><td><code>?stok=masuk</code> / <code>keluar</code> / <code>hapus</code></td><td>Mencatat stok retur. POST.</td><td>admin, pa</td></tr>
+    <tr><td><code>?stok=data</code></td><td>Seluruh catatan stok. Disaring per peran.</td><td>semua</td></tr>
+    <tr><td><code>?stok=segarkan</code></td><td>Memperbarui status kiriman dari Everpro. POST.</td><td>admin, pa</td></tr>
+    <tr><td><code>?semangat=1</code></td><td>Kalimat semangat hari ini, dikarang AI.</td><td>semua</td></tr>
+    <tr><td><code>/everpro/callback</code></td><td>Penerima panggilan balik Everpro. POST, diperiksa
+      lewat header <code>x-everpro-key</code>.</td><td>server Everpro</td></tr>
   </tbody>
 </table>
-</div>
 
-<h3>Everpro Open API</h3>
-<p>Dokumentasi: <a href="https://developer.everpro.id/" style="color:var(--indigo)">developer.everpro.id</a></p>
-<pre><code>Base: https://client-api.everpro.id
-
-POST /auth/v1/token        {client_key, client_secret} -> token berlaku 24 jam
-GET  /shipment/v1/orders   ?start_date=&amp;end_date=&amp;page=&amp;limit=   (limit maks 50)
-     Header: Authorization: Bearer &lt;token&gt;</code></pre>
-<p>Worker menyimpan token di memori sampai mendekati kedaluwarsa, lalu menukar ulang sendiri.</p>
-<div class="panel">
-<table>
-  <thead><tr><th>Kolom Everpro</th><th>Arti</th></tr></thead>
-  <tbody>
-    <tr><td><code>awb_number</code></td><td>Nomor resi</td></tr>
-    <tr><td><code>status_id</code></td><td>Kode status. 300 menunggu pickup, 400 dalam proses, 404 menuju penerima,
-      500 terkirim, 700 dibatalkan, 702 retur, 703 hilang atau rusak, 704 gagal</td></tr>
-    <tr><td><code>cashback</code></td><td>Nilai cashback ongkir</td></tr>
-    <tr><td><code>total_cod</code> dan <code>total_cod_disbursement</code></td><td>Nilai COD dan yang sudah dicairkan</td></tr>
-    <tr><td><code>is_cod</code></td><td>COD atau bukan</td></tr>
-    <tr><td><code>courier_detail</code></td><td>Kurir dan jenis layanannya</td></tr>
-    <tr><td><code>shipment_price</code></td><td>Ongkos kirim</td></tr>
-  </tbody>
-</table>
-</div>
+<div class="catat"><b>Perlindungan lapis pertama.</b> Worker menolak permintaan yang datang dari
+luar daftar asal yang diizinkan — hanya halaman dashboard dan localhost. Membuka alamat Worker
+langsung di bilah alamat peramban akan dijawab 403. Ini disengaja.
+Pengecualiannya <code>/everpro/callback</code>, yang memang dipanggil server Everpro dan
+diperiksa dengan cara lain.</div>
 
 <!-- 8 -->
-<h2 id="gabung"><span class="no">8</span>Penggabungan data</h2>
-<p>Menyambungkan pesanan Globemerce dengan pengiriman Everpro dilakukan bertingkat:</p>
-<div class="alur">
-  <div class="step"><div class="n" style="background:var(--indigo)">1</div>
-    <h4>Nomor order</h4><p>Diambil dari nama penerima atau catatan alamat di Everpro, contoh
-    "IQBAL HABIB no order #2491113". Hanya angkanya yang disimpan.</p></div>
-  <div class="panah">→</div>
-  <div class="step"><div class="n" style="background:var(--ungu)">2</div>
-    <h4>Nomor resi</h4><p>Dibersihkan dari tanda baca lalu dicocokkan.</p></div>
-  <div class="panah">→</div>
-  <div class="step"><div class="n" style="background:var(--pink)">3</div>
-    <h4>Kolom rujukan</h4><p><code>client_order_no</code>, <code>shipment_order_no</code>,
-    <code>unique_reference_id</code>, <code>logistic_reference_number</code>.</p></div>
-</div>
-<p>Kiriman berstatus dibatalkan disaring dari tampilan, dari perhitungan, dan dari pencocokan.
-Berkasnya tetap menyimpan lengkap, penyaringan hanya di sisi tampilan.</p>
+<h2 id="uang"><span class="no">8</span>Cara angka uang dihitung</h2>
 
-<div class="catat aman"><p><strong>Keputusan privasi.</strong> Repository bersifat publik,
-maka <strong>nama, nomor telepon, dan alamat pembeli tidak pernah disimpan</strong> ke dalamnya.
-Berkas Everpro hanya memuat resi, nomor order, status, dan nominal. Nama pembeli ditampilkan
-di dashboard dengan mengambilnya dari Globemerce secara langsung saat halaman dibuka,
-lalu dicocokkan lewat nomor resi atau nomor order. Hasil akhirnya sama informatifnya,
-tanpa menerbitkan data pribadi pelanggan.</p></div>
+<h3>Laba setelah iklan</h3>
+<pre><code>gross profit (Globemerce)
+  + profit produk retur
+  − biaya pengiriman (Everpro)
+  − biaya iklan (Windsor)</code></pre>
+
+<div class="grid">
+  <div class="card"><p class="k">GROSS PROFIT</p><p class="v">Dari Globemerce</p>
+    <p class="s">Omzet dikurangi HPP, apa adanya dari sumbernya.</p></div>
+  <div class="card"><p class="k">BIAYA PENGIRIMAN</p><p class="v">Hanya dari Everpro</p>
+    <p class="s">Ongkir + fee COD + asuransi − cashback. Globemerce tidak pernah dipakai untuk ini.</p></div>
+  <div class="card"><p class="k">PROFIT PRODUK RETUR</p><p class="v">Omzet − ongkir</p>
+    <p class="s">HPP tidak dipotong lagi; modalnya sudah keluar saat penjualan pertama.</p></div>
+</div>
+
+<h3>Aturan yang mudah terlupa</h3>
+<ul class="rapi">
+  <li><b>Omzet dan GMV di Overview murni Globemerce.</b> Penjualan dari stok retur tidak dicampur ke sana —
+    hanya labanya yang ditambahkan, sebagai kartu tersendiri.</li>
+  <li><b>GMV stok retur masuk ke peringkat CS</b> yang mengerjakannya, bukan ke GMV Personal.</li>
+  <li><b>Ongkir tidak boleh terpotong dua kali.</b> Resi kiriman stok retur dikeluarkan dari Biaya
+    pengiriman, karena ongkirnya sudah dipotong di laba kiriman itu sendiri.</li>
+  <li><b>KIRIM JOGJA bukan penjualan.</b> Stoknya berkurang dan ongkirnya tetap dipotong sebagai biaya,
+    tapi tidak ada omzet, GMV, atau kredit CS. Resinya sengaja tetap ikut ke Biaya pengiriman.</li>
+  <li><b>ROAS iklan</b> memakai omzet pelanggan baru saja. ROAS total tetap ditampilkan berdampingan.</li>
+</ul>
+
+<h3>Target GMV harian</h3>
+<p>Target hari ini adalah GMV hari terakhir yang ada penjualannya, dikali <b>1,02</b>. Hari kosong
+dilewati sendiri — Minggu, tanggal merah, atau tutup mendadak, tanpa perlu daftar hari libur.
+Mundurnya dibatasi 7 hari; lebih dari itu targetnya dianggap belum bisa dipatok.</p>
 
 <!-- 9 -->
-<h2 id="rutin"><span class="no">9</span>Operasi rutin</h2>
+<h2 id="cs"><span class="no">9</span>Customer Service dan follow-up</h2>
+<p>Nama CS dibaca dari kolom <b>Sender</b> di Globemerce. Beberapa nama bisa menunjuk satu orang,
+dan beberapa nama bukan CS sama sekali.</p>
+<table>
+  <thead><tr><th>Nama Sender</th><th>Perlakuan</th></tr></thead>
+  <tbody>
+    <tr><td>YARA</td><td>Ditampilkan sebagai <b>Lili</b></td></tr>
+    <tr><td>INTAN dan RIANA</td><td>Digabung jadi satu orang, <b>Intan</b></td></tr>
+    <tr><td>NANDA</td><td>Bukan CS — order sendiri</td></tr>
+    <tr><td>DINDA</td><td>Bukan CS — advertiser</td></tr>
+    <tr><td>KIRIM JOGJA</td><td>Bukan CS — kiriman internal</td></tr>
+  </tbody>
+</table>
 
-<h3>Memperbarui dashboard setelah ada perubahan berkas</h3>
-<pre><code>cd ~/Documents/ads-dashboard
-git add . &amp;&amp; git commit -m "keterangan perubahan"
-git pull --rebase &amp;&amp; git push</code></pre>
-<p>Selalu commit dulu baru <code>git pull --rebase</code>, karena robot GitHub rutin menulis
-data ke repo yang sama dan bisa membuat push ditolak.</p>
-
-<h3>Menyegarkan data</h3>
-<p>Tidak ada langkah manual. Semua sumber ditarik saat dashboard dibuka. Tombol muat ulang
-di kartu profil memaksa mengambil data baru dengan melewati simpanan sementara.</p>
-
-<h3>Memperbarui kode Worker</h3>
-<p>Cloudflare → Compute → Workers &amp; Pages → <code>ads-proxy</code> → Edit code →
-pilih semua, hapus, tempel isi <code>worker.js</code> → Deploy.</p>
-
-<h3>Menambah akun atau platform iklan baru</h3>
-<p>Otorisasi di Windsor.ai, lalu tidak perlu mengubah kode apa pun — daftar akun dan platform
-dibangun otomatis dari data yang masuk.</p>
+<h3>Jadwal follow-up</h3>
+<p>Mengikuti SOP 28 hari. Pelanggan baru disentuh pada hari <b>1, 3, 7, 14, 21, 27</b>; pelanggan
+repeat lebih longgar, hanya hari <b>1 dan 15</b>, karena sudah tahu cara pakai. Ditambah satu
+pengingat saat stoknya diperkirakan habis — jumlah unit dikali 30 hari.</p>
+<p>Coffiy tidak dijadwalkan. Tapi pesanan campuran seperti EROJAN + Coffiy tetap dijadwalkan
+mengikuti produk utamanya.</p>
+<p>Hitungan hari dimulai dari <b>tanggal barang diterima</b>, bukan tanggal order. Selama tanggal
+terima belum bisa ditarik, dipakai perkiraan <b>tanggal order + 2 hari</b> — angka itu diukur dari
+53 pesanan pada catatan manual CS: rata-rata 2,23 hari, median 2.</p>
+<p>Daftar follow-up selalu mencakup <b>dua bulan terakhir</b> dan sengaja tidak mengikuti filter
+periode di atas, supaya tugasnya tidak lenyap saat CS mengganti periode.</p>
 
 <!-- 10 -->
-<h2 id="batas"><span class="no">10</span>Batasan dan catatan</h2>
+<h2 id="stok"><span class="no">10</span>Personal Admin dan stok retur</h2>
+<p>Dua pencatatan, dan sedikit sekali yang diketik.</p>
+<div class="alur">
+  <div class="step"><span class="n">1</span><b>Barang masuk</b>
+    <p class="s">Ketik nomor order Globemerce. Nama produk, jumlah, harga, dan HPP ditarik Worker sendiri.</p></div>
+  <div class="panah">→</div>
+  <div class="step"><span class="n">2</span><b>Barang keluar</b>
+    <p class="s">Pilih dari stok retur mana, isi pembeli baru dan resinya, tentukan CS-nya.</p></div>
+  <div class="panah">→</div>
+  <div class="step"><span class="n">3</span><b>Status</b>
+    <p class="s">Ditarik dari Everpro lewat resi, diperbarui sendiri tiap 15 menit.</p></div>
+</div>
 <ul class="rapi">
-  <li><strong>Data tidak real-time.</strong> Google Ads sendiri tertinggal beberapa menit sampai
-  beberapa jam, dan Windsor menyalinnya menurut jadwalnya sendiri. Konversi paling lambat karena
-  menunggu jendela atribusi.</li>
-  <li><strong>Token Globemerce bisa mati.</strong> Globemerce masih memakai token sesi browser,
-  bukan API key resmi. Bila data penjualan berhenti masuk, itu penyebab pertama yang perlu dicek.
-  Meminta API resmi ke Globemerce adalah perbaikan berikutnya yang paling berharga —
-  Everpro sudah melewati tahap ini.</li>
-  <li><strong>Nomor order tidak selalu tercatat.</strong> Penggabungan dengan Globemerce
-  mengandalkan nomor order yang disisipkan di catatan Everpro. Sejauh ini hanya kiriman instan
-  seperti GoSend yang mencantumkannya; sisanya dicocokkan lewat nomor resi.</li>
-  <li><strong>Windsor.ai berstatus percobaan.</strong> Bila masa trial habis, seluruh data iklan
-  berhenti mengalir.</li>
-  <li><strong>Laporan Auction Insights milik Google</strong> yang membandingkan dengan domain
-  pesaing tidak tersedia lewat Windsor. Analisis lelang memakai metrik pangsa tayang resmi,
-  yang inti diagnosanya sama tetapi tanpa nama pesaing.</li>
-  <li><strong>Meta Ads, TikTok Ads, dan TikTok Shop</strong> sudah disiapkan penuh di kode,
-  tinggal diotorisasi. ROAS gabungan baru bisa dihitung setelah ada sumber omzet yang tersambung.</li>
+  <li>Harga, HPP, dan GMV point barang keluar <b>diwarisi dari catatan masuk yang dipilih</b>, bukan
+    dari daftar harga terpisah.</li>
+  <li>Baris seperti <code>COURIER CHARGES</code> dan potongan diskon <b>tidak dihitung sebagai barang</b> —
+    tidak ada fisiknya yang bisa dikirim ulang.</li>
+  <li>Barang bonus PWP <b>ikut tercatat</b> sebagai stok, karena fisiknya nyata dan ikut kembali.
+    Tapi tidak menambah angka Produk terjual di laporan.</li>
+  <li>Pemakaian tidak bisa melebihi sisa stok, dan pemeriksaannya di Worker — bukan hanya di tampilan.</li>
 </ul>
 
 <!-- 11 -->
-<h2 id="bekal"><span class="no">11</span>Bekal untuk sesi Claude baru</h2>
-<p>Salin teks di bawah ini ke awal percakapan Claude yang baru, supaya tidak perlu menjelaskan
-ulang dari nol.</p>
-<pre><code>Saya punya dashboard iklan dan penjualan yang sudah jalan. Ringkasnya:
+<h2 id="otomatis"><span class="no">11</span>Yang berjalan sendiri</h2>
+<table>
+  <thead><tr><th>Apa</th><th>Kapan</th><th>Dijalankan oleh</th></tr></thead>
+  <tbody>
+    <tr><td>Menarik data iklan dan mengarsipkannya</td><td>Tiap jam, menit ke-5</td><td>GitHub Actions</td></tr>
+    <tr><td>Memperbarui status kiriman stok retur</td><td>Tiap 15 menit</td><td>Cron Trigger Cloudflare</td></tr>
+    <tr><td>Mengarang kalimat semangat</td><td>Sekali per orang per hari</td><td>Workers AI, saat halaman dibuka</td></tr>
+    <tr><td>Menandai kiriman terkirim seketika</td><td>Saat status berubah</td><td>Panggilan balik Everpro <span class="tag t-no">belum aktif</span></td></tr>
+  </tbody>
+</table>
+<p>Panggilan balik Everpro sudah siap di sisi kita, tinggal didaftarkan ke Everpro. Selama belum,
+pemeriksaan berkala tiap 15 menit sudah menutupi kebutuhannya.</p>
 
-HOSTING
-- Repo publik: github.com/Renaldo-89/ads-dashboard
-- Tayang di: renaldo-89.github.io/ads-dashboard
-- Folder lokal di Mac: ~/Documents/ads-dashboard
-- Perantara API: Cloudflare Worker "ads-proxy"
-  di ads-proxy.renaldo1600016091.workers.dev
+<!-- 12 -->
+<h2 id="rutin"><span class="no">12</span>Operasi rutin</h2>
 
-HALAMAN
-- index.html  : dashboard ponsel, fokus Google Ads
-- kerja.html  : dashboard kerja lengkap dengan sidebar
+<h3>Mengubah dashboard</h3>
+<pre><code>cd ~/Documents/ads-dashboard
+git pull --rebase
+git push</code></pre>
+<p>Selalu <code>pull --rebase</code> dulu: robot iklan menulis ke repo tiap jam, jadi tabrakan sering terjadi.
+GitHub Pages butuh sekitar dua menit untuk menayangkan.</p>
 
-SUMBER DATA
-- Google Ads 3 akun lewat Windsor.ai:
-  136-395-5915 MY ADS, 632-017-0821 MELI ADS, 525-218-4635 DEA ADS
-- Globemerce lewat gateway.globemerce.com, token di Cloudflare
-- Everpro lewat Everpro Open API (client-api.everpro.id),
-  Worker menukar client key + secret jadi token sendiri
-- Meta Ads, TikTok Ads, TikTok Shop sudah siap di kode, belum diotorisasi
+<h3>Mengubah Worker</h3>
+<p>Salin seluruh isi <code>worker.js</code>, tempel menimpa di <b>Edit code</b> pada dasbor Cloudflare,
+lalu <b>Deploy</b>. Berkas ini tidak pernah ikut ke GitHub.</p>
 
-RAHASIA
-- Di Cloudflare: WINDSOR_API_KEY, GLOBEMERCE_TOKEN,
-  EVERPRO_CLIENT_KEY, EVERPRO_CLIENT_SECRET
+<h3>Mengubah berkas di .github/workflows</h3>
+<p>Tidak bisa lewat <code>git push</code> kecuali token aksesmu punya izin <code>workflow</code>.
+Cara termudah: edit langsung di GitHub lewat peramban, lalu <code>git pull --rebase</code> di komputer.</p>
 
-ATURAN PENTING
-- Repo publik, jadi nama/telepon/alamat pembeli TIDAK BOLEH disimpan
-  ke dalam repo. Nama diambil langsung dari Globemerce saat halaman
-  dibuka, dicocokkan lewat nomor resi atau nomor order.
-- Nomor order Globemerce sering disisipkan di nama penerima atau
-  catatan alamat Everpro, contoh "NAMA no order #2491113".
-- Selalu commit dulu sebelum git pull --rebase, karena robot GitHub
-  rutin menulis data ke repo yang sama.
+<h3>Token Globemerce kedaluwarsa</h3>
+<p>Gejalanya menu Globemerce jadi "belum" padahal Everpro normal. Ambil token baru dari Globemerce,
+ganti <code>GLOBEMERCE_TOKEN</code> di Cloudflare, lalu terbitkan ulang.</p>
 
-Tolong baca file dokumentasi-sistem.html untuk detail lengkapnya.</code></pre>
+<h3>Memperbarui data cashback</h3>
+<p>Buka halaman My Balance Everpro, jalankan isi <code>ambil-cashback.js</code> di konsol,
+pindahkan berkas hasilnya ke <code>data/</code>, lalu push.</p>
 
-<footer>
-  Disusun otomatis dari riwayat pengerjaan sistem. Perbarui halaman ini bila ada sumber data,
-  berkas, atau keputusan teknis baru.
+<!-- 13 -->
+<h2 id="pelajaran"><span class="no">13</span>Pelajaran mahal</h2>
+<p>Kesalahan yang pernah benar-benar terjadi di sistem ini, ditulis supaya tidak terulang.</p>
+
+<div class="catat penting"><b>Kebocoran data antar-CS.</b> Echa pernah melihat pelanggan Intan.
+Penyebabnya CDN Cloudflare menyimpan jawaban berdasarkan alamat URL dan mengabaikan header —
+sementara identitas pengguna dikirim lewat header. Perbaikannya: jawaban ke peramban diberi
+<code>Cache-Control: private, no-store</code>, dan salinan simpanan dibuat terpisah dengan kunci
+yang sudah memuat identitas. <b>Menguji dengan parameter <code>bust=</code> tidak membuktikan apa pun</b>,
+karena justru melewati jalur yang dipakai dashboard.</div>
+
+<div class="catat"><b>Pemeriksaan sintaks tidak cukup.</b> Beberapa kali halaman kosong total karena
+variabel yang dipakai tapi tidak pernah dideklarasikan, atau fungsi yang ada di lingkup lain
+(<code>pil is not defined</code>). <code>node --check</code> tidak menangkap ini. Sekarang tiap
+halaman digambar di dalam pagar, jadi satu galat tidak lagi mengosongkan seluruh dashboard.</div>
+
+<div class="catat"><b>Penomoran halaman Everpro tidak bisa dipercaya.</b> Keterangan jumlah halamannya
+selalu bilang sudah habis di halaman pertama — 51 hari cuma menghasilkan 50 baris. Sekarang
+patokannya jumlah baris yang kembali, bukan keterangan dari API.</div>
+
+<div class="catat"><b>Kutip melengkung merusak JSON.</b> macOS mengganti <code>"</code> jadi kutip
+melengkung di semua kolom teks, termasuk di dalam peramban. Rahasia <code>PENGGUNA</code> pernah
+rusak berkali-kali karenanya. Matikan <b>Use smart quotes and dashes</b> di System Settings →
+Keyboard → Text Input, atau selalu tempel dari berkas tanpa mengetik apa pun.</div>
+
+<div class="catat"><b>Model AI bisa dipensiunkan tanpa peringatan.</b> Model yang dipakai untuk
+kalimat semangat mati pada 30 Mei 2026 dan fiturnya ikut mati diam-diam. Sekarang ada empat model
+yang dicoba berurutan.</div>
+
+<div class="catat"><b>Kolom yang namanya mirip bukan berarti isinya benar.</b> Pencarian longgar
+berdasarkan bentuk nama pernah menangkap <code>receiver_address</code> sebagai tanggal terkirim,
+karena mengandung "receiv". Sejak itu nama kolom selalu dicocokkan utuh.</div>
+
+<!-- 14 -->
+<h2 id="batas"><span class="no">14</span>Batasan yang diketahui</h2>
+<ul class="rapi">
+  <li><b>Tanggal terkirim masih perkiraan.</b> Alamat pelacakan yang benar
+    (<code>/orders/{resi}/track</code>) sudah ditemukan dan memuat <code>delivered_at</code>,
+    tapi jadwal follow-up belum dipindahkan ke sana — masih memakai tanggal order + 2 hari.</li>
+  <li><b>Berkas <code>data/*.json</code> bisa dibaca siapa saja</b>, karena repo ini publik. Isinya
+    biaya iklan, nama kampanye, dan kata kunci pencarian. Tidak ada data pelanggan di sana.</li>
+  <li><b>Globemerce hanya menyediakan rekap bulanan</b> untuk beberapa angka. Kalau periode yang
+    dipilih tidak sebulan penuh, angka penjualan dan biaya iklan tidak setara.</li>
+  <li><b>Pencarian nomor order dibatasi 3000 pesanan.</b> Pesanan yang lebih lama dari itu tidak
+    ketemu saat mencatat barang retur masuk.</li>
+  <li><b>Dashboard belum memakai <code>data/riwayat-iklan.json</code> sebagai cadangan.</b> Kalau
+    Windsor kehilangan akses ke sebuah akun, angkanya hilang dari layar meski datanya aman tersimpan.</li>
+</ul>
+
+<div class="catat aman"><b>Aturan yang tidak boleh dilanggar.</b> Repo ini publik. Nama pembeli,
+nomor telepon, dan alamat tidak boleh pernah ditulis ke berkas mana pun di dalamnya. Yang boleh
+disimpan hanya resi, nomor order, status, dan angka.</div>
+
+<footer style="margin-top:52px; padding-top:22px; border-top:1px solid var(--line);">
+  <p class="s">Hiro Dashboard · dokumentasi ini bagian dari repo, perbarui bersama perubahan sistem.</p>
 </footer>
 
 </div>
