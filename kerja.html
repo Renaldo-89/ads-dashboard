@@ -975,6 +975,26 @@
   const salesRowsLalu = () => SALES.flatMap(x => D.prevSales[x.id] || []);
   const adaSales = () => SALES.some(s => D.sales[s.id] && D.sales[s.id].status==='ok');
 
+  // Omzet dari pelanggan baru saja, dihitung dari daftar pesanan Globemerce.
+  //
+  // Dipakai untuk ROAS iklan. Iklan tugasnya mendatangkan orang baru;
+  // pembelian ulang datang dari follow-up CS, bukan dari iklan. Kalau seluruh
+  // omzet dibagi biaya iklan, angkanya terlihat bagus karena jerih payah CS
+  // ikut terhitung sebagai hasil iklan.
+  function omzetPelangganBaru(dari, sampai) {
+    let omzet = 0, order = 0, adaData = false;
+    for (const o of (D.pesanan || [])) {
+      const t = String(o.tanggal || '');
+      if (!t) continue;
+      if ((dari && t < dari) || (sampai && t > sampai)) continue;
+      adaData = true;
+      if (o.jenis_pembeli === 'repeat') continue;
+      omzet += Number(o.omzet) || 0;
+      order++;
+    }
+    return { omzet, order, adaData };
+  }
+
   // Laba barang keluar dari stok retur = omzetnya, tanpa dipotong HPP.
   //
   // HPP barang itu sudah keluar sekali waktu pesanan aslinya dibuat dan sudah
@@ -2391,6 +2411,10 @@
     const bulanan = salesRows().some(r=>r.granularity==='monthly');
     const margin = s.revenue>0 ? s.gross/s.revenue*100 : 0;
     const roas = t.spend>0 && s.revenue>0 ? s.revenue/t.spend : 0;
+    const pb = omzetPelangganBaru(rk && rk.from, rk && rk.to);
+    const pbLalu = omzetPelangganBaru(rp && rp.from, rp && rp.to);
+    const roasIklan = t.spend>0 && pb.omzet>0 ? pb.omzet/t.spend : 0;
+    const roasIklanLalu = (p.spend||0)>0 && pbLalu.omzet>0 ? pbLalu.omzet/(p.spend||0) : 0;
     const totalPel = s.baru + s.repeat;
     const pctRepeat = totalPel>0 ? s.repeat/totalPel*100 : 0;
     const unit = s.units || s.orders;
@@ -2407,6 +2431,9 @@
         ${kpi(I.money,'var(--blue)','var(--blue-soft)','Biaya iklan',fC(t.spend),delta(t.spend,p.spend,false))}
         ${adaKirim()?kpi(I.plug,'var(--pink)','var(--pink-soft)','Biaya pengiriman',fC(bk.bersih),''):''}
         ${kpi(I.up,'var(--toska)','var(--toska-soft)','ROAS',roas?roas.toFixed(2).replace('.',',')+'×':'—','')}
+        ${pb.adaData?kpi(I.target,'var(--blue)','var(--blue-soft)','ROAS iklan',
+          roasIklan?roasIklan.toFixed(2).replace('.',',')+'×':'—',
+          delta(roasIklan, roasIklanLalu, false)):''}
         ${kpi(I.target,'var(--amber)','var(--amber-soft)','Pelanggan baru',fN(s.baru),delta(s.baru,sp.baru,false))}
         ${kpi(I.up,'var(--violet)','var(--violet-soft)','Pelanggan repeat',fN(s.repeat)+' · '+fP(pctRepeat),delta(s.repeat,sp.repeat,false))}
         ${lr.n?kpi(I.kotak,'var(--amber)','var(--amber-soft)','Profit produk retur',fC(lr.laba),
@@ -2433,6 +2460,10 @@
             +' &minus; ongkir '+fC(lr.ongkir)+' &middot; HPP tidak dipotong lagi, sudah terhitung'
             +' di penjualan pertama',
           fC(lr.laba),'laba',0):''}
+        ${pb.adaData?li({c:'var(--blue)',s:'var(--blue-soft)',ini:'I'},'ROAS iklan',
+          'Omzet pelanggan baru '+fC(pb.omzet)+' dari '+fN(pb.order)+' pesanan &divide; biaya iklan '+fC(t.spend)
+            +' &middot; pembelian ulang tidak dihitung karena bukan hasil iklan',
+          roasIklan?roasIklan.toFixed(2).replace('.',',')+'×':'—','',0):''}
         ${li({c:'var(--green)',s:'var(--green-soft)',ini:'%'},'Margin kotor','Gross profit dibagi omzet',fP(margin),'',0)}
         ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'A'},'Biaya iklan per produk terjual',
           unit>0?'Rata-rata biaya iklan untuk tiap produk':'Belum ada penjualan',
