@@ -1619,7 +1619,7 @@
       lalu simpan hasilnya sebagai <code>data/everpro-cashback.json</code>.</div></div>`;
     const seg = String(cashbackInfo && cashbackInfo.updated_at || '').slice(0,10);
     const umur = seg ? Math.floor((Date.parse(hariIni()) - Date.parse(seg)) / 864e5) : null;
-    const basi = umur !== null && umur >= 2;
+    const basi = umur !== null && umur >= 3;
     return `<div class="gmv">
         <div class="gcard terang">
           <p class="k">CASHBACK CAIR · ${esc(labelPeriode().toUpperCase())}</p>
@@ -1633,18 +1633,27 @@
           <p class="s">${fN(c.nTunda)} resi menunggu${c.nTelat?' · '+fN(c.nTelat)+' lewat jatuh tempo':''}
             · seluruh data ${fC(c.semuaTunda)}</p>
         </div></div>
-      ${c.nTelat ? `<div class="panel tight" style="border-color:var(--red-line);background:var(--red-soft);margin-bottom:6px">
+      ${basi ? `<div class="panel tight" style="border-color:var(--amber);background:var(--amber-soft);margin-bottom:6px">
+        <div class="li"><div class="ic" style="background:var(--amber-soft);color:var(--amber-ink)">${I.alert}</div>
+        <div class="li-b"><p class="li-t" style="color:var(--amber-ink)">Data cashback sudah ${umur} hari</p>
+        <p class="li-s">Diambil ${sd(seg)}. Cashback yang cair setelah tanggal itu belum terlihat di sini,
+          jadi angka "belum cair" bisa terlalu besar. Jalankan <code>ambil-cashback.js</code> di halaman
+          My Balance Everpro untuk menyegarkan.</p></div>
+        </div></div>` : ''}
+      ${c.nTelat && !basi ? `<div class="panel tight" style="border-color:var(--red-line);background:var(--red-soft);margin-bottom:6px">
         <div class="li"><div class="ic" style="background:var(--red-soft);color:var(--red)">${I.alert}</div>
         <div class="li-b"><p class="li-t" style="color:var(--red-ink)">${fN(c.nTelat)} cashback terlambat cair</p>
         <p class="li-s">Total ${fC(c.telat)} · paling lama ${c.terlama} hari lewat dari estimasi Everpro</p></div>
         </div></div>` : ''}
+      ${c.nTelat && basi ? `<div class="note" style="margin:2px 0 0">
+        ${fN(c.nTelat)} resi tercatat lewat jatuh tempo menurut data lama ini — segarkan dulu
+        sebelum menanyakannya ke Everpro.</div>` : ''}
       ${!c.adaPeriode ? `<div class="note" style="margin:2px 0 0">
         Tidak ada cashback yang tercatat pada ${esc(labelPeriode())}.
         Seluruh data: ${fC(c.semuaCair)} cair, ${fC(c.semuaTunda)} belum cair.</div>` : ''}
       <div class="note" style="margin:2px 0 12px">Dikelompokkan menurut tanggal cashback masuk saldo · sumber halaman My Balance Everpro${
         cashbackInfo && cashbackInfo.dari ? ' · '+cashbackInfo.dari+' s/d '+cashbackInfo.sampai : ''}${
-        seg ? ' · diperbarui '+sd(seg) : ''}${
-        basi ? ' <b style="color:var(--amber-ink)">— data '+umur+' hari, jalankan ambil-cashback.js lagi</b>' : ''}</div>`;
+        seg ? ' · diperbarui '+sd(seg) : ''}</div>`;
   }
 
   // ---------- navigasi ----------
