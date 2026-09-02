@@ -2157,9 +2157,13 @@
 
   // ---------- tantangan GMV harian ----------
   // Sengaja TIDAK mengikuti chip periode di atas. Targetnya selalu hari ini,
-  // dengan acuan GMV kemarin. Datanya ditarik sendiri untuk 30 hari terakhir
+  // terhadap target harian tetap. Datanya ditarik sendiri untuk 30 hari terakhir
   // supaya angkanya tidak berubah waktu kamu ganti periode.
-  const LAJU_TARGET = 1.02;          // target naik 2% dari hari sebelumnya
+  // Target GMV harian dipatok tetap, sama untuk setiap hari. Sebelumnya
+  // targetnya mengikuti hari sebelumnya dikali 1,02 — ikut naik-turun mengikuti
+  // hari kemarin, jadi hari yang bagus justru membuat target besok berat, dan
+  // hari sepi membuatnya terlalu ringan. Angka tetap lebih mudah dipegang.
+  const TARGET_GMV = 1500;
   const JENDELA_GMV = 30;            // hari ke belakang untuk rentetan dan rata-rata
 
   let gmvHarian = null;              // { peta:Map, memuat, gagal }
@@ -2198,51 +2202,29 @@
         minggu: new Date(t + 'T00:00:00').getDay() === 0 });
     }
 
-    // Acuan target adalah hari terakhir yang benar-benar ada penjualannya.
-    //
-    // Dulu hanya hari Minggu yang dilewati. Tapi tanggal merah juga kosong,
-    // dan kalau kemarin libur nasional, targetnya jadi nol — seolah hari ini
-    // cukup jual satu botol untuk dianggap tumbuh. Sekarang hari kosong apa pun
-    // dilewati, jadi tidak perlu daftar hari libur yang harus diurus tiap tahun.
-    //
-    // Mundurnya dibatasi 7 hari. Kalau sepekan penuh tidak ada penjualan,
-    // itu bukan libur lagi, dan menargetkan dari data sebulan lalu tidak masuk akal.
-    const MAKS_MUNDUR = 7;
-    const acuan = i => {
-      for (let j = i - 1, langkah = 0; j >= 0 && langkah < MAKS_MUNDUR; j--, langkah++) {
-        if (urut[j].gmv > 0) return urut[j];
-      }
-      return null;
-    };
-
     let tercapai = 0, dinilai = 0, beruntun = 0, beruntunTerbaik = 0;
     for (let i = 1; i < urut.length; i++) {
-      // Hari kosong tidak dinilai — Minggu maupun tanggal merah. Kalau dinilai,
-      // rentetannya putus tiap pekan dan tiap libur, padahal bukan karena gagal.
+      // Hari kosong tetap tidak dinilai — Minggu maupun tanggal merah. Kalau
+      // dinilai, rentetannya putus tiap pekan dan tiap libur, padahal bukan
+      // karena gagal berjualan.
       if (urut[i].gmv <= 0) { urut[i].nilai = null; continue; }
-      const a = acuan(i);
-      if (!a || a.gmv <= 0) { urut[i].nilai = null; continue; }   // target dari nol tidak adil
       dinilai++;
-      const lulus = urut[i].gmv >= a.gmv * LAJU_TARGET;
+      const lulus = urut[i].gmv >= TARGET_GMV;
       urut[i].nilai = lulus;
       if (lulus) { tercapai++; beruntun++; beruntunTerbaik = Math.max(beruntunTerbaik, beruntun); }
       else beruntun = 0;
     }
 
     const ini = urut[urut.length - 1];          // hari ini
-    const a = acuan(urut.length - 1);           // acuan, biasanya kemarin
-    // Berapa hari acuannya mundur dari kemarin. 0 berarti acuannya kemarin.
-    const mundur = a ? urut.length - 1 - urut.findIndex(x => x.tanggal === a.tanggal) - 1 : 0;
-    const dasar = a ? a.gmv : 0;
-    const target = dasar * LAJU_TARGET;
+    const target = TARGET_GMV;
     const kurang = Math.max(0, target - ini.gmv);
     const total = urut.reduce((a2, x) => a2 + x.gmv, 0);
 
     return {
-      hariIni: ini.gmv, kemarin: dasar, target, kurang,
-      tglAcuan: a ? a.tanggal : null, mundur,
-      lulus: dasar > 0 && ini.gmv >= target,
-      belumBisaDinilai: dasar <= 0,
+      hariIni: ini.gmv, kemarin: 0, target, kurang,
+      tglAcuan: null, mundur: 0,
+      lulus: ini.gmv >= target,
+      belumBisaDinilai: false,
       rata: total / urut.length,
       tercapai, dinilai, persen: dinilai ? tercapai / dinilai * 100 : 0,
       beruntun, beruntunTerbaik,
@@ -2362,18 +2344,9 @@
       : pct >= 60 ? ['#F59E0B', '#FBBF24', '245,158,11']
       : ['#EF4444', '#F87171', '239,68,68'];
     const [inti, terang, rgb] = set;
-    const ket = c.belumBisaDinilai
-      ? 'Belum ada penjualan sepekan terakhir, target hari ini belum bisa dipatok'
-      : (() => {
-          // Kalau acuannya bukan kemarin, tanggalnya disebutkan supaya jelas
-          // targetnya diambil dari mana — hari libur otomatis dilewati.
-          const asal = c.mundur > 0
-            ? sd(c.tglAcuan) + ' ' + fN(Math.round(c.kemarin))
-              + ' (' + c.mundur + ' hari kosong dilewati)'
-            : 'kemarin ' + fN(Math.round(c.kemarin));
-          return c.lulus ? `<b>Tercapai.</b> Acuan ${asal}`
-            : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; acuan ${asal}`;
-        })();
+    const ket = c.lulus
+      ? `<b>Tercapai.</b> Target harian ${fN(c.target)} GMV`
+      : `Kurang <b>${fN(Math.ceil(c.kurang))}</b> GMV lagi &middot; target harian ${fN(c.target)}`;
 
     return `<div class="target">
         <div class="target-kiri">
