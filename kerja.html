@@ -802,6 +802,7 @@
     { g:1, id:'cs',       lbl:'Customer Service', ic:I.cs, t:'Performa Customer Service' },
     { g:1, id:'retur',    lbl:'Data Return',      ic:I.balik, t:'Paket retur' },
     { g:1, id:'stok',     lbl:'Personal Admin',   ic:I.kotak, t:'Stok barang retur' },
+    { g:1, id:'dealer',   lbl:'Dealer',           ic:I.chart, t:'Race GMV dealer' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -1988,6 +1989,7 @@
       else if (page==='cs') el.innerHTML = pgCS();
       else if (page==='retur') el.innerHTML = pgRetur();
       else if (page==='stok') el.innerHTML = pgStok();
+      else if (page==='dealer') el.innerHTML = pgDealer();
       else if (page==='kampanye') el.innerHTML = pgKampanye();
       else if (page==='lelang') el.innerHTML = pgLelang();
       else if (page==='jam') el.innerHTML = pgJam();
@@ -3556,6 +3558,105 @@
     return `<div class="podium">${kartu(tiga[1], 1)}${kartu(tiga[0], 0)}${kartu(tiga[2], 2)}</div>`;
   }
 
+  // ---------- menu Dealer: race GMV downline, ditarik langsung dari Globemerce ----------
+  // Endpoint (/dealer/downline/sales?period=YYYYMM) ditemukan lewat DevTools Network
+  // saat membuka My Report > Group Sales Tree di web.globemerce.com. Worker yang
+  // menyimpan GLOBEMERCE_TOKEN dan meneruskannya, sama seperti sumber lain.
+  let dealerPeriode = null;                 // 'YYYYMM' yang sedang dilihat
+  const dealerCache = new Map();            // periode -> rows | null (gagal ditarik)
+  let dealerMemuat = false;
+
+  const periodeSekarang = () => { const n = new Date();
+    return String(n.getFullYear()) + String(n.getMonth() + 1).padStart(2, '0'); };
+
+  async function tarikDealer(periode) {
+    const q = new URLSearchParams({ dealer: '1', period: periode });
+    if (BUST) q.set('bust', BUST);
+    const res = await ambil(PROXY + '?' + q.toString());
+    if (!res.ok) throw new Error(String(res.status));
+    const j = await res.json();
+    if (j && j.error) throw new Error(j.error);
+    if (!Array.isArray(j.data)) throw new Error('kosong');
+    return j.data;
+  }
+
+  function muatDealer(periode) {
+    if (dealerCache.has(periode) || dealerMemuat) return;
+    dealerMemuat = true;
+    tarikDealer(periode)
+      .then(rows => dealerCache.set(periode, rows))
+      .catch(() => dealerCache.set(periode, null))
+      .finally(() => { dealerMemuat = false; if (page === 'dealer') render(); });
+  }
+
+  function pgDealer() {
+    if (!dealerPeriode) dealerPeriode = periodeSekarang();
+    const opsi = Array.from({ length: 6 }, (_, i) => {
+      const n = new Date(); n.setDate(1); n.setMonth(n.getMonth() - i);
+      return { v: String(n.getFullYear()) + String(n.getMonth() + 1).padStart(2, '0'),
+        l: BLNP[n.getMonth()] + ' ' + n.getFullYear() };
+    });
+    const filterHtml = `<div class="chips" style="margin-bottom:14px">
+      ${opsi.map(o => `<button class="${dealerPeriode===o.v?'on':''}" data-dealer-bulan="${o.v}">${esc(o.l)}</button>`).join('')}
+    </div>`;
+
+    if (!dealerCache.has(dealerPeriode)) {
+      muatDealer(dealerPeriode);
+      return filterHtml + `<div class="panel"><div class="empty"><div class="spinner"></div>
+        Menarik data dealer dari Globemerce&hellip;</div></div>`;
+    }
+    const rows = dealerCache.get(dealerPeriode);
+    if (!rows) return filterHtml + `<div class="panel"><div class="empty">
+      <div class="big" style="background:var(--red-soft);color:var(--red)">${I.alert}</div>
+      <b>Gagal menarik data dealer</b><br>Cek token Globemerce di Worker, mungkin sudah kedaluwarsa.</div></div>`;
+    if (!rows.length) return filterHtml + `<div class="panel"><div class="empty">
+      Belum ada dealer downline untuk periode ini.</div></div>`;
+
+    const R = rows.map(x => ({
+      nama: x.username || x.dealer_id, kode: x.dealer_id,
+      posisi: x.dealer_position_name || '—',
+      personal: Number(x.total_pv) || 0, grup: Number(x.group_pv) || 0,
+      gmv: Number(x.sum_pv) || 0, downline: Number(x.active_downlines) || 0,
+      mata: x.currency_symbol || 'Rp',
+    })).sort((a, b) => b.gmv - a.gmv);
+
+    const total = R.reduce((a, c) => ({ personal: a.personal + c.personal,
+      grup: a.grup + c.grup, gmv: a.gmv + c.gmv }), { personal: 0, grup: 0, gmv: 0 });
+    const maks = Math.max(...R.map(c => c.gmv), 1);
+
+    const kartu = `<div class="kpis tiga">
+      ${kpi(I.cs,'var(--violet)','var(--violet-soft)','Jumlah dealer',fN(R.length),'')}
+      ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total personal GMV',fN(Math.round(total.personal)),'')}
+      ${kpi(I.spark,'var(--amber)','var(--amber-soft)','Total group GMV',fN(Math.round(total.grup)),'')}
+    </div>`;
+
+    // podium() dibuat untuk peringkat CS; dipakai ulang lewat pemetaan ringan
+    const podiumR = R.map(c => ({ nama: c.nama, order: c.downline, repeat: 0, gmv: c.gmv }));
+
+    return filterHtml + `<div class="sec"><h4>Race GMV dealer</h4>
+        <span class="note">diurutkan dari total GMV, personal + group</span></div>
+      ${kartu}
+      <div style="height:6px"></div>
+      ${podium(podiumR)}
+      <div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
+        <thead><tr><th>Dealer</th><th>Posisi</th><th class="num">Downline aktif</th>
+          <th class="num">Personal GMV</th><th class="num">Group GMV</th><th class="num">Total GMV</th></tr></thead>
+        <tbody>${R.map((c, i) => {
+          const medali = ['#F59E0B','#94A3B8','#C08457'][i] || null;
+          return `<tr>
+            <td class="nama"><b>${medali?'<span style="color:'+medali+'">#'+(i+1)+'</span> ':''}${esc(c.nama)}</b>
+              <span style="color:var(--faint);font-weight:500"> (${esc(c.kode)})</span>
+              <div class="track" style="margin-top:6px"><i style="width:${(c.gmv/maks*100).toFixed(1)}%;background:${medali||'var(--violet)'}"></i></div></td>
+            <td>${esc(c.posisi)}</td>
+            <td class="num">${fN(c.downline)}</td>
+            <td class="num">${esc(c.mata)} ${fN(c.personal)}</td>
+            <td class="num">${esc(c.mata)} ${fN(c.grup)}</td>
+            <td class="num"><b>${esc(c.mata)} ${fN(c.gmv)}</b></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div></div>`;
+  }
+
   function pgCS() {
     // Peringkat diambil dari ringkasan tim (semua CS), rincian pelanggan dari
     // pesanan yang boleh dilihat pengguna ini. Keduanya digabung per nama.
@@ -4759,6 +4860,8 @@
     if (fu) { fuBuka = fuBuka === fu.dataset.fu ? null : fu.dataset.fu; render(); return; }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
+    const db = e.target.closest('button[data-dealer-bulan]');
+    if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
     const k = b.dataset.metrik;
     if (pilih.includes(k)) { if (pilih.length>1) pilih = pilih.filter(x=>x!==k); }
