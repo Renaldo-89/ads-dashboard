@@ -3553,7 +3553,12 @@
   // menyimpan GLOBEMERCE_TOKEN dan meneruskannya, sama seperti sumber lain.
   let dealerPeriode = null;                 // 'YYYYMM' yang sedang dilihat
   const dealerCache = new Map();            // periode -> rows | null (gagal ditarik)
-  let dealerMemuat = false;
+  // Per periode, bukan satu boolean global — supaya klik pindah bulan yang
+  // cepat (sebelum bulan sebelumnya selesai dimuat) tidak saling menjegal.
+  // Boolean tunggal sebelumnya membuat permintaan bulan kedua diam-diam
+  // dibatalkan kalau bulan pertama belum selesai, dan bulan itu macet di
+  // layar "memuat" selamanya sampai chip-nya diklik ulang.
+  const dealerMemuat = new Set();
 
   const periodeSekarang = () => { const n = new Date();
     return String(n.getFullYear()) + String(n.getMonth() + 1).padStart(2, '0'); };
@@ -3570,12 +3575,12 @@
   }
 
   function muatDealer(periode) {
-    if (dealerCache.has(periode) || dealerMemuat) return;
-    dealerMemuat = true;
+    if (dealerCache.has(periode) || dealerMemuat.has(periode)) return;
+    dealerMemuat.add(periode);
     tarikDealer(periode)
       .then(rows => dealerCache.set(periode, rows))
       .catch(() => dealerCache.set(periode, null))
-      .finally(() => { dealerMemuat = false; if (page === 'dealer') render(); });
+      .finally(() => { dealerMemuat.delete(periode); if (page === 'dealer') render(); });
   }
 
   function pgDealer() {
