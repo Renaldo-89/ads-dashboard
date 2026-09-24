@@ -803,6 +803,7 @@
     { g:1, id:'retur',    lbl:'Data Return',      ic:I.balik, t:'Paket retur' },
     { g:1, id:'stok',     lbl:'Personal Admin',   ic:I.kotak, t:'Stok barang retur' },
     { g:1, id:'dealer',   lbl:'Dealer',           ic:I.chart, t:'Race GMV dealer' },
+    { g:1, id:'laporan',  lbl:'Laporan Iklan',    ic:I.bolt,  t:'Laporan harian advertiser' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -1668,7 +1669,8 @@
   // hanya stok retur.
   const menuBoleh = m => AKU.peran === 'admin'
     || (AKU.peran === 'cs' && m.id === 'cs')
-    || (AKU.peran === 'pa' && m.id === 'stok');
+    || (AKU.peran === 'pa' && m.id === 'stok')
+    || (AKU.peran === 'advertiser' && m.id === 'laporan');
 
   // ---------- semangat harian ----------
   // Satu kalimat per hari untuk tiap CS. Sengaja tidak berganti tiap kali
@@ -1983,6 +1985,7 @@
       else if (page==='retur') el.innerHTML = pgRetur();
       else if (page==='stok') el.innerHTML = pgStok();
       else if (page==='dealer') el.innerHTML = pgDealer();
+      else if (page==='laporan') el.innerHTML = pgLaporan();
       else if (page==='kampanye') el.innerHTML = pgKampanye();
       else if (page==='lelang') el.innerHTML = pgLelang();
       else if (page==='jam') el.innerHTML = pgJam();
@@ -3655,6 +3658,156 @@
       </table></div></div>`;
   }
 
+  // ---------- halaman Laporan Iklan (khusus role advertiser + admin) ----------
+  // Advertiser mengisi rencana & realisasi budget hariannya sendiri, sebagai
+  // patokan kerja. Dibandingkan dengan angka REAL dari Google/Meta/TikTok Ads
+  // yang sudah tertarik otomatis untuk periode yang sedang dipilih di filter
+  // paling atas halaman — supaya ketahuan kalau angka yang diinput meleset
+  // dari kenyataan.
+  //
+  // Semua advertiser bisa saling lihat laporan satu sama lain (kolom "Oleh"),
+  // tapi hanya boleh menghapus laporannya sendiri; admin boleh menghapus semua.
+  let laporanData = null;      // array dari Worker, null = belum ditarik
+  let laporanMemuat = false;
+  let laporanPesan = null;     // { jenis:'ok'|'galat', teks }
+  let laporanFilter = '30';    // 'hari' | '7' | '30' | 'semua'
+
+  async function tarikLaporan() {
+    const q = new URLSearchParams({ laporan: 'data' });
+    if (BUST) q.set('bust', BUST);
+    const res = await ambil(PROXY + '?' + q.toString());
+    if (!res.ok) throw new Error(String(res.status));
+    const j = await res.json();
+    if (j && j.error) throw new Error(j.error);
+    if (!Array.isArray(j.data)) throw new Error('kosong');
+    return j.data;
+  }
+
+  function muatLaporan() {
+    if (laporanData || laporanMemuat) return;
+    laporanMemuat = true;
+    tarikLaporan()
+      .then(rows => { laporanData = rows; })
+      .catch(() => { laporanData = []; })
+      .finally(() => { laporanMemuat = false; if (page === 'laporan') render(); });
+  }
+
+  async function kirimLaporan(jenis, isi) {
+    laporanPesan = null;
+    try {
+      const r = await fetch(PROXY + '?laporan=' + encodeURIComponent(jenis), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+          'X-Kunci': SANDI || '', 'X-Pengguna': PENGGUNA || '' },
+        body: JSON.stringify(isi),
+      });
+      const j = await r.json();
+      if (!r.ok || (j && j.error)) {
+        laporanPesan = { jenis: 'galat', teks: (j && j.error) || ('Gagal menyimpan (' + r.status + ')') };
+        return null;
+      }
+      return j.data;
+    } catch (e) {
+      laporanPesan = { jenis: 'galat', teks: 'Tidak bisa menghubungi server. Coba lagi.' };
+      return null;
+    }
+  }
+
+  // Spend REAL dari koneksi Google/Meta/TikTok Ads yang sudah tertarik untuk
+  // periode yang sedang dipilih di filter atas. null kalau platformnya belum
+  // tersambung, belum ada connector otomatis (mis. "lainnya"), atau tanggalnya
+  // di luar periode yang sedang dimuat.
+  function spendReal(platform, tgl) {
+    const info = D.iklan[platform];
+    if (!info || info.status !== 'ok') return null;
+    const baris = info.rows.filter(r => r.date === tgl);
+    if (!baris.length) return null;
+    return baris.reduce((a, r) => a + (Number(r.spend) || 0), 0);
+  }
+
+  function pgLaporan() {
+    if (laporanData === null) {
+      muatLaporan();
+      return `<div class="panel"><div class="empty"><div class="spinner"></div>
+        Menarik laporan iklan&hellip;</div></div>`;
+    }
+
+    const n0 = new Date();
+    const batasHari = { hari:1, '7':7, '30':30, semua:Infinity }[laporanFilter] || 30;
+    const batasTgl = iso(new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() - batasHari + 1));
+    const rows = laporanData
+      .filter(x => laporanFilter === 'semua' || x.tgl >= batasTgl)
+      .sort((a, b) => b.tgl.localeCompare(a.tgl) || String(b.dibuat).localeCompare(String(a.dibuat)));
+
+    const total = rows.reduce((a, c) => ({
+      rencana: a.rencana + (Number(c.rencana) || 0),
+      aktual: a.aktual + (Number(c.aktual) || 0),
+      hasil: a.hasil + (Number(c.hasil) || 0),
+    }), { rencana: 0, aktual: 0, hasil: 0 });
+
+    const opsiPlatform = IKLAN.map(id => `<option value="${id}">${esc(PLAT[id].nama)}</option>`).join('')
+      + `<option value="lainnya">Lainnya</option>`;
+
+    const form = `<form class="stok-kotak" data-form="laporan">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+        <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
+        <label>Platform<select name="platform" required>${opsiPlatform}</select></label>
+        <label>Nama akun<input type="text" name="akun" placeholder="cth. SVO Connect 01" required maxlength="60"></label>
+        <label>Budget rencana<input type="number" name="rencana" min="0" step="1" placeholder="0" required></label>
+        <label>Budget aktual<input type="number" name="aktual" min="0" step="1" placeholder="0" required></label>
+        <label>Hasil / leads<input type="number" name="hasil" min="0" step="1" placeholder="0"></label>
+      </div>
+      <label>Catatan<textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau rencana besok (opsional)"></textarea></label>
+      ${laporanPesan ? `<div class="stok-pesan ${laporanPesan.jenis}">${esc(laporanPesan.teks)}</div>` : ''}
+      <div class="stok-aksi"><button type="submit">Simpan laporan hari ini</button></div>
+    </form>`;
+
+    const chipFilter = `<div class="chips" style="margin:14px 0">
+      ${[['hari','Hari ini'],['7','7 hari'],['30','30 hari'],['semua','Semua']].map(([v,l]) =>
+        `<button class="${laporanFilter===v?'on':''}" data-laporan-filter="${v}">${esc(l)}</button>`).join('')}
+    </div>`;
+
+    const kartu = `<div class="kpis tiga">
+      ${kpi(I.target,'var(--blue)','var(--blue-soft)','Total budget rencana',fC(total.rencana),'')}
+      ${kpi(I.money,'var(--amber)','var(--amber-soft)','Total budget aktual',fC(total.aktual),'')}
+      ${kpi(I.spark,'var(--green)','var(--green-soft)','Total hasil / leads',fN(total.hasil),'')}
+    </div>`;
+
+    const bolehHapus = c => AKU.peran === 'admin' || c.oleh === AKU.nama;
+
+    const tabel = !rows.length
+      ? `<div class="panel"><div class="empty">Belum ada laporan untuk rentang ini.</div></div>`
+      : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
+        <thead><tr><th>Tanggal</th><th>Platform</th><th>Akun</th>
+          <th class="num">Rencana</th><th class="num">Aktual (input)</th><th class="num">Real (sistem)</th>
+          <th class="num">Hasil</th><th>Catatan</th><th>Oleh</th><th></th></tr></thead>
+        <tbody>${rows.map(c => {
+          const real = spendReal(c.platform, c.tgl);
+          const selisih = real !== null ? (Number(c.aktual) || 0) - real : null;
+          const warnaSelisih = selisih === null ? 'var(--faint)'
+            : Math.abs(selisih) < 1 ? 'var(--green-ink)' : 'var(--red-ink)';
+          return `<tr>
+            <td>${sd(c.tgl)}</td>
+            <td>${esc((PLAT[c.platform] && PLAT[c.platform].nama) || c.platform)}</td>
+            <td>${esc(c.akun)}</td>
+            <td class="num">${fC(Number(c.rencana) || 0)}</td>
+            <td class="num">${fC(Number(c.aktual) || 0)}</td>
+            <td class="num">${real === null
+              ? '<span style="color:var(--faint)">&mdash;</span>'
+              : `${fC(real)}<br><span style="font-size:11px;color:${warnaSelisih}">selisih ${fC(Math.abs(selisih))} ${selisih>=0?'lebih':'kurang'}</span>`}</td>
+            <td class="num">${fN(Number(c.hasil) || 0)}</td>
+            <td style="max-width:200px;white-space:normal">${esc(c.catatan || '')}</td>
+            <td>${esc(c.oleh)}</td>
+            <td>${bolehHapus(c) ? `<button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div></div>
+      <p class="note" style="margin-top:8px">Kolom "Real (sistem)" hanya terisi untuk platform yang sudah tersambung
+        (Google/Meta/TikTok Ads) dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas halaman.</p>`;
+
+    return form + chipFilter + kartu + tabel;
+  }
+
   function pgCS() {
     // Peringkat diambil dari ringkasan tim (semua CS), rincian pelanggan dari
     // pesanan yang boleh dilihat pengguna ini. Keduanya digabung per nama.
@@ -4734,6 +4887,13 @@
         + ' keluar untuk ' + (hasil.pembeli || 'pembeli baru') + ', penjualannya masuk ke ' + hasil.agen + '.' };
       await muatStok();
     }
+    if (jenis === 'laporan') {
+      if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
+      const hasil = await kirimLaporan('tambah', data);
+      if (hasil) { laporanPesan = { jenis: 'ok', teks: 'Laporan tersimpan.' }; laporanData.unshift(hasil); f.reset(); }
+      if (tombol) { tombol.disabled = false; tombol.textContent = 'Simpan laporan hari ini'; }
+      render();
+    }
   });
 
   const barisPeriode = document.getElementById('periods');
@@ -4860,6 +5020,18 @@
     if (c) { fCS = c.dataset.cs; render(); return; }
     const db = e.target.closest('button[data-dealer-bulan]');
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
+    const lf = e.target.closest('button[data-laporan-filter]');
+    if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
+    const hl = e.target.closest('button[data-hapus-laporan]');
+    if (hl) {
+      const id = hl.dataset.hapusLaporan;
+      hl.disabled = true;
+      kirimLaporan('hapus', { id }).then(hasil => {
+        if (hasil) laporanData = laporanData.filter(x => x.id !== id);
+        render();
+      });
+      return;
+    }
     const b = e.target.closest('button[data-metrik]'); if(!b) return;
     const k = b.dataset.metrik;
     if (pilih.includes(k)) { if (pilih.length>1) pilih = pilih.filter(x=>x!==k); }
