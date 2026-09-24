@@ -3817,20 +3817,20 @@
         `<button class="${laporanFilter===v?'on':''}" data-laporan-filter="${v}">${esc(l)}</button>`).join('')}
     </div>`;
 
-    const kartu = `<div class="kpis tiga">
+    const kartu = `<div class="kpis">
       ${kpi(I.money,'var(--amber)','var(--amber-soft)','Total budget',fC(total.aktual),'')}
       ${kpi(I.spark,'var(--green)','var(--green-soft)','Total omset',fC(total.omset),'')}
       ${kpi(I.target,'var(--blue)','var(--blue-soft)','ROAS',roas.toFixed(2)+'x','')}
-    </div>
-    <div class="kpis tiga" style="margin-top:10px">
       ${kpi(I.spark,'var(--blue)','var(--blue-soft)','Closing rate',(closingRate*100).toFixed(2)+'%','')}
       ${kpi(I.spark,'var(--blue)','var(--blue-soft)','Upselling (botol/closing)',upsellingRt.toFixed(2),'')}
-      ${kpi(I.money,'var(--red)','var(--red-soft)','Biaya akuisisi (lead / customer)',fC(biayaLead)+' / '+fC(biayaCust),'')}
+      ${kpi(I.money,'var(--red)','var(--red-soft)','Biaya akuisisi (lead/customer)',fC(biayaLead)+' / '+fC(biayaCust),'')}
     </div>`;
 
     const bolehHapus = c => AKU.peran === 'admin' || c.oleh === AKU.nama;
 
-    const tabel = !rows.length
+    const judulTabel = `<div class="sec"><h4>Riwayat laporan</h4><span class="note">${fN(rows.length)} entri</span></div>`;
+
+    const tabel = judulTabel + (!rows.length
       ? `<div class="panel"><div class="empty">Belum ada laporan untuk rentang ini.</div></div>`
       : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Tanggal</th><th>Platform</th><th>Akun</th>
@@ -3876,7 +3876,7 @@
       </table></div></div>
       <p class="note" style="margin-top:8px">Kolom "Budget (sistem)" hanya terisi untuk platform yang sudah tersambung
         (Google/Meta/TikTok Ads) dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas halaman.
-        Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis dari Budget/Lead/Closing/Botol/Omset yang diinput.</p>`;
+        Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis dari Budget/Lead/Closing/Botol/Omset yang diinput.</p>`);
 
     return form + chipFilter + kartu + tabel;
   }
