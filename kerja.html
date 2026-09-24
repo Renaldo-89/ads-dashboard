@@ -1062,9 +1062,11 @@
     const jam = sisa === null ? '' : ' · sesi ' + (sisa >= 36e5
       ? Math.round(sisa / 36e5) + ' jam lagi'
       : Math.max(1, Math.round(sisa / 6e4)) + ' menit lagi');
-    if (el('p-peran')) el('p-peran').textContent =
-      (AKU.peran === 'admin' ? 'Admin · akses penuh'
-        : 'Customer Service' + (AKU.agen ? ' · ' + AKU.agen : '')) + jam;
+    const labelPeran = AKU.peran === 'admin' ? 'Admin · akses penuh'
+      : AKU.peran === 'pa' ? 'Personal Admin' + (AKU.agen ? ' · ' + AKU.agen : '')
+      : AKU.peran === 'advertiser' ? 'Advertiser' + (AKU.agen ? ' · ' + AKU.agen : '')
+      : 'Customer Service' + (AKU.agen ? ' · ' + AKU.agen : '');
+    if (el('p-peran')) el('p-peran').textContent = labelPeran + jam;
   }
 
   // ---------- kunci dashboard ----------
@@ -1163,6 +1165,8 @@
     catatHariMasuk();
     tampilkanIdentitas();
     if (AKU.peran === 'cs') { page = 'cs'; await fuMuat(); }
+    if (AKU.peran === 'pa') page = 'stok';
+    if (AKU.peran === 'advertiser') page = 'laporan';
     buildNav();          // menu tampil lebih dulu, tidak menunggu data
     muat();
   }
@@ -1963,6 +1967,7 @@
     // yang benar-benar menahan data tetap Worker, yang menjawab 403.
     if (AKU.peran === 'cs' && page !== 'cs') page = 'cs';
     if (AKU.peran === 'pa' && page !== 'stok') page = 'stok';
+    if (AKU.peran === 'advertiser' && page !== 'laporan') page = 'laporan';
     const m = MENU.find(x=>x.id===page) || MENU[0];
     document.getElementById('ptitle').textContent = m.t;
     let crumb = rentang(period).label;
