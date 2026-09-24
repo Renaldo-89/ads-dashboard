@@ -3729,6 +3729,18 @@
     return baris.reduce((a, r) => a + (Number(r.spend) || 0), 0);
   }
 
+  // Daftar nama akun iklan yang benar-benar tersambung (mis. akun bisnis Meta
+  // milik pengguna), diambil dari data yang sudah ditarik Windsor.ai untuk
+  // platform itu — dipakai sebagai <datalist> supaya advertiser tinggal pilih,
+  // tapi tetap bisa ketik nama akun lain kalau belum tersambung.
+  function daftarAkunPlatform(platform) {
+    const info = D.iklan[platform];
+    if (!info || info.status !== 'ok') return [];
+    const s = new Set();
+    for (const r of info.rows) if (r.account_name) s.add(String(r.account_name));
+    return Array.from(s).sort();
+  }
+
   function pgLaporan() {
     if (laporanData === null) {
       muatLaporan();
@@ -3762,12 +3774,17 @@
 
     const opsiPlatform = IKLAN.map(id => `<option value="${id}">${esc(PLAT[id].nama)}</option>`).join('')
       + `<option value="lainnya">Lainnya</option>`;
+    const platformAwal = IKLAN[0] || 'lainnya';
+    const opsiAkunAwal = daftarAkunPlatform(platformAwal)
+      .map(nama => `<option value="${esc(nama)}"></option>`).join('');
 
     const form = `<form class="stok-kotak" data-form="laporan">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
-        <label>Platform<select name="platform" required>${opsiPlatform}</select></label>
-        <label>Nama akun<input type="text" name="akun" placeholder="cth. SVO Connect 01" required maxlength="60"></label>
+        <label>Platform<select name="platform" data-laporan-platform required>${opsiPlatform}</select></label>
+        <label>Nama akun<input type="text" name="akun" list="laporan-akun-list" autocomplete="off"
+          placeholder="cth. Meliglow Ads 01" required maxlength="60"></label>
+        <datalist id="laporan-akun-list">${opsiAkunAwal}</datalist>
         <label>Budget iklan<input type="number" name="aktual" min="0" step="1" placeholder="0" required></label>
         <label>Jumlah lead<input type="number" name="lead" min="0" step="1" placeholder="0" required></label>
         <label>Closing (customer baru)<input type="number" name="closing" min="0" step="1" placeholder="0" required></label>
@@ -4996,10 +5013,22 @@
   });
   document.getElementById('content').addEventListener('change', e=>{
     const sel = e.target.closest('select[data-retur]');
-    if (!sel) return;
-    returMode = sel.value;
-    if (returMode !== 'periode') muatRetur(returMode);
-    render();
+    if (sel) {
+      returMode = sel.value;
+      if (returMode !== 'periode') muatRetur(returMode);
+      render();
+      return;
+    }
+    const selPlat = e.target.closest('select[data-laporan-platform]');
+    if (selPlat) {
+      // Ganti isi <datalist> sesuai platform yang dipilih, tanpa render ulang
+      // supaya input lain di form (budget, lead, dst.) tidak ikut terhapus.
+      const dl = document.getElementById('laporan-akun-list');
+      if (dl) dl.innerHTML = daftarAkunPlatform(selPlat.value)
+        .map(nama => `<option value="${esc(nama)}"></option>`).join('');
+      const inputAkun = selPlat.closest('form').querySelector('input[name="akun"]');
+      if (inputAkun) inputAkun.value = '';
+    }
   });
 
   document.getElementById('content').addEventListener('click', e=>{
