@@ -845,7 +845,11 @@
   const fMetrik = (k,v) => METRIK[k].unit==='idr'?fC(v):METRIK[k].unit==='pct'?fP(v):fN(v);
   const fMetrikP = (k,v) => METRIK[k].unit==='idr'?fIDR(v):METRIK[k].unit==='pct'?fP(v):fN(v);
 
-  let period='30', page='overview', charts={};
+  // Default bulan berjalan, bukan 30 hari terakhir: lebih ringan (biasanya
+  // belum sebulan penuh) dan sesuai patokan yang diharapkan tiap kali dibuka.
+  // bulanKe() didefinisikan di bawah tapi function declaration di-hoist,
+  // jadi aman dipanggil di sini.
+  let period=bulanKe(0).nilai, page='overview', charts={};
   let fAkun='all', fKmp='all', pilih=['spend','conversions'];
   let everproInfo = null;
   let gantiTema = false;
