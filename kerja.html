@@ -3659,11 +3659,15 @@
   }
 
   // ---------- halaman Laporan Iklan (khusus role advertiser + admin) ----------
-  // Advertiser mengisi rencana & realisasi budget hariannya sendiri, sebagai
-  // patokan kerja. Dibandingkan dengan angka REAL dari Google/Meta/TikTok Ads
-  // yang sudah tertarik otomatis untuk periode yang sedang dipilih di filter
-  // paling atas halaman — supaya ketahuan kalau angka yang diinput meleset
-  // dari kenyataan.
+  // Advertiser cukup lapor 5 angka mentah per hari: budget iklan, jumlah lead,
+  // closing (customer baru), botol/unit terjual (customer baru), dan omset.
+  // Closing rate, upselling, biaya akuisisi lead/customer, dan ROAS semuanya
+  // dihitung otomatis dari 5 angka itu (sama seperti rumus di spreadsheet lama:
+  // upselling = botol/closing; biaya akuisisi = (budget/lead atau /closing)*110%;
+  // roas = omset/budget) — advertiser tidak perlu hitung atau isi manual.
+  // Budget diinput juga dibandingkan dengan angka REAL dari Google/Meta/TikTok
+  // Ads yang sudah tertarik otomatis, untuk periode yang sedang dipilih di
+  // filter paling atas halaman — supaya ketahuan kalau input meleset.
   //
   // Semua advertiser bisa saling lihat laporan satu sama lain (kolom "Oleh"),
   // tapi hanya boleh menghapus laporannya sendiri; admin boleh menghapus semua.
@@ -3740,10 +3744,21 @@
       .sort((a, b) => b.tgl.localeCompare(a.tgl) || String(b.dibuat).localeCompare(String(a.dibuat)));
 
     const total = rows.reduce((a, c) => ({
-      rencana: a.rencana + (Number(c.rencana) || 0),
       aktual: a.aktual + (Number(c.aktual) || 0),
-      hasil: a.hasil + (Number(c.hasil) || 0),
-    }), { rencana: 0, aktual: 0, hasil: 0 });
+      lead: a.lead + (Number(c.lead) || 0),
+      closing: a.closing + (Number(c.closing) || 0),
+      botol: a.botol + (Number(c.botol) || 0),
+      omset: a.omset + (Number(c.omset) || 0),
+    }), { aktual: 0, lead: 0, closing: 0, botol: 0, omset: 0 });
+
+    // Rumus sama seperti spreadsheet lama, dihitung dari total rentang yang
+    // sedang difilter (bukan rata-rata per baris) supaya konsisten dengan cara
+    // spreadsheet menjumlah per hari lalu membagi totalnya.
+    const closingRate = total.lead > 0 ? total.closing / total.lead : 0;
+    const upsellingRt = total.closing > 0 ? total.botol / total.closing : 0;
+    const biayaLead = total.lead > 0 ? (total.aktual / total.lead) * 1.1 : 0;
+    const biayaCust = total.closing > 0 ? (total.aktual / total.closing) * 1.1 : 0;
+    const roas = total.aktual > 0 ? total.omset / total.aktual : 0;
 
     const opsiPlatform = IKLAN.map(id => `<option value="${id}">${esc(PLAT[id].nama)}</option>`).join('')
       + `<option value="lainnya">Lainnya</option>`;
@@ -3753,11 +3768,13 @@
         <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
         <label>Platform<select name="platform" required>${opsiPlatform}</select></label>
         <label>Nama akun<input type="text" name="akun" placeholder="cth. SVO Connect 01" required maxlength="60"></label>
-        <label>Budget rencana<input type="number" name="rencana" min="0" step="1" placeholder="0" required></label>
-        <label>Budget aktual<input type="number" name="aktual" min="0" step="1" placeholder="0" required></label>
-        <label>Hasil / leads<input type="number" name="hasil" min="0" step="1" placeholder="0"></label>
+        <label>Budget iklan<input type="number" name="aktual" min="0" step="1" placeholder="0" required></label>
+        <label>Jumlah lead<input type="number" name="lead" min="0" step="1" placeholder="0" required></label>
+        <label>Closing (customer baru)<input type="number" name="closing" min="0" step="1" placeholder="0" required></label>
+        <label>Botol (unit customer baru)<input type="number" name="botol" min="0" step="1" placeholder="0" required></label>
+        <label>Omset<input type="number" name="omset" min="0" step="1" placeholder="0" required></label>
       </div>
-      <label>Catatan<textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau rencana besok (opsional)"></textarea></label>
+      <label>Catatan<textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau catatan lain (opsional)"></textarea></label>
       ${laporanPesan ? `<div class="stok-pesan ${laporanPesan.jenis}">${esc(laporanPesan.teks)}</div>` : ''}
       <div class="stok-aksi"><button type="submit">Simpan laporan hari ini</button></div>
     </form>`;
@@ -3768,9 +3785,14 @@
     </div>`;
 
     const kartu = `<div class="kpis tiga">
-      ${kpi(I.target,'var(--blue)','var(--blue-soft)','Total budget rencana',fC(total.rencana),'')}
-      ${kpi(I.money,'var(--amber)','var(--amber-soft)','Total budget aktual',fC(total.aktual),'')}
-      ${kpi(I.spark,'var(--green)','var(--green-soft)','Total hasil / leads',fN(total.hasil),'')}
+      ${kpi(I.money,'var(--amber)','var(--amber-soft)','Total budget',fC(total.aktual),'')}
+      ${kpi(I.spark,'var(--green)','var(--green-soft)','Total omset',fC(total.omset),'')}
+      ${kpi(I.target,'var(--blue)','var(--blue-soft)','ROAS',roas.toFixed(2)+'x','')}
+    </div>
+    <div class="kpis tiga" style="margin-top:10px">
+      ${kpi(I.spark,'var(--blue)','var(--blue-soft)','Closing rate',(closingRate*100).toFixed(2)+'%','')}
+      ${kpi(I.spark,'var(--blue)','var(--blue-soft)','Upselling (botol/closing)',upsellingRt.toFixed(2),'')}
+      ${kpi(I.money,'var(--red)','var(--red-soft)','Biaya akuisisi (lead / customer)',fC(biayaLead)+' / '+fC(biayaCust),'')}
     </div>`;
 
     const bolehHapus = c => AKU.peran === 'admin' || c.oleh === AKU.nama;
@@ -3779,31 +3801,49 @@
       ? `<div class="panel"><div class="empty">Belum ada laporan untuk rentang ini.</div></div>`
       : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Tanggal</th><th>Platform</th><th>Akun</th>
-          <th class="num">Rencana</th><th class="num">Aktual (input)</th><th class="num">Real (sistem)</th>
-          <th class="num">Hasil</th><th>Catatan</th><th>Oleh</th><th></th></tr></thead>
+          <th class="num">Budget (input)</th><th class="num">Budget (sistem)</th>
+          <th class="num">Lead</th><th class="num">Closing</th><th class="num">Botol</th>
+          <th class="num">Omset</th><th class="num">Closing rate</th><th class="num">Upselling</th>
+          <th class="num">Biaya/lead</th><th class="num">Biaya/customer</th><th class="num">ROAS</th>
+          <th>Catatan</th><th>Oleh</th><th></th></tr></thead>
         <tbody>${rows.map(c => {
           const real = spendReal(c.platform, c.tgl);
           const selisih = real !== null ? (Number(c.aktual) || 0) - real : null;
           const warnaSelisih = selisih === null ? 'var(--faint)'
             : Math.abs(selisih) < 1 ? 'var(--green-ink)' : 'var(--red-ink)';
+          const budget = Number(c.aktual) || 0, lead = Number(c.lead) || 0,
+            closing = Number(c.closing) || 0, botol = Number(c.botol) || 0, omset = Number(c.omset) || 0;
+          const cr = lead > 0 ? closing / lead : 0;
+          const up = closing > 0 ? botol / closing : 0;
+          const bLead = lead > 0 ? (budget / lead) * 1.1 : 0;
+          const bCust = closing > 0 ? (budget / closing) * 1.1 : 0;
+          const rs = budget > 0 ? omset / budget : 0;
           return `<tr>
             <td>${sd(c.tgl)}</td>
             <td>${esc((PLAT[c.platform] && PLAT[c.platform].nama) || c.platform)}</td>
             <td>${esc(c.akun)}</td>
-            <td class="num">${fC(Number(c.rencana) || 0)}</td>
-            <td class="num">${fC(Number(c.aktual) || 0)}</td>
+            <td class="num">${fC(budget)}</td>
             <td class="num">${real === null
               ? '<span style="color:var(--faint)">&mdash;</span>'
               : `${fC(real)}<br><span style="font-size:11px;color:${warnaSelisih}">selisih ${fC(Math.abs(selisih))} ${selisih>=0?'lebih':'kurang'}</span>`}</td>
-            <td class="num">${fN(Number(c.hasil) || 0)}</td>
+            <td class="num">${fN(lead)}</td>
+            <td class="num">${fN(closing)}</td>
+            <td class="num">${fN(botol)}</td>
+            <td class="num">${fC(omset)}</td>
+            <td class="num">${(cr*100).toFixed(2)}%</td>
+            <td class="num">${up.toFixed(2)}</td>
+            <td class="num">${fC(bLead)}</td>
+            <td class="num">${fC(bCust)}</td>
+            <td class="num">${rs.toFixed(2)}x</td>
             <td style="max-width:200px;white-space:normal">${esc(c.catatan || '')}</td>
             <td>${esc(c.oleh)}</td>
             <td>${bolehHapus(c) ? `<button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
           </tr>`;
         }).join('')}</tbody>
       </table></div></div>
-      <p class="note" style="margin-top:8px">Kolom "Real (sistem)" hanya terisi untuk platform yang sudah tersambung
-        (Google/Meta/TikTok Ads) dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas halaman.</p>`;
+      <p class="note" style="margin-top:8px">Kolom "Budget (sistem)" hanya terisi untuk platform yang sudah tersambung
+        (Google/Meta/TikTok Ads) dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas halaman.
+        Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis dari Budget/Lead/Closing/Botol/Omset yang diinput.</p>`;
 
     return form + chipFilter + kartu + tabel;
   }
