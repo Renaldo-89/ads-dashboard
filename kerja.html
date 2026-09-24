@@ -205,6 +205,11 @@
     font-family:inherit; }
   .stok-hapus:hover { border-color:var(--red); color:var(--red); background:var(--red-soft); }
   .stok-hapus:disabled { opacity:.4; cursor:default; }
+  .stok-edit { border:1px solid var(--line); background:var(--panel); color:var(--faint);
+    width:26px; height:26px; border-radius:8px; font-size:13px; line-height:1; cursor:pointer;
+    font-family:inherit; }
+  .stok-edit:hover { border-color:var(--violet); color:var(--violet); background:var(--blue-soft); }
+  .stok-edit:disabled { opacity:.4; cursor:default; }
   /* pratinjau pesanan yang sedang dicek sebelum dicatat masuk */
   .stok-pratinjau { border:1px solid var(--violet); background:var(--violet-soft);
     border-radius:16px; padding:15px 16px 13px; margin-bottom:16px; }
@@ -3680,6 +3685,7 @@
   let laporanMemuat = false;
   let laporanPesan = null;     // { jenis:'ok'|'galat', teks }
   let laporanFilter = '30';    // 'hari' | '7' | '30' | 'semua'
+  let laporanEdit = null;      // id catatan yang sedang disunting, null = mode tambah baru
 
   async function tarikLaporan() {
     const q = new URLSearchParams({ laporan: 'data' });
@@ -3777,37 +3783,47 @@
     const biayaCust = total.closing > 0 ? (total.aktual / total.closing) * 1.1 : 0;
     const roas = total.aktual > 0 ? total.omset / total.aktual : 0;
 
-    const opsiPlatform = IKLAN.map(id => `<option value="${id}">${esc(PLAT[id].nama)}</option>`).join('')
-      + `<option value="lainnya">Lainnya</option>`;
-    const platformAwal = IKLAN[0] || 'lainnya';
-    const opsiAkunAwal = daftarAkunPlatform(platformAwal)
+    const opsiPlatform = plt => IKLAN.map(id => `<option value="${id}" ${plt===id?'selected':''}>${esc(PLAT[id].nama)}</option>`).join('')
+      + `<option value="lainnya" ${plt==='lainnya'?'selected':''}>Lainnya</option>`;
+
+    // Mode sunting: cari catatannya di laporanData (bukan di `rows` yang sudah
+    // difilter periode, supaya tetap bisa disunting walau tanggalnya di luar
+    // rentang filter yang sedang dipilih).
+    const editingC = laporanEdit ? laporanData.find(x => x.id === laporanEdit) : null;
+    const v = (nama, def) => editingC ? esc(String(editingC[nama] ?? def ?? '')) : esc(String(def ?? ''));
+    const platformForm = editingC ? editingC.platform : (IKLAN[0] || 'lainnya');
+    const opsiAkunAwal = daftarAkunPlatform(platformForm)
       .map(nama => `<option value="${esc(nama)}"></option>`).join('');
 
     const form = `<form class="stok-kotak" data-form="laporan">
-      <p class="k">LAPORAN IKLAN HARI INI</p>
+      <p class="k">${editingC ? 'SUNTING LAPORAN' : 'LAPORAN IKLAN HARI INI'}</p>
+      ${editingC ? `<input type="hidden" name="id" value="${esc(editingC.id)}">` : ''}
       <div class="baris">
-        <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
-        <label>Platform<select name="platform" data-laporan-platform required>${opsiPlatform}</select></label>
+        <label>Tanggal<input type="date" name="tgl" value="${v('tgl', hariIni())}" max="${hariIni()}" required></label>
+        <label>Platform<select name="platform" data-laporan-platform required>${opsiPlatform(platformForm)}</select></label>
         <label>Nama akun<input type="text" name="akun" list="laporan-akun-list" autocomplete="off"
-          placeholder="cth. Meliglow Ads 01" required maxlength="60"></label>
+          value="${v('akun','')}" placeholder="cth. Meliglow Ads 01" required maxlength="60"></label>
         <datalist id="laporan-akun-list">${opsiAkunAwal}</datalist>
       </div>
       <p class="k" style="margin-top:14px">ANGKA HARI INI</p>
       <div class="baris">
-        <label>Budget iklan <span>Rp</span><input type="number" name="aktual" min="0" step="1" placeholder="cth. 500000" required></label>
-        <label>Jumlah lead <span>orang chat/DM</span><input type="number" name="lead" min="0" step="1" placeholder="cth. 14" required></label>
+        <label>Budget iklan <span>Rp</span><input type="number" name="aktual" min="0" step="1" value="${v('aktual','')}" placeholder="cth. 500000" required></label>
+        <label>Jumlah lead <span>orang chat/DM</span><input type="number" name="lead" min="0" step="1" value="${v('lead','')}" placeholder="cth. 14" required></label>
       </div>
       <div class="baris">
-        <label>Closing <span>customer baru</span><input type="number" name="closing" min="0" step="1" placeholder="cth. 12" required></label>
-        <label>Botol <span>unit ke customer baru</span><input type="number" name="botol" min="0" step="1" placeholder="cth. 24" required></label>
-        <label>Omset <span>Rp, dari closing hari ini</span><input type="number" name="omset" min="0" step="1" placeholder="cth. 23976000" required></label>
+        <label>Closing <span>customer baru</span><input type="number" name="closing" min="0" step="1" value="${v('closing','')}" placeholder="cth. 12" required></label>
+        <label>Botol <span>unit ke customer baru</span><input type="number" name="botol" min="0" step="1" value="${v('botol','')}" placeholder="cth. 24" required></label>
+        <label>Omset <span>Rp, dari closing hari ini</span><input type="number" name="omset" min="0" step="1" value="${v('omset','')}" placeholder="cth. 23976000" required></label>
       </div>
       <div class="baris">
         <label>Catatan <span>opsional</span>
-          <textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau catatan lain"></textarea></label>
+          <textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau catatan lain">${v('catatan','')}</textarea></label>
       </div>
       ${laporanPesan ? `<div class="stok-pesan ${laporanPesan.jenis}">${esc(laporanPesan.teks)}</div>` : ''}
-      <button type="submit">Simpan laporan hari ini</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="submit" style="flex:1">${editingC ? 'Simpan perubahan' : 'Simpan laporan hari ini'}</button>
+        ${editingC ? `<button type="button" data-batal-edit-laporan style="flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--ink-2)">Batal</button>` : ''}
+      </div>
       <p class="note" style="margin:9px 0 0">Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis
         dari 5 angka di atas — tidak perlu dihitung manual.</p>
     </form>`;
@@ -3870,7 +3886,8 @@
             <td class="num">${rs.toFixed(2)}x</td>
             <td style="max-width:200px;white-space:normal">${esc(c.catatan || '')}</td>
             <td>${esc(c.oleh)}</td>
-            <td>${bolehHapus(c) ? `<button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
+            <td style="white-space:nowrap">${bolehHapus(c) ? `<button class="stok-edit" data-edit-laporan="${esc(c.id)}" title="Sunting catatan">&#9998;</button>
+              <button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
           </tr>`;
         }).join('')}</tbody>
       </table></div></div>
@@ -4961,10 +4978,23 @@
       await muatStok();
     }
     if (jenis === 'laporan') {
+      const menyunting = !!data.id;
+      const labelSemula = tombol ? tombol.textContent : '';
       if (tombol) { tombol.disabled = true; tombol.textContent = 'Menyimpan…'; }
-      const hasil = await kirimLaporan('tambah', data);
-      if (hasil) { laporanPesan = { jenis: 'ok', teks: 'Laporan tersimpan.' }; laporanData.unshift(hasil); f.reset(); }
-      if (tombol) { tombol.disabled = false; tombol.textContent = 'Simpan laporan hari ini'; }
+      const hasil = await kirimLaporan(menyunting ? 'ubah' : 'tambah', data);
+      if (hasil) {
+        if (menyunting) {
+          const idx = laporanData.findIndex(x => x.id === hasil.id);
+          if (idx !== -1) laporanData[idx] = hasil; else laporanData.unshift(hasil);
+          laporanEdit = null;
+          laporanPesan = { jenis: 'ok', teks: 'Laporan diperbarui.' };
+        } else {
+          laporanData.unshift(hasil);
+          f.reset();
+          laporanPesan = { jenis: 'ok', teks: 'Laporan tersimpan.' };
+        }
+      }
+      if (tombol) { tombol.disabled = false; tombol.textContent = labelSemula; }
       render();
     }
   });
@@ -5107,12 +5137,26 @@
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const lf = e.target.closest('button[data-laporan-filter]');
     if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
+    const el = e.target.closest('button[data-edit-laporan]');
+    if (el) {
+      laporanEdit = el.dataset.editLaporan;
+      laporanPesan = null;
+      render();
+      const f = document.querySelector('form[data-form="laporan"]');
+      if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const bel = e.target.closest('button[data-batal-edit-laporan]');
+    if (bel) { laporanEdit = null; laporanPesan = null; render(); return; }
     const hl = e.target.closest('button[data-hapus-laporan]');
     if (hl) {
       const id = hl.dataset.hapusLaporan;
       hl.disabled = true;
       kirimLaporan('hapus', { id }).then(hasil => {
-        if (hasil) laporanData = laporanData.filter(x => x.id !== id);
+        if (hasil) {
+          laporanData = laporanData.filter(x => x.id !== id);
+          if (laporanEdit === id) laporanEdit = null;
+        }
         render();
       });
       return;
