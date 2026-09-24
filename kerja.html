@@ -3779,21 +3779,32 @@
       .map(nama => `<option value="${esc(nama)}"></option>`).join('');
 
     const form = `<form class="stok-kotak" data-form="laporan">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      <p class="k">LAPORAN IKLAN HARI INI</p>
+      <div class="baris">
         <label>Tanggal<input type="date" name="tgl" value="${hariIni()}" max="${hariIni()}" required></label>
         <label>Platform<select name="platform" data-laporan-platform required>${opsiPlatform}</select></label>
         <label>Nama akun<input type="text" name="akun" list="laporan-akun-list" autocomplete="off"
           placeholder="cth. Meliglow Ads 01" required maxlength="60"></label>
         <datalist id="laporan-akun-list">${opsiAkunAwal}</datalist>
-        <label>Budget iklan<input type="number" name="aktual" min="0" step="1" placeholder="0" required></label>
-        <label>Jumlah lead<input type="number" name="lead" min="0" step="1" placeholder="0" required></label>
-        <label>Closing (customer baru)<input type="number" name="closing" min="0" step="1" placeholder="0" required></label>
-        <label>Botol (unit customer baru)<input type="number" name="botol" min="0" step="1" placeholder="0" required></label>
-        <label>Omset<input type="number" name="omset" min="0" step="1" placeholder="0" required></label>
       </div>
-      <label>Catatan<textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau catatan lain (opsional)"></textarea></label>
+      <p class="k" style="margin-top:14px">ANGKA HARI INI</p>
+      <div class="baris">
+        <label>Budget iklan <span>Rp</span><input type="number" name="aktual" min="0" step="1" placeholder="cth. 500000" required></label>
+        <label>Jumlah lead <span>orang chat/DM</span><input type="number" name="lead" min="0" step="1" placeholder="cth. 14" required></label>
+      </div>
+      <div class="baris">
+        <label>Closing <span>customer baru</span><input type="number" name="closing" min="0" step="1" placeholder="cth. 12" required></label>
+        <label>Botol <span>unit ke customer baru</span><input type="number" name="botol" min="0" step="1" placeholder="cth. 24" required></label>
+        <label>Omset <span>Rp, dari closing hari ini</span><input type="number" name="omset" min="0" step="1" placeholder="cth. 23976000" required></label>
+      </div>
+      <div class="baris">
+        <label>Catatan <span>opsional</span>
+          <textarea name="catatan" rows="2" maxlength="300" placeholder="Kendala, insight, atau catatan lain"></textarea></label>
+      </div>
       ${laporanPesan ? `<div class="stok-pesan ${laporanPesan.jenis}">${esc(laporanPesan.teks)}</div>` : ''}
-      <div class="stok-aksi"><button type="submit">Simpan laporan hari ini</button></div>
+      <button type="submit">Simpan laporan hari ini</button>
+      <p class="note" style="margin:9px 0 0">Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis
+        dari 5 angka di atas — tidak perlu dihitung manual.</p>
     </form>`;
 
     const chipFilter = `<div class="chips" style="margin:14px 0">
