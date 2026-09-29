@@ -210,6 +210,11 @@
     font-family:inherit; }
   .stok-edit:hover { border-color:var(--violet); color:var(--violet); background:var(--blue-soft); }
   .stok-edit:disabled { opacity:.4; cursor:default; }
+  .stok-wa { border:1px solid var(--line); background:var(--panel); color:var(--faint);
+    width:26px; height:26px; border-radius:8px; font-size:13px; line-height:1; cursor:pointer;
+    font-family:inherit; }
+  .stok-wa:hover { border-color:#25D366; color:#25D366; background:#e9fbf1; }
+  .stok-wa:disabled { opacity:.4; cursor:default; }
   /* pratinjau pesanan yang sedang dicek sebelum dicatat masuk */
   .stok-pratinjau { border:1px solid var(--violet); background:var(--violet-soft);
     border-radius:16px; padding:15px 16px 13px; margin-bottom:16px; }
@@ -3728,11 +3733,13 @@
     }
   }
 
-  // Spend REAL dari koneksi Google/Meta/TikTok Ads yang sudah tertarik untuk
-  // periode yang sedang dipilih di filter atas. null kalau platformnya belum
-  // tersambung, belum ada connector otomatis (mis. "lainnya"), atau tanggalnya
-  // di luar periode yang sedang dimuat.
+  // Spend REAL dari koneksi Meta Ads yang sudah tertarik untuk periode yang
+  // sedang dipilih di filter atas. Sementara cuma Meta (facebook) dulu yang
+  // dibandingkan — Google/TikTok Ads belum dipakai di laporan ini. null kalau
+  // platformnya bukan facebook, belum tersambung, atau tanggalnya di luar
+  // periode yang sedang dimuat.
   function spendReal(platform, tgl) {
+    if (platform !== 'facebook') return null;
     const info = D.iklan[platform];
     if (!info || info.status !== 'ok') return null;
     const baris = info.rows.filter(r => r.date === tgl);
@@ -3752,6 +3759,34 @@
     return Array.from(s).sort();
   }
 
+  // Teks laporan SATU baris (satu tanggal) untuk dikirim ke WhatsApp. Dicari
+  // langsung dari laporanData berdasarkan id, supaya selalu sinkron dengan
+  // data terbaru walau tabel sedang difilter ke rentang lain.
+  function teksLaporanWA(id) {
+    const c = (laporanData || []).find(x => x.id === id);
+    if (!c) return null;
+    const budget = Number(c.aktual) || 0, lead = Number(c.lead) || 0, kontak = Number(c.kontak) || 0,
+      closing = Number(c.closing) || 0, botol = Number(c.botol) || 0, omset = Number(c.omset) || 0;
+    const cr = lead > 0 ? closing / lead : 0;
+    const up = closing > 0 ? botol / closing : 0;
+    const bLead = lead > 0 ? (budget / lead) * 1.1 : 0;
+    const bCust = closing > 0 ? (budget / closing) * 1.1 : 0;
+    const rs = budget > 0 ? omset / budget : 0;
+    const platNama = (PLAT[c.platform] && PLAT[c.platform].nama) || c.platform;
+
+    return `*LAPORAN IKLAN* — ${sd(c.tgl)}\n`
+      + `Platform: ${platNama} (${c.akun})\n\n`
+      + `Budget: ${fC(budget)}\n`
+      + `Lead: ${fN(lead)} · Real kontak: ${fN(kontak)}\n`
+      + `Closing: ${fN(closing)} · Botol: ${fN(botol)}\n`
+      + `Omset: ${fC(omset)}\n\n`
+      + `Closing rate: ${(cr*100).toFixed(2)}% · Upselling: ${up.toFixed(2)}\n`
+      + `Biaya akuisisi lead/customer: ${fC(bLead)} / ${fC(bCust)}\n`
+      + `ROAS: ${rs.toFixed(2)}x`
+      + (c.catatan ? `\n\nCatatan: ${c.catatan}` : '')
+      + `\n\nOleh: ${c.oleh || '-'}`;
+  }
+
   function pgLaporan() {
     if (laporanData === null) {
       muatLaporan();
@@ -3769,10 +3804,11 @@
     const total = rows.reduce((a, c) => ({
       aktual: a.aktual + (Number(c.aktual) || 0),
       lead: a.lead + (Number(c.lead) || 0),
+      kontak: a.kontak + (Number(c.kontak) || 0),
       closing: a.closing + (Number(c.closing) || 0),
       botol: a.botol + (Number(c.botol) || 0),
       omset: a.omset + (Number(c.omset) || 0),
-    }), { aktual: 0, lead: 0, closing: 0, botol: 0, omset: 0 });
+    }), { aktual: 0, lead: 0, kontak: 0, closing: 0, botol: 0, omset: 0 });
 
     // Rumus sama seperti spreadsheet lama, dihitung dari total rentang yang
     // sedang difilter (bukan rata-rata per baris) supaya konsisten dengan cara
@@ -3808,7 +3844,8 @@
       <p class="k" style="margin-top:14px">ANGKA HARI INI</p>
       <div class="baris">
         <label>Budget iklan <span>Rp</span><input type="number" name="aktual" min="0" step="1" value="${v('aktual','')}" placeholder="cth. 500000" required></label>
-        <label>Jumlah lead <span>orang chat/DM</span><input type="number" name="lead" min="0" step="1" value="${v('lead','')}" placeholder="cth. 14" required></label>
+        <label>Jumlah lead <span>dari iklan</span><input type="number" name="lead" min="0" step="1" value="${v('lead','')}" placeholder="cth. 14" required></label>
+        <label>Real kontak masuk <span>chat/DM yang benar masuk</span><input type="number" name="kontak" min="0" step="1" value="${v('kontak','')}" placeholder="cth. 12" required></label>
       </div>
       <div class="baris">
         <label>Closing <span>customer baru</span><input type="number" name="closing" min="0" step="1" value="${v('closing','')}" placeholder="cth. 12" required></label>
@@ -3825,7 +3862,8 @@
         ${editingC ? `<button type="button" data-batal-edit-laporan style="flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--ink-2)">Batal</button>` : ''}
       </div>
       <p class="note" style="margin:9px 0 0">Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis
-        dari 5 angka di atas — tidak perlu dihitung manual.</p>
+        dari angka-angka di atas — tidak perlu dihitung manual. "Real kontak masuk" dipakai untuk mengecek
+        seberapa jauh jumlah lead dari iklan meleset dari chat/DM yang benar-benar masuk.</p>
     </form>`;
 
     const chipFilter = `<div class="chips" style="margin:14px 0">
@@ -3851,7 +3889,7 @@
       : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Tanggal</th><th>Platform</th><th>Akun</th>
           <th class="num">Budget (input)</th><th class="num">Budget (sistem)</th>
-          <th class="num">Lead</th><th class="num">Closing</th><th class="num">Botol</th>
+          <th class="num">Lead</th><th class="num">Real kontak</th><th class="num">Closing</th><th class="num">Botol</th>
           <th class="num">Omset</th><th class="num">Closing rate</th><th class="num">Upselling</th>
           <th class="num">Biaya/lead</th><th class="num">Biaya/customer</th><th class="num">ROAS</th>
           <th>Catatan</th><th>Oleh</th><th></th></tr></thead>
@@ -3860,13 +3898,14 @@
           const selisih = real !== null ? (Number(c.aktual) || 0) - real : null;
           const warnaSelisih = selisih === null ? 'var(--faint)'
             : Math.abs(selisih) < 1 ? 'var(--green-ink)' : 'var(--red-ink)';
-          const budget = Number(c.aktual) || 0, lead = Number(c.lead) || 0,
+          const budget = Number(c.aktual) || 0, lead = Number(c.lead) || 0, kontak = Number(c.kontak) || 0,
             closing = Number(c.closing) || 0, botol = Number(c.botol) || 0, omset = Number(c.omset) || 0;
           const cr = lead > 0 ? closing / lead : 0;
           const up = closing > 0 ? botol / closing : 0;
           const bLead = lead > 0 ? (budget / lead) * 1.1 : 0;
           const bCust = closing > 0 ? (budget / closing) * 1.1 : 0;
           const rs = budget > 0 ? omset / budget : 0;
+          const selisihKontak = lead - kontak;
           return `<tr>
             <td>${sd(c.tgl)}</td>
             <td>${esc((PLAT[c.platform] && PLAT[c.platform].nama) || c.platform)}</td>
@@ -3876,6 +3915,7 @@
               ? '<span style="color:var(--faint)">&mdash;</span>'
               : `${fC(real)}<br><span style="font-size:11px;color:${warnaSelisih}">selisih ${fC(Math.abs(selisih))} ${selisih>=0?'lebih':'kurang'}</span>`}</td>
             <td class="num">${fN(lead)}</td>
+            <td class="num">${fN(kontak)}${selisihKontak!==0?`<br><span style="font-size:11px;color:${selisihKontak>0?'var(--red-ink)':'var(--green-ink)'}">selisih ${fN(Math.abs(selisihKontak))} ${selisihKontak>0?'kurang':'lebih'}</span>`:''}</td>
             <td class="num">${fN(closing)}</td>
             <td class="num">${fN(botol)}</td>
             <td class="num">${fC(omset)}</td>
@@ -3886,13 +3926,16 @@
             <td class="num">${rs.toFixed(2)}x</td>
             <td style="max-width:200px;white-space:normal">${esc(c.catatan || '')}</td>
             <td>${esc(c.oleh)}</td>
-            <td style="white-space:nowrap">${bolehHapus(c) ? `<button class="stok-edit" data-edit-laporan="${esc(c.id)}" title="Sunting catatan">&#9998;</button>
+            <td style="white-space:nowrap">
+              <button class="stok-wa" data-kirim-wa-laporan="${esc(c.id)}" title="Kirim laporan tanggal ini ke WhatsApp">&#9742;</button>
+              ${bolehHapus(c) ? `<button class="stok-edit" data-edit-laporan="${esc(c.id)}" title="Sunting catatan">&#9998;</button>
               <button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
           </tr>`;
         }).join('')}</tbody>
       </table></div></div>
-      <p class="note" style="margin-top:8px">Kolom "Budget (sistem)" hanya terisi untuk platform yang sudah tersambung
-        (Google/Meta/TikTok Ads) dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas halaman.
+      <p class="note" style="margin-top:8px">Kolom "Budget (sistem)" untuk sementara hanya dibandingkan untuk platform
+        Meta Ads yang sudah tersambung, dan tanggalnya termasuk dalam periode yang sedang dipilih di filter paling atas
+        halaman. Google Ads dan TikTok Ads belum dibandingkan di sini.
         Closing rate, upselling, biaya akuisisi, dan ROAS dihitung otomatis dari Budget/Lead/Closing/Botol/Omset yang diinput.</p>`);
 
     return form + chipFilter + kartu + tabel;
@@ -5148,6 +5191,12 @@
     }
     const bel = e.target.closest('button[data-batal-edit-laporan]');
     if (bel) { laporanEdit = null; laporanPesan = null; render(); return; }
+    const wa = e.target.closest('button[data-kirim-wa-laporan]');
+    if (wa) {
+      const teks = teksLaporanWA(wa.dataset.kirimWaLaporan);
+      if (teks) window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
+      return;
+    }
     const hl = e.target.closest('button[data-hapus-laporan]');
     if (hl) {
       const id = hl.dataset.hapusLaporan;
