@@ -210,10 +210,11 @@
     font-family:inherit; }
   .stok-edit:hover { border-color:var(--violet); color:var(--violet); background:var(--blue-soft); }
   .stok-edit:disabled { opacity:.4; cursor:default; }
-  .stok-wa { border:1px solid #25D366; background:#e9fbf1; color:#25D366;
-    width:26px; height:26px; border-radius:8px; font-size:13px; line-height:1; cursor:pointer;
-    font-family:inherit; }
-  .stok-wa:hover { border-color:#1da851; color:#fff; background:#25D366; }
+  .stok-wa { border:1px solid #25D366; background:#25D366; color:#fff;
+    width:26px; height:26px; border-radius:8px; line-height:1; cursor:pointer;
+    font-family:inherit; display:inline-flex; align-items:center; justify-content:center; }
+  .stok-wa svg { width:14px; height:14px; display:block; }
+  .stok-wa:hover { border-color:#1da851; background:#1da851; }
   .stok-wa:disabled { opacity:.4; cursor:default; }
   /* pratinjau pesanan yang sedang dicek sebelum dicatat masuk */
   .stok-pratinjau { border:1px solid var(--violet); background:var(--violet-soft);
@@ -3690,6 +3691,7 @@
   let laporanMemuat = false;
   let laporanPesan = null;     // { jenis:'ok'|'galat', teks }
   let laporanFilter = '30';    // 'hari' | '7' | '30' | 'semua'
+  let laporanPlatform = 'semua'; // 'semua' | 'google_ads' | 'facebook' | 'tiktok' | 'lainnya'
   let laporanEdit = null;      // id catatan yang sedang disunting, null = mode tambah baru
 
   async function tarikLaporan() {
@@ -3799,6 +3801,7 @@
     const batasTgl = iso(new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() - batasHari + 1));
     const rows = laporanData
       .filter(x => laporanFilter === 'semua' || x.tgl >= batasTgl)
+      .filter(x => laporanPlatform === 'semua' || x.platform === laporanPlatform)
       .sort((a, b) => b.tgl.localeCompare(a.tgl) || String(b.dibuat).localeCompare(String(a.dibuat)));
 
     const total = rows.reduce((a, c) => ({
@@ -3866,9 +3869,13 @@
         seberapa jauh jumlah lead dari iklan meleset dari chat/DM yang benar-benar masuk.</p>
     </form>`;
 
-    const chipFilter = `<div class="chips" style="margin:14px 0">
+    const chipFilter = `<div class="chips" style="margin:14px 0 8px">
       ${[['hari','Hari ini'],['7','7 hari'],['30','30 hari'],['semua','Semua']].map(([v,l]) =>
         `<button class="${laporanFilter===v?'on':''}" data-laporan-filter="${v}">${esc(l)}</button>`).join('')}
+    </div>
+    <div class="chips" style="margin:0 0 14px">
+      ${[['semua','Semua platform'], ...IKLAN.map(id => [id, PLAT[id].nama]), ['lainnya','Lainnya']].map(([v,l]) =>
+        `<button class="${laporanPlatform===v?'on':''}" data-laporan-platform-filter="${v}">${esc(l)}</button>`).join('')}
     </div>`;
 
     const kartu = `<div class="kpis">
@@ -3927,7 +3934,7 @@
             <td style="max-width:200px;white-space:normal">${esc(c.catatan || '')}</td>
             <td>${esc(c.oleh)}</td>
             <td style="white-space:nowrap">
-              <button class="stok-wa" data-kirim-wa-laporan="${esc(c.id)}" title="Kirim laporan tanggal ini ke WhatsApp">&#9742;</button>
+              <button class="stok-wa" data-kirim-wa-laporan="${esc(c.id)}" title="Kirim laporan tanggal ini ke WhatsApp"><svg viewBox="0 0 32 32" fill="currentColor"><path d="M16.004 3C9.377 3 4 8.373 4 14.997c0 2.276.635 4.482 1.84 6.41L4 29l7.77-1.804a12.94 12.94 0 0 0 4.234.71h.004c6.627 0 12.004-5.373 12.004-11.997C28.012 8.373 22.635 3 16.004 3Zm0 21.5h-.003a10.46 10.46 0 0 1-5.335-1.462l-.383-.228-4.61 1.07 1.096-4.49-.25-.397a10.44 10.44 0 0 1-1.61-5.586c0-5.79 4.71-10.5 10.5-10.5 5.79 0 10.497 4.71 10.497 10.5.003 5.792-4.708 10.093-10.502 10.093Zm5.757-7.869c-.316-.158-1.87-.923-2.16-1.029-.29-.106-.5-.158-.712.158-.211.317-.816 1.03-1.001 1.242-.184.211-.369.238-.685.08-.316-.158-1.333-.491-2.54-1.567-.939-.837-1.573-1.87-1.757-2.187-.184-.317-.02-.488.138-.646.142-.14.316-.369.474-.554.158-.184.211-.317.316-.528.106-.211.053-.396-.026-.554-.08-.158-.712-1.716-.976-2.35-.257-.617-.518-.534-.712-.544l-.606-.011c-.211 0-.554.079-.844.396-.29.317-1.107 1.082-1.107 2.638 0 1.556 1.133 3.06 1.29 3.271.158.211 2.229 3.404 5.4 4.775.755.326 1.344.52 1.804.665.758.241 1.448.207 1.994.126.608-.091 1.87-.765 2.134-1.503.264-.739.264-1.372.185-1.503-.079-.132-.29-.211-.606-.369Z"/></svg></button>
               ${bolehHapus(c) ? `<button class="stok-edit" data-edit-laporan="${esc(c.id)}" title="Sunting catatan">&#9998;</button>
               <button class="stok-hapus" data-hapus-laporan="${esc(c.id)}" title="Hapus catatan">&times;</button>` : ''}</td>
           </tr>`;
@@ -5180,6 +5187,8 @@
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const lf = e.target.closest('button[data-laporan-filter]');
     if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
+    const lpf = e.target.closest('button[data-laporan-platform-filter]');
+    if (lpf) { laporanPlatform = lpf.dataset.laporanPlatformFilter; render(); return; }
     const el = e.target.closest('button[data-edit-laporan]');
     if (el) {
       laporanEdit = el.dataset.editLaporan;
