@@ -676,6 +676,14 @@
     .wrap { height:240px; }
     .scrim.show { display:block; position:fixed; inset:0; background:rgba(17,24,39,.32); z-index:55; }
   }
+
+  @media print {
+    aside#side, .topbar .burger, .topbar .chips, #loading { display:none !important; }
+    main { margin-left:0 !important; }
+    .body { padding:0 !important; }
+    [data-pajak-refresh], [data-pajak-csv], [data-pajak-cetak] { display:none !important; }
+    .panel, .kpi, .li { box-shadow:none !important; break-inside:avoid; }
+  }
 </style>
 </head>
 <body>
@@ -3799,8 +3807,28 @@
   // di Overview (Globemerce/Everpro), bukan dari input manual — lihat SALES.
   let pajakData = null;      // { tahun, bulan:[{bulan,label,dariTgl,sampaiTgl,omzet}] }, null = belum ditarik
   let pajakMemuat = false;
+  let pajakBarisTerakhir = []; // hasil hitung bulanan terakhir, dipakai tombol unduh CSV
   const AMBANG_BEBAS_PAJAK = 500000000; // Rp500 juta/tahun (PP 20/2026)
   const TARIF_PAJAK_FINAL = 0.005;      // 0,5%
+
+  // Unduh rekap omzet + pajak bulanan sebagai CSV, untuk dibawa ke KPP/konsultan pajak.
+  function unduhPajakCsv() {
+    if (!pajakData || !pajakBarisTerakhir.length) return;
+    const header = ['Bulan','Omzet','Omzet kumulatif','Dasar kena pajak (kumulatif)','Pajak bulan ini','Pajak kumulatif'];
+    const baris = pajakBarisTerakhir.map(b => [
+      `${b.label} ${pajakData.tahun}`,
+      Math.round(b.omzet), Math.round(b.kumulatif), Math.round(b.dasar),
+      Math.round(b.pajakBulan), Math.round(b.pajakKumulatif),
+    ]);
+    const esc2 = v => { const s = String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+    const csv = '﻿' + [header, ...baris].map(r => r.map(esc2).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `pajak-${pajakData.tahun}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   async function tarikOmzetBulan(dariTgl, sampaiTgl) {
     let total = 0;
@@ -3848,6 +3876,7 @@
       pajakKumulatif = pajakKumulatifBaru;
       baris.push({ ...b, kumulatif, dasar, pajakBulan, pajakKumulatif });
     }
+    pajakBarisTerakhir = baris;
 
     const n = baris.length;
     const totalOmzet = kumulatif;
@@ -3869,8 +3898,10 @@
         bebas pajak, sisanya kena tarif final 0,5%, dihitung kumulatif sepanjang tahun. Dihitung otomatis dari omzet
         bulanan Globemerce/Everpro yang sudah tersambung — bukan nasihat pajak resmi, tetap disarankan dicek ulang
         dengan konsultan pajak saat lapor SPT.</p>
-      <div style="margin:-2px 0 14px">
+      <div style="margin:-2px 0 14px;display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" data-pajak-refresh ${pajakMemuat?'disabled':''}>${pajakMemuat?'Menarik ulang…':'Tarik ulang data'}</button>
+        <button type="button" data-pajak-csv style="background:var(--panel);border:1px solid var(--line);color:var(--ink-2)">${I.unduh} Unduh CSV</button>
+        <button type="button" data-pajak-cetak style="background:var(--panel);border:1px solid var(--line);color:var(--ink-2)">${I.unduh} Cetak / Simpan PDF</button>
       </div>`;
 
     const kartu = `<div class="kpis">
@@ -5314,6 +5345,10 @@
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const pr = e.target.closest('button[data-pajak-refresh]');
     if (pr) { pajakData = null; muatPajak(); render(); return; }
+    const pc = e.target.closest('button[data-pajak-csv]');
+    if (pc) { unduhPajakCsv(); return; }
+    const pp = e.target.closest('button[data-pajak-cetak]');
+    if (pp) { window.print(); return; }
     const lf = e.target.closest('button[data-laporan-filter]');
     if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
     const lpf = e.target.closest('button[data-laporan-platform-filter]');
