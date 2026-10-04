@@ -3814,6 +3814,7 @@
   let pajakNpwp = '';        // opsional, diisi manual, cuma dipakai di kop CSV/PDF
   let pajakNamaWp = 'Renaldo Ilham Zamzam'; // nama wajib pajak sesuai KTP/NPWP, bisa beda dari nama akun login
   let pajakBarisTerakhir = []; // hasil hitung bulanan terakhir, dipakai tombol unduh CSV
+  let pajakKoreksiHarianTerakhir = {}; // tgl -> nilai koreksi retur, dipakai tombol unduh CSV harian
   const AMBANG_BEBAS_PAJAK = 500000000; // Rp500 juta/tahun (PP 20/2026)
   const TARIF_PAJAK_FINAL = 0.005;      // 0,5%
 
@@ -3831,12 +3832,13 @@
   // Unduh rekap PAJAK BULANAN (sudah dipecah per sumber) sebagai CSV.
   function unduhPajakCsvBulanan() {
     if (!pajakData || !pajakBarisTerakhir.length) return;
-    const header = ['Bulan', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total',
+    const header = ['Bulan', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet kotor', 'Koreksi retur', 'Omzet bersih',
       'Omzet kumulatif', 'Dasar kena pajak (kumulatif)', 'Pajak bulan ini', 'Pajak kumulatif'];
     const baris = pajakBarisTerakhir.map(b => [
       `${b.label} ${pajakData.tahun}`,
       ...SALES.map(s => Math.round((b.perSumber && b.perSumber[s.id]) || 0)),
-      Math.round(b.omzet), Math.round(b.kumulatif), Math.round(b.dasar),
+      Math.round(b.omzet), Math.round(b.koreksi || 0), Math.round(b.omzetBersih),
+      Math.round(b.kumulatif), Math.round(b.dasar),
       Math.round(b.pajakBulan), Math.round(b.pajakKumulatif),
     ]);
     unduhCsv(`pajak-bulanan-${pajakData.tahun}.csv`, [header, ...baris]);
@@ -3846,12 +3848,15 @@
   // petugas pajak minta bukti transaksi sehari-hari, bukan cuma total bulanan.
   function unduhPajakCsvHarian() {
     if (!pajakData || !pajakData.hari.length) return;
-    const header = ['Tanggal', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total'];
-    const baris = pajakData.hari.map(h => [
-      h.label,
-      ...SALES.map(s => Math.round((h.perSumber && h.perSumber[s.id]) || 0)),
-      Math.round(h.total),
-    ]);
+    const header = ['Tanggal', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total', 'Koreksi retur', 'Omzet bersih'];
+    const baris = pajakData.hari.map(h => {
+      const kr = pajakKoreksiHarianTerakhir[h.tgl] || 0;
+      return [
+        h.label,
+        ...SALES.map(s => Math.round((h.perSumber && h.perSumber[s.id]) || 0)),
+        Math.round(h.total), Math.round(kr), Math.round(Math.max(0, h.total - kr)),
+      ];
+    });
     unduhCsv(`pajak-harian-${pajakData.tahun}.csv`, [header, ...baris]);
   }
 
@@ -3934,15 +3939,49 @@
         <b>Menarik data omzet bulanan&hellip;</b></div></div>`;
     }
 
+    // Koreksi retur: paket yang balik/gagal kirim tapi omzetnya masih kehitung
+    // di Globemerce, dicocokkan dengan logika yang sama seperti halaman Data
+    // Return (kunciKirim/kunciPesanan/petaPembeli/cari) supaya omzet pajak
+    // tidak termasuk pesanan yang sebenarnya tidak jadi terjual.
+    const returTahun = returData.get(pajakData.tahun);
+    let returMatch = [];
+    let returMemuat = false, returGagal = false;
+    if (!returTahun || returTahun.memuat) {
+      muatRetur(pajakData.tahun);
+      returMemuat = true;
+    } else if (returTahun.gagal) {
+      returGagal = true;
+    } else {
+      const R = (returTahun.rows || []).filter(x => String(x.kelompok || '') === 'retur');
+      const pb = petaPembeli(returTahun.pesanan || []);
+      for (const x of R) {
+        const o = cari(pb, kunciKirim(x));
+        if (o && (Number(o.omzet) || 0) > 0) returMatch.push(o);
+      }
+    }
+    const koreksiPerBulan = {}, koreksiPerHari = {};
+    for (const o of returMatch) {
+      const tgl = String(o.tanggal || '');
+      const nilai = Number(o.omzet) || 0;
+      if (!nilai) continue;
+      if (tgl.length >= 7) koreksiPerBulan[tgl.slice(0, 7)] = (koreksiPerBulan[tgl.slice(0, 7)] || 0) + nilai;
+      if (tgl && tgl !== '0000-00-00') koreksiPerHari[tgl] = (koreksiPerHari[tgl] || 0) + nilai;
+    }
+    const totalKoreksiRetur = returMatch.reduce((a, o) => a + (Number(o.omzet) || 0), 0);
+    pajakKoreksiHarianTerakhir = koreksiPerHari;
+
     const baris = [];
     let kumulatif = 0, pajakKumulatif = 0;
     for (const b of pajakData.bulan) {
-      kumulatif += b.omzet;
+      const bulanKey = `${pajakData.tahun}-${String(b.bulan).padStart(2,'0')}`;
+      const koreksi = koreksiPerBulan[bulanKey] || 0;
+      const omzetBersih = Math.max(0, b.omzet - koreksi);
+      kumulatif += omzetBersih;
       const dasar = Math.max(0, kumulatif - AMBANG_BEBAS_PAJAK);
       const pajakKumulatifBaru = dasar * TARIF_PAJAK_FINAL;
       const pajakBulan = pajakKumulatifBaru - pajakKumulatif;
       pajakKumulatif = pajakKumulatifBaru;
-      baris.push({ ...b, kumulatif, dasar, pajakBulan, pajakKumulatif });
+      baris.push({ ...b, koreksi, omzetBersih, kumulatif, dasar, pajakBulan, pajakKumulatif });
     }
     pajakBarisTerakhir = baris;
 
@@ -3952,7 +3991,7 @@
     const rataRata = n ? totalOmzet / n : 0;
     const bulanSisa = 12 - n;
     const recentN = Math.min(3, n);
-    const recentAvg = recentN ? baris.slice(-recentN).reduce((a,r)=>a+r.omzet,0) / recentN : 0;
+    const recentAvg = recentN ? baris.slice(-recentN).reduce((a,r)=>a+r.omzetBersih,0) / recentN : 0;
     const hitungPajakSetahun = omzetSetahun => Math.max(0, omzetSetahun - AMBANG_BEBAS_PAJAK) * TARIF_PAJAK_FINAL;
     const proyeksiOmzetDatar = totalOmzet + rataRata * bulanSisa;
     const proyeksiOmzetTren = totalOmzet + recentAvg * bulanSisa;
@@ -3972,9 +4011,18 @@
         </div>
         <p class="note" style="margin:10px 0 0">Dasar hukum: PPh Final UMKM 0,5% (PP 20/2026, kelanjutan PP 23/2018) untuk
           Wajib Pajak Orang Pribadi dengan peredaran bruto &le; Rp4,8 miliar/tahun. Metode: omzet kumulatif tahun
-          berjalan dikurangi jatah bebas pajak Rp500.000.000/tahun, sisanya dikalikan tarif final 0,5%, dihitung
-          kumulatif bulan berjalan (bukan per bulan terpisah).</p>
+          berjalan &mdash; setelah dikurangi omzet pesanan yang retur/gagal kirim &mdash; dikurangi jatah bebas pajak
+          Rp500.000.000/tahun, sisanya dikalikan tarif final 0,5%, dihitung kumulatif bulan berjalan (bukan per bulan
+          terpisah).</p>
       </div>
+    </div>`;
+
+    const panelKoreksi = `<div class="panel tight" style="margin-bottom:14px">
+      ${li({c:'var(--pink)',s:'var(--pink-soft)',ini:'R'},'Koreksi retur/gagal kirim',
+        returMemuat ? 'Mencocokkan dengan data Data Return&hellip; (bisa beda hasil setelah selesai dimuat)'
+          : returGagal ? 'Gagal menarik data retur tahun ini &mdash; omzet di bawah BELUM dikurangi koreksi ini.'
+          : `${fN(returMatch.length)} pesanan cocok dengan paket retur/gagal kirim Everpro, dicocokkan lewat resi/nomor order`,
+        returMemuat || returGagal ? '—' : '&minus;' + fC(totalKoreksiRetur), 'dikurangkan dari omzet', 0)}
     </div>`;
 
     const header = `<div class="sec"><h4>Estimasi Pajak</h4>
@@ -3991,7 +4039,7 @@
       </div>`;
 
     const kartu = `<div class="kpis">
-      ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet tahun berjalan',fC(totalOmzet),'')}
+      ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet bersih tahun berjalan',fC(totalOmzet),'')}
       ${kpi(I.money,'var(--red)','var(--red-soft)','Pajak terutang sejauh ini',fC(totalPajak),'')}
       ${kpi(I.target,'var(--blue)','var(--blue-soft)','Sisa jatah bebas pajak',sisaBebas>0?fC(sisaBebas):'Sudah terlewati','')}
       ${kpi(I.up,'var(--violet)','var(--violet-soft)','Proyeksi omzet setahun',fC(proyeksiOmzetTren),'')}
@@ -4013,13 +4061,16 @@
       ? `<div class="panel"><div class="empty">Belum ada data omzet untuk tahun ini.</div></div>`
       : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Bulan</th>${SALES.map(s=>`<th class="num">Omzet ${esc(s.nama)}</th>`).join('')}
-          <th class="num">Omzet total</th><th class="num">Kumulatif</th>
+          <th class="num">Omzet kotor</th><th class="num">Koreksi retur</th><th class="num">Omzet bersih</th>
+          <th class="num">Kumulatif</th>
           <th class="num">Dasar kena pajak (kumulatif)</th><th class="num">Pajak bulan ini</th>
           <th class="num">Pajak kumulatif</th></tr></thead>
         <tbody>${baris.map(b => `<tr>
           <td>${esc(b.label)} ${pajakData.tahun}</td>
           ${SALES.map(s=>`<td class="num">${fC((b.perSumber && b.perSumber[s.id]) || 0)}</td>`).join('')}
           <td class="num">${fC(b.omzet)}</td>
+          <td class="num">${b.koreksi ? '&minus;'+fC(b.koreksi) : '—'}</td>
+          <td class="num">${fC(b.omzetBersih)}</td>
           <td class="num">${fC(b.kumulatif)}</td>
           <td class="num">${fC(b.dasar)}</td>
           <td class="num">${fC(b.pajakBulan)}</td>
@@ -4038,20 +4089,25 @@
       : `<div class="panel tight"><div class="scroll-x pajak-harian-scroll" style="max-height:420px;overflow:auto">
         <table class="dt pesanan"><thead><tr><th>Tanggal</th>
           ${SALES.map(s=>`<th class="num">Omzet ${esc(s.nama)}</th>`).join('')}
-          <th class="num">Omzet total</th></tr></thead>
-        <tbody>${pajakData.hari.map(h => `<tr>
+          <th class="num">Omzet total</th><th class="num">Koreksi retur</th><th class="num">Omzet bersih</th></tr></thead>
+        <tbody>${pajakData.hari.map(h => { const kr = koreksiPerHari[h.tgl] || 0; return `<tr>
           <td>${esc(h.label)}</td>
           ${SALES.map(s=>`<td class="num">${fC((h.perSumber && h.perSumber[s.id]) || 0)}</td>`).join('')}
           <td class="num">${fC(h.total)}</td>
-        </tr>`).join('')}</tbody></table>
+          <td class="num">${kr ? '&minus;'+fC(kr) : '—'}</td>
+          <td class="num">${fC(Math.max(0, h.total - kr))}</td>
+        </tr>`; }).join('')}</tbody></table>
       </div></div>`);
 
     const catatan = `<p class="note" style="margin-top:8px">Dasar kena pajak dihitung kumulatif per tahun (omzet
-      kumulatif dikurangi Rp500 juta jatah bebas pajak), bukan per bulan terpisah — sesuai cara kerja PPh Final UMKM
-      0,5% untuk orang pribadi. Omzet bulan yang akun iklannya belum tersambung penuh (akun baru, dsb) bisa membuat
-      angka di sini lebih rendah dari kondisi sebenarnya.</p>`;
+      bersih kumulatif dikurangi Rp500 juta jatah bebas pajak), bukan per bulan terpisah — sesuai cara kerja PPh
+      Final UMKM 0,5% untuk orang pribadi. "Omzet bersih" sudah dikurangi pesanan yang retur/gagal kirim (lihat
+      "Koreksi retur" di atas) tapi belum tentu menangkap semua kasus — paket retur yang belum tercocokkan ke
+      pesanan Globemerce (misalnya belum tersinkron ke Data Return) tetap terhitung sebagai omzet. Omzet bulan yang
+      akun iklannya belum tersambung penuh (akun baru, dsb) juga bisa membuat angka di sini lebih rendah dari
+      kondisi sebenarnya.</p>`;
 
-    return identitas + header + kartu + proyeksiPanel + tabel + tabelHarian + catatan;
+    return identitas + header + panelKoreksi + kartu + proyeksiPanel + tabel + tabelHarian + catatan;
   }
 
   function pgLaporan() {
