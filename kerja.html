@@ -681,8 +681,10 @@
     aside#side, .topbar .burger, .topbar .chips, #loading { display:none !important; }
     main { margin-left:0 !important; }
     .body { padding:0 !important; }
-    [data-pajak-refresh], [data-pajak-csv], [data-pajak-cetak] { display:none !important; }
+    [data-pajak-refresh], [data-pajak-csv-bulanan], [data-pajak-csv-harian], [data-pajak-cetak] { display:none !important; }
     .panel, .kpi, .li { box-shadow:none !important; break-inside:avoid; }
+    .pajak-harian-scroll { max-height:none !important; overflow:visible !important; }
+    #pajak-npwp { border:none !important; background:transparent !important; padding:0 !important; }
   }
 </style>
 </head>
@@ -3805,40 +3807,74 @@
   // dihitung kumulatif sepanjang tahun berjalan (bukan per bulan terpisah).
   // Omzet ditarik otomatis per bulan dari sumber penjualan yang sama dipakai
   // di Overview (Globemerce/Everpro), bukan dari input manual — lihat SALES.
-  let pajakData = null;      // { tahun, bulan:[{bulan,label,dariTgl,sampaiTgl,omzet}] }, null = belum ditarik
+  // Dipecah juga per sumber dan per hari, supaya kalau petugas pajak minta
+  // rincian/bukti, admin tinggal unduh CSV harian — bukan cuma total bulanan.
+  let pajakData = null;      // { tahun, bulan:[...], hari:[{tgl,perSumber,total}] }, null = belum ditarik
   let pajakMemuat = false;
+  let pajakNpwp = '';        // opsional, diisi manual, cuma dipakai di kop CSV/PDF
   let pajakBarisTerakhir = []; // hasil hitung bulanan terakhir, dipakai tombol unduh CSV
   const AMBANG_BEBAS_PAJAK = 500000000; // Rp500 juta/tahun (PP 20/2026)
   const TARIF_PAJAK_FINAL = 0.005;      // 0,5%
 
-  // Unduh rekap omzet + pajak bulanan sebagai CSV, untuk dibawa ke KPP/konsultan pajak.
-  function unduhPajakCsv() {
-    if (!pajakData || !pajakBarisTerakhir.length) return;
-    const header = ['Bulan','Omzet','Omzet kumulatif','Dasar kena pajak (kumulatif)','Pajak bulan ini','Pajak kumulatif'];
-    const baris = pajakBarisTerakhir.map(b => [
-      `${b.label} ${pajakData.tahun}`,
-      Math.round(b.omzet), Math.round(b.kumulatif), Math.round(b.dasar),
-      Math.round(b.pajakBulan), Math.round(b.pajakKumulatif),
-    ]);
-    const esc2 = v => { const s = String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-    const csv = '﻿' + [header, ...baris].map(r => r.map(esc2).join(',')).join('\r\n');
+  function csvEsc(v) { const s = String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+  function unduhCsv(nama, baris) {
+    const csv = '﻿' + baris.map(r => r.map(csvEsc).join(',')).join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `pajak-${pajakData.tahun}.csv`;
+    a.href = url; a.download = nama;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  // Unduh rekap PAJAK BULANAN (sudah dipecah per sumber) sebagai CSV.
+  function unduhPajakCsvBulanan() {
+    if (!pajakData || !pajakBarisTerakhir.length) return;
+    const header = ['Bulan', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total',
+      'Omzet kumulatif', 'Dasar kena pajak (kumulatif)', 'Pajak bulan ini', 'Pajak kumulatif'];
+    const baris = pajakBarisTerakhir.map(b => [
+      `${b.label} ${pajakData.tahun}`,
+      ...SALES.map(s => Math.round((b.perSumber && b.perSumber[s.id]) || 0)),
+      Math.round(b.omzet), Math.round(b.kumulatif), Math.round(b.dasar),
+      Math.round(b.pajakBulan), Math.round(b.pajakKumulatif),
+    ]);
+    unduhCsv(`pajak-bulanan-${pajakData.tahun}.csv`, [header, ...baris]);
+  }
+
+  // Unduh rekap OMZET HARIAN per sumber sebagai CSV — ini yang dipakai kalau
+  // petugas pajak minta bukti transaksi sehari-hari, bukan cuma total bulanan.
+  function unduhPajakCsvHarian() {
+    if (!pajakData || !pajakData.hari.length) return;
+    const header = ['Tanggal', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total'];
+    const baris = pajakData.hari.map(h => [
+      h.tgl,
+      ...SALES.map(s => Math.round((h.perSumber && h.perSumber[s.id]) || 0)),
+      Math.round(h.total),
+    ]);
+    unduhCsv(`pajak-harian-${pajakData.tahun}.csv`, [header, ...baris]);
+  }
+
+  // Menarik omzet satu bulan, dipecah per sumber penjualan dan per tanggal
+  // (bukan cuma dijumlah jadi satu angka), supaya bisa ditampilkan rinci.
   async function tarikOmzetBulan(dariTgl, sampaiTgl) {
-    let total = 0;
+    const perSumber = {};
+    const perHari = {}; // tgl -> { [sumberId]: number }
     for (const s of SALES) {
+      perSumber[s.id] = 0;
       try {
         const rows = await tarikSales(s.id, dariTgl, sampaiTgl);
-        total += rows.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
+        for (const r of rows) {
+          const rev = Number(r.revenue) || 0;
+          perSumber[s.id] += rev;
+          const tgl = r.date;
+          if (!tgl) continue;
+          if (!perHari[tgl]) perHari[tgl] = {};
+          perHari[tgl][s.id] = (perHari[tgl][s.id] || 0) + rev;
+        }
       } catch (e) { /* sumber ini belum tersambung atau gagal ditarik, lewati */ }
     }
-    return total;
+    const total = SALES.reduce((a, s) => a + (perSumber[s.id] || 0), 0);
+    return { perSumber, perHari, total };
   }
 
   function muatPajak() {
@@ -3854,8 +3890,25 @@
       bulanList.push({ bulan: b + 1, label: BLNP[b], dariTgl: iso(dari), sampaiTgl: iso(sampai) });
     }
     Promise.all(bulanList.map(x => tarikOmzetBulan(x.dariTgl, x.sampaiTgl)))
-      .then(hasil => { pajakData = { tahun, bulan: bulanList.map((x, i) => ({ ...x, omzet: hasil[i] || 0 })) }; })
-      .catch(() => { pajakData = { tahun, bulan: [] }; })
+      .then(hasil => {
+        const bulan = bulanList.map((x, i) => ({
+          ...x, omzet: hasil[i].total || 0, perSumber: hasil[i].perSumber,
+        }));
+        const hariMap = {};
+        hasil.forEach(h => {
+          for (const tgl of Object.keys(h.perHari)) {
+            if (!hariMap[tgl]) hariMap[tgl] = {};
+            for (const sid of Object.keys(h.perHari[tgl]))
+              hariMap[tgl][sid] = (hariMap[tgl][sid] || 0) + h.perHari[tgl][sid];
+          }
+        });
+        const hari = Object.keys(hariMap).sort().map(tgl => ({
+          tgl, perSumber: hariMap[tgl],
+          total: SALES.reduce((a, s) => a + (hariMap[tgl][s.id] || 0), 0),
+        }));
+        pajakData = { tahun, bulan, hari };
+      })
+      .catch(() => { pajakData = { tahun, bulan: [], hari: [] }; })
       .finally(() => { pajakMemuat = false; if (page === 'pajak') render(); });
   }
 
@@ -3892,6 +3945,23 @@
     const proyeksiPajakTren = hitungPajakSetahun(proyeksiOmzetTren);
     const sisaBebas = Math.max(0, AMBANG_BEBAS_PAJAK - totalOmzet);
 
+    const identitas = `<div class="panel tight pajak-identitas stok-kotak" style="margin-bottom:14px">
+      <div style="padding:14px 16px">
+        <p class="note" style="margin:0 0 8px">DOKUMEN PERHITUNGAN PAJAK &middot; dicetak ${sd(hariIni())} ${pajakData.tahun}</p>
+        <div class="baris">
+          <label>Nama wajib pajak<span>sesuai akun admin</span>
+            <input type="text" value="${esc(AKU.nama || '')}" disabled></label>
+          <label>NPWP <span>opsional, untuk kop dokumen</span>
+            <input type="text" id="pajak-npwp" value="${esc(pajakNpwp)}" placeholder="cth. 09.xxx.xxx.x-xxx.000"></label>
+          <label>Tahun pajak<span>&nbsp;</span><input type="text" value="${pajakData.tahun}" disabled></label>
+        </div>
+        <p class="note" style="margin:10px 0 0">Dasar hukum: PPh Final UMKM 0,5% (PP 20/2026, kelanjutan PP 23/2018) untuk
+          Wajib Pajak Orang Pribadi dengan peredaran bruto &le; Rp4,8 miliar/tahun. Metode: omzet kumulatif tahun
+          berjalan dikurangi jatah bebas pajak Rp500.000.000/tahun, sisanya dikalikan tarif final 0,5%, dihitung
+          kumulatif bulan berjalan (bukan per bulan terpisah).</p>
+      </div>
+    </div>`;
+
     const header = `<div class="sec"><h4>Estimasi Pajak</h4>
       <span class="note">${pajakData.tahun} &middot; PPh Final UMKM 0,5% &middot; ditarik otomatis dari omzet dashboard</span></div>
       <p class="lead">Estimasi untuk wajib pajak orang pribadi (PP 20/2026): omzet Rp500 juta pertama dalam setahun
@@ -3900,7 +3970,8 @@
         dengan konsultan pajak saat lapor SPT.</p>
       <div style="margin:-2px 0 14px;display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" data-pajak-refresh ${pajakMemuat?'disabled':''}>${pajakMemuat?'Menarik ulang…':'Tarik ulang data'}</button>
-        <button type="button" data-pajak-csv>Unduh CSV</button>
+        <button type="button" data-pajak-csv-bulanan>Unduh CSV bulanan</button>
+        <button type="button" data-pajak-csv-harian>Unduh CSV harian</button>
         <button type="button" data-pajak-cetak>Cetak / Simpan PDF</button>
       </div>`;
 
@@ -3921,16 +3992,18 @@
         fC(proyeksiPajakDatar),'pajak setahun',0)}
     </div>`;
 
-    const judulTabel = `<div class="sec"><h4>Rincian bulanan</h4><span class="note">${fN(n)} bulan tertarik</span></div>`;
+    const judulTabel = `<div class="sec"><h4>Rincian bulanan</h4><span class="note">${fN(n)} bulan tertarik &middot; dipecah per sumber</span></div>`;
 
     const tabel = judulTabel + (!n
       ? `<div class="panel"><div class="empty">Belum ada data omzet untuk tahun ini.</div></div>`
       : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
-        <thead><tr><th>Bulan</th><th class="num">Omzet</th><th class="num">Kumulatif</th>
+        <thead><tr><th>Bulan</th>${SALES.map(s=>`<th class="num">Omzet ${esc(s.nama)}</th>`).join('')}
+          <th class="num">Omzet total</th><th class="num">Kumulatif</th>
           <th class="num">Dasar kena pajak (kumulatif)</th><th class="num">Pajak bulan ini</th>
           <th class="num">Pajak kumulatif</th></tr></thead>
         <tbody>${baris.map(b => `<tr>
           <td>${esc(b.label)} ${pajakData.tahun}</td>
+          ${SALES.map(s=>`<td class="num">${fC((b.perSumber && b.perSumber[s.id]) || 0)}</td>`).join('')}
           <td class="num">${fC(b.omzet)}</td>
           <td class="num">${fC(b.kumulatif)}</td>
           <td class="num">${fC(b.dasar)}</td>
@@ -3939,12 +4012,28 @@
         </tr>`).join('')}</tbody>
       </table></div></div>`);
 
+    const judulHarian = `<div class="sec" style="margin-top:22px"><h4>Rincian harian</h4>
+      <span class="note">${fN(pajakData.hari.length)} hari ada transaksi &middot; untuk bukti ke petugas pajak kalau diminta</span></div>`;
+
+    const tabelHarian = judulHarian + (!pajakData.hari.length
+      ? `<div class="panel"><div class="empty">Belum ada data harian untuk tahun ini.</div></div>`
+      : `<div class="panel tight"><div class="scroll-x pajak-harian-scroll" style="max-height:420px;overflow:auto">
+        <table class="dt pesanan"><thead><tr><th>Tanggal</th>
+          ${SALES.map(s=>`<th class="num">Omzet ${esc(s.nama)}</th>`).join('')}
+          <th class="num">Omzet total</th></tr></thead>
+        <tbody>${pajakData.hari.map(h => `<tr>
+          <td>${esc(sd(h.tgl))}</td>
+          ${SALES.map(s=>`<td class="num">${fC((h.perSumber && h.perSumber[s.id]) || 0)}</td>`).join('')}
+          <td class="num">${fC(h.total)}</td>
+        </tr>`).join('')}</tbody></table>
+      </div></div>`);
+
     const catatan = `<p class="note" style="margin-top:8px">Dasar kena pajak dihitung kumulatif per tahun (omzet
       kumulatif dikurangi Rp500 juta jatah bebas pajak), bukan per bulan terpisah — sesuai cara kerja PPh Final UMKM
       0,5% untuk orang pribadi. Omzet bulan yang akun iklannya belum tersambung penuh (akun baru, dsb) bisa membuat
       angka di sini lebih rendah dari kondisi sebenarnya.</p>`;
 
-    return header + kartu + proyeksiPanel + tabel + catatan;
+    return identitas + header + kartu + proyeksiPanel + tabel + tabelHarian + catatan;
   }
 
   function pgLaporan() {
@@ -5159,6 +5248,10 @@
     await muatStok();
   }
 
+  document.getElementById('content').addEventListener('input', e => {
+    if (e.target && e.target.id === 'pajak-npwp') pajakNpwp = e.target.value;
+  });
+
   document.getElementById('content').addEventListener('submit', async e => {
     const f = e.target.closest('form');
     if (!f) return;
@@ -5345,8 +5438,10 @@
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const pr = e.target.closest('button[data-pajak-refresh]');
     if (pr) { pajakData = null; muatPajak(); render(); return; }
-    const pc = e.target.closest('button[data-pajak-csv]');
-    if (pc) { unduhPajakCsv(); return; }
+    const pcb = e.target.closest('button[data-pajak-csv-bulanan]');
+    if (pcb) { unduhPajakCsvBulanan(); return; }
+    const pch = e.target.closest('button[data-pajak-csv-harian]');
+    if (pch) { unduhPajakCsvHarian(); return; }
     const pp = e.target.closest('button[data-pajak-cetak]');
     if (pp) { window.print(); return; }
     const lf = e.target.closest('button[data-laporan-filter]');
