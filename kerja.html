@@ -3812,6 +3812,7 @@
   let pajakData = null;      // { tahun, bulan:[...], hari:[{tgl,perSumber,total}] }, null = belum ditarik
   let pajakMemuat = false;
   let pajakNpwp = '';        // opsional, diisi manual, cuma dipakai di kop CSV/PDF
+  let pajakNamaWp = 'Renaldo Ilham Zamzam'; // nama wajib pajak sesuai KTP/NPWP, bisa beda dari nama akun login
   let pajakBarisTerakhir = []; // hasil hitung bulanan terakhir, dipakai tombol unduh CSV
   const AMBANG_BEBAS_PAJAK = 500000000; // Rp500 juta/tahun (PP 20/2026)
   const TARIF_PAJAK_FINAL = 0.005;      // 0,5%
@@ -3963,8 +3964,8 @@
       <div style="padding:14px 16px">
         <p class="note" style="margin:0 0 8px">DOKUMEN PERHITUNGAN PAJAK &middot; dicetak ${sd(hariIni())} ${pajakData.tahun}</p>
         <div class="baris">
-          <label>Nama wajib pajak<span>sesuai akun admin</span>
-            <input type="text" value="${esc(AKU.nama || '')}" disabled></label>
+          <label>Nama wajib pajak<span>sesuai KTP/NPWP, untuk kop dokumen</span>
+            <input type="text" id="pajak-nama" value="${esc(pajakNamaWp || AKU.nama || '')}" placeholder="cth. Renaldo Ilham Zamzam"></label>
           <label>NPWP <span>opsional, untuk kop dokumen</span>
             <input type="text" id="pajak-npwp" value="${esc(pajakNpwp)}" placeholder="cth. 09.xxx.xxx.x-xxx.000"></label>
           <label>Tahun pajak<span>&nbsp;</span><input type="text" value="${pajakData.tahun}" disabled></label>
@@ -5267,6 +5268,7 @@
 
   document.getElementById('content').addEventListener('input', e => {
     if (e.target && e.target.id === 'pajak-npwp') pajakNpwp = e.target.value;
+    if (e.target && e.target.id === 'pajak-nama') pajakNamaWp = e.target.value;
   });
 
   document.getElementById('content').addEventListener('submit', async e => {
