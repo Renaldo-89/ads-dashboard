@@ -815,6 +815,7 @@
     { g:1, id:'stok',     lbl:'Personal Admin',   ic:I.kotak, t:'Stok barang retur' },
     { g:1, id:'dealer',   lbl:'Dealer',           ic:I.chart, t:'Race GMV dealer' },
     { g:1, id:'laporan',  lbl:'Laporan Iklan',    ic:I.bolt,  t:'Laporan harian advertiser' },
+    { g:1, id:'pajak',    lbl:'Pajak',            ic:I.money, t:'Estimasi Pajak' },
     { g:2, id:'google_ads', lbl:'Google Ads', ic:I.target, t:'Google Ads', plat:'google_ads' },
     { g:2, id:'facebook',   lbl:'Meta Ads',   ic:I.plug,   t:'Meta Ads',   plat:'facebook' },
     { g:2, id:'tiktok',     lbl:'TikTok Ads', ic:I.plug,   t:'TikTok Ads', plat:'tiktok' },
@@ -2002,6 +2003,7 @@
       else if (page==='stok') el.innerHTML = pgStok();
       else if (page==='dealer') el.innerHTML = pgDealer();
       else if (page==='laporan') el.innerHTML = pgLaporan();
+      else if (page==='pajak') el.innerHTML = pgPajak();
       else if (page==='kampanye') el.innerHTML = pgKampanye();
       else if (page==='lelang') el.innerHTML = pgLelang();
       else if (page==='jam') el.innerHTML = pgJam();
@@ -3789,6 +3791,131 @@
       + `\n\nOleh: ${c.oleh || '-'}`;
   }
 
+  // ---------- halaman Pajak (khusus admin) ----------
+  // Estimasi PPh Final UMKM 0,5% (PP 20/2026) untuk wajib pajak orang pribadi:
+  // omzet Rp500 juta pertama per tahun bebas pajak, sisanya kena 0,5% final,
+  // dihitung kumulatif sepanjang tahun berjalan (bukan per bulan terpisah).
+  // Omzet ditarik otomatis per bulan dari sumber penjualan yang sama dipakai
+  // di Overview (Globemerce/Everpro), bukan dari input manual — lihat SALES.
+  let pajakData = null;      // { tahun, bulan:[{bulan,label,dariTgl,sampaiTgl,omzet}] }, null = belum ditarik
+  let pajakMemuat = false;
+  const AMBANG_BEBAS_PAJAK = 500000000; // Rp500 juta/tahun (PP 20/2026)
+  const TARIF_PAJAK_FINAL = 0.005;      // 0,5%
+
+  async function tarikOmzetBulan(dariTgl, sampaiTgl) {
+    let total = 0;
+    for (const s of SALES) {
+      try {
+        const rows = await tarikSales(s.id, dariTgl, sampaiTgl);
+        total += rows.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
+      } catch (e) { /* sumber ini belum tersambung atau gagal ditarik, lewati */ }
+    }
+    return total;
+  }
+
+  function muatPajak() {
+    if (pajakData || pajakMemuat) return;
+    pajakMemuat = true;
+    const skrg = new Date(hariIni());
+    const tahun = skrg.getFullYear();
+    const bulanIni = skrg.getMonth(); // 0-11, bulan berjalan termasuk
+    const bulanList = [];
+    for (let b = 0; b <= bulanIni; b++) {
+      const dari = new Date(tahun, b, 1);
+      const sampai = new Date(tahun, b + 1, 0);
+      bulanList.push({ bulan: b + 1, label: BLNP[b], dariTgl: iso(dari), sampaiTgl: iso(sampai) });
+    }
+    Promise.all(bulanList.map(x => tarikOmzetBulan(x.dariTgl, x.sampaiTgl)))
+      .then(hasil => { pajakData = { tahun, bulan: bulanList.map((x, i) => ({ ...x, omzet: hasil[i] || 0 })) }; })
+      .catch(() => { pajakData = { tahun, bulan: [] }; })
+      .finally(() => { pajakMemuat = false; if (page === 'pajak') render(); });
+  }
+
+  function pgPajak() {
+    if (pajakData === null) {
+      muatPajak();
+      return `<div class="panel"><div class="empty"><div class="spinner"></div>
+        <b>Menarik data omzet bulanan&hellip;</b></div></div>`;
+    }
+
+    const baris = [];
+    let kumulatif = 0, pajakKumulatif = 0;
+    for (const b of pajakData.bulan) {
+      kumulatif += b.omzet;
+      const dasar = Math.max(0, kumulatif - AMBANG_BEBAS_PAJAK);
+      const pajakKumulatifBaru = dasar * TARIF_PAJAK_FINAL;
+      const pajakBulan = pajakKumulatifBaru - pajakKumulatif;
+      pajakKumulatif = pajakKumulatifBaru;
+      baris.push({ ...b, kumulatif, dasar, pajakBulan, pajakKumulatif });
+    }
+
+    const n = baris.length;
+    const totalOmzet = kumulatif;
+    const totalPajak = pajakKumulatif;
+    const rataRata = n ? totalOmzet / n : 0;
+    const bulanSisa = 12 - n;
+    const recentN = Math.min(3, n);
+    const recentAvg = recentN ? baris.slice(-recentN).reduce((a,r)=>a+r.omzet,0) / recentN : 0;
+    const hitungPajakSetahun = omzetSetahun => Math.max(0, omzetSetahun - AMBANG_BEBAS_PAJAK) * TARIF_PAJAK_FINAL;
+    const proyeksiOmzetDatar = totalOmzet + rataRata * bulanSisa;
+    const proyeksiOmzetTren = totalOmzet + recentAvg * bulanSisa;
+    const proyeksiPajakDatar = hitungPajakSetahun(proyeksiOmzetDatar);
+    const proyeksiPajakTren = hitungPajakSetahun(proyeksiOmzetTren);
+    const sisaBebas = Math.max(0, AMBANG_BEBAS_PAJAK - totalOmzet);
+
+    const header = `<div class="sec"><h4>Estimasi Pajak</h4>
+      <span class="note">${pajakData.tahun} &middot; PPh Final UMKM 0,5% &middot; ditarik otomatis dari omzet dashboard</span></div>
+      <p class="lead">Estimasi untuk wajib pajak orang pribadi (PP 20/2026): omzet Rp500 juta pertama dalam setahun
+        bebas pajak, sisanya kena tarif final 0,5%, dihitung kumulatif sepanjang tahun. Dihitung otomatis dari omzet
+        bulanan Globemerce/Everpro yang sudah tersambung — bukan nasihat pajak resmi, tetap disarankan dicek ulang
+        dengan konsultan pajak saat lapor SPT.</p>
+      <div style="margin:-2px 0 14px">
+        <button type="button" data-pajak-refresh ${pajakMemuat?'disabled':''}>${pajakMemuat?'Menarik ulang…':'Tarik ulang data'}</button>
+      </div>`;
+
+    const kartu = `<div class="kpis">
+      ${kpi(I.cart,'var(--green)','var(--green-soft)','Omzet tahun berjalan',fC(totalOmzet),'')}
+      ${kpi(I.money,'var(--red)','var(--red-soft)','Pajak terutang sejauh ini',fC(totalPajak),'')}
+      ${kpi(I.target,'var(--blue)','var(--blue-soft)','Sisa jatah bebas pajak',sisaBebas>0?fC(sisaBebas):'Sudah terlewati','')}
+      ${kpi(I.up,'var(--violet)','var(--violet-soft)','Proyeksi omzet setahun',fC(proyeksiOmzetTren),'')}
+      ${kpi(I.spark,'var(--amber)','var(--amber-soft)','Proyeksi pajak setahun',fC(proyeksiPajakTren),'')}
+    </div>`;
+
+    const proyeksiPanel = `<div class="panel tight" style="margin-top:11px">
+      ${li({c:'var(--violet)',s:'var(--violet-soft)',ini:'T'},'Proyeksi berdasar tren 3 bulan terakhir',
+        'Rata-rata omzet ' + fC(recentAvg) + '/bulan &times; ' + bulanSisa + ' bulan sisa',
+        fC(proyeksiPajakTren),'pajak setahun',0)}
+      ${li({c:'var(--blue)',s:'var(--blue-soft)',ini:'R'},'Proyeksi rata-rata datar (semua bulan berjalan)',
+        'Rata-rata omzet ' + fC(rataRata) + '/bulan &times; ' + bulanSisa + ' bulan sisa',
+        fC(proyeksiPajakDatar),'pajak setahun',0)}
+    </div>`;
+
+    const judulTabel = `<div class="sec"><h4>Rincian bulanan</h4><span class="note">${fN(n)} bulan tertarik</span></div>`;
+
+    const tabel = judulTabel + (!n
+      ? `<div class="panel"><div class="empty">Belum ada data omzet untuk tahun ini.</div></div>`
+      : `<div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
+        <thead><tr><th>Bulan</th><th class="num">Omzet</th><th class="num">Kumulatif</th>
+          <th class="num">Dasar kena pajak (kumulatif)</th><th class="num">Pajak bulan ini</th>
+          <th class="num">Pajak kumulatif</th></tr></thead>
+        <tbody>${baris.map(b => `<tr>
+          <td>${esc(b.label)} ${pajakData.tahun}</td>
+          <td class="num">${fC(b.omzet)}</td>
+          <td class="num">${fC(b.kumulatif)}</td>
+          <td class="num">${fC(b.dasar)}</td>
+          <td class="num">${fC(b.pajakBulan)}</td>
+          <td class="num">${fC(b.pajakKumulatif)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div></div>`);
+
+    const catatan = `<p class="note" style="margin-top:8px">Dasar kena pajak dihitung kumulatif per tahun (omzet
+      kumulatif dikurangi Rp500 juta jatah bebas pajak), bukan per bulan terpisah — sesuai cara kerja PPh Final UMKM
+      0,5% untuk orang pribadi. Omzet bulan yang akun iklannya belum tersambung penuh (akun baru, dsb) bisa membuat
+      angka di sini lebih rendah dari kondisi sebenarnya.</p>`;
+
+    return header + kartu + proyeksiPanel + tabel + catatan;
+  }
+
   function pgLaporan() {
     if (laporanData === null) {
       muatLaporan();
@@ -5185,6 +5312,8 @@
     if (c) { fCS = c.dataset.cs; render(); return; }
     const db = e.target.closest('button[data-dealer-bulan]');
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
+    const pr = e.target.closest('button[data-pajak-refresh]');
+    if (pr) { pajakData = null; muatPajak(); render(); return; }
     const lf = e.target.closest('button[data-laporan-filter]');
     if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
     const lpf = e.target.closest('button[data-laporan-platform-filter]');
