@@ -3847,7 +3847,7 @@
     if (!pajakData || !pajakData.hari.length) return;
     const header = ['Tanggal', ...SALES.map(s => 'Omzet ' + s.nama), 'Omzet total'];
     const baris = pajakData.hari.map(h => [
-      h.tgl,
+      h.label,
       ...SALES.map(s => Math.round((h.perSumber && h.perSumber[s.id]) || 0)),
       Math.round(h.total),
     ]);
@@ -3894,18 +3894,32 @@
         const bulan = bulanList.map((x, i) => ({
           ...x, omzet: hasil[i].total || 0, perSumber: hasil[i].perSumber,
         }));
+        // Globemerce kadang punya baris tanpa tanggal pasti (date:"0000-00-00")
+        // untuk pesanan yang tidak tercatat harinya di sistem mereka — omzetnya
+        // tetap nyata dan ikut masuk ke total bulanan, tapi dikelompokkan per
+        // BULAN (bukan digabung jadi satu baris untuk seluruh tahun) supaya
+        // rincian harian tidak menyesatkan kalau ditunjukkan ke petugas pajak.
         const hariMap = {};
-        hasil.forEach(h => {
+        hasil.forEach((h, i) => {
+          const bln = bulanList[i];
           for (const tgl of Object.keys(h.perHari)) {
-            if (!hariMap[tgl]) hariMap[tgl] = {};
+            const tanpaTgl = tgl === '0000-00-00';
+            const key = tanpaTgl ? `tanpa-tanggal-${bln.bulan}` : tgl;
+            if (!hariMap[key]) hariMap[key] = {
+              perSumber: {},
+              label: tanpaTgl ? `Tanpa tanggal tercatat (${bln.label} ${tahun})` : sd(tgl),
+              sortKey: tanpaTgl ? `${tahun}-${String(bln.bulan).padStart(2,'0')}-99` : tgl,
+            };
             for (const sid of Object.keys(h.perHari[tgl]))
-              hariMap[tgl][sid] = (hariMap[tgl][sid] || 0) + h.perHari[tgl][sid];
+              hariMap[key].perSumber[sid] = (hariMap[key].perSumber[sid] || 0) + h.perHari[tgl][sid];
           }
         });
-        const hari = Object.keys(hariMap).sort().map(tgl => ({
-          tgl, perSumber: hariMap[tgl],
-          total: SALES.reduce((a, s) => a + (hariMap[tgl][s.id] || 0), 0),
-        }));
+        const hari = Object.keys(hariMap)
+          .sort((a, b) => hariMap[a].sortKey.localeCompare(hariMap[b].sortKey))
+          .map(key => ({
+            tgl: key, label: hariMap[key].label, perSumber: hariMap[key].perSumber,
+            total: SALES.reduce((a, s) => a + (hariMap[key].perSumber[s.id] || 0), 0),
+          }));
         pajakData = { tahun, bulan, hari };
       })
       .catch(() => { pajakData = { tahun, bulan: [], hari: [] }; })
@@ -4013,7 +4027,10 @@
       </table></div></div>`);
 
     const judulHarian = `<div class="sec" style="margin-top:22px"><h4>Rincian harian</h4>
-      <span class="note">${fN(pajakData.hari.length)} hari ada transaksi &middot; untuk bukti ke petugas pajak kalau diminta</span></div>`;
+      <span class="note">${fN(pajakData.hari.length)} baris &middot; untuk bukti ke petugas pajak kalau diminta</span></div>
+      <p class="note" style="margin:0 0 10px">Beberapa pesanan Globemerce tidak tercatat tanggal pastinya di sistem
+        mereka — omzetnya tetap nyata dan sudah ikut dihitung di total bulanan, tapi di sini dikumpulkan jadi satu
+        baris "Tanpa tanggal tercatat" per bulan supaya tidak disangka transaksi satu hari.</p>`;
 
     const tabelHarian = judulHarian + (!pajakData.hari.length
       ? `<div class="panel"><div class="empty">Belum ada data harian untuk tahun ini.</div></div>`
@@ -4022,7 +4039,7 @@
           ${SALES.map(s=>`<th class="num">Omzet ${esc(s.nama)}</th>`).join('')}
           <th class="num">Omzet total</th></tr></thead>
         <tbody>${pajakData.hari.map(h => `<tr>
-          <td>${esc(sd(h.tgl))}</td>
+          <td>${esc(h.label)}</td>
           ${SALES.map(s=>`<td class="num">${fC((h.perSumber && h.perSumber[s.id]) || 0)}</td>`).join('')}
           <td class="num">${fC(h.total)}</td>
         </tr>`).join('')}</tbody></table>
