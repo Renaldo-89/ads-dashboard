@@ -2262,7 +2262,7 @@
   // bukan dari rekap bulanan, supaya bisa dipecah per tanggal.
   function labaHarian() {
     const m = new Map();
-    const isi = d => { if (!m.has(d)) m.set(d, { profit:0, spend:0, kirim:0, order:0, omzet:0 }); return m.get(d); };
+    const isi = d => { if (!m.has(d)) m.set(d, { profit:0, spend:0, kirim:0, order:0, omzet:0, retur:0, returN:0 }); return m.get(d); };
     for (const o of (D.pesanan || [])) {
       if (!o.tanggal) continue;
       const a = isi(o.tanggal);
@@ -2275,7 +2275,16 @@
       isi(r.date).spend += Number(r.spend) || 0;
     }
     for (const [d, v] of kirimHarian()) isi(d).kirim += v;
-    for (const a of m.values()) a.laba = a.profit - a.kirim - a.spend;
+    // Profit barang keluar dari stok retur (omzet - ongkir, tanpa potong HPP),
+    // per tanggal barang dipakai — sama seperti labaRetur() di "Laba setelah
+    // iklan", supaya total kalender cocok dengan angka di Overview.
+    const rk = rentangKini();
+    for (const x of barisRetur(rk && rk.from, rk && rk.to)) {
+      const a = isi(x.date);
+      a.retur += (Number(x.revenue) || 0) - (Number(x.ongkir) || 0);
+      a.returN += 1;
+    }
+    for (const a of m.values()) a.laba = a.profit + a.retur - a.kirim - a.spend;
     return m;
   }
 
@@ -2317,7 +2326,7 @@
         const dalam = tgl >= r.from && tgl <= r.to;
         const a = H.get(tgl);
         const kini = tgl === hariIniStr ? ' kini' : '';
-        if (!dalam || !a || (!a.order && !a.spend)) {
+        if (!dalam || !a || (!a.order && !a.spend && !a.returN)) {
           sel += `<div class="kal-hari${kini}" title="${tgl}${dalam?' · belum ada aktivitas':' · di luar periode'}">${t}</div>`;
         } else {
           const k = a.laba >= 0 ? 'untung' : 'rugi';
@@ -2332,7 +2341,7 @@
     }).join('');
 
     const untung = [...H.values()].filter(x => x.laba > 0).length;
-    const rugi = [...H.values()].filter(x => x.laba < 0 && (x.order || x.spend)).length;
+    const rugi = [...H.values()].filter(x => x.laba < 0 && (x.order || x.spend || x.returN)).length;
 
     return `<div class="sec"><h4>Kalender laba harian</h4>
         <span class="note">${fN(untung)} hari untung · ${fN(rugi)} hari minus</span></div>
@@ -5465,6 +5474,7 @@
           + `<span style="color:${untung?'var(--green-ink)':'var(--red-ink)'};font-weight:700">`
           + `${untung ? 'Untung' : 'Minus'} ${fC(Math.abs(a.laba))}</span><br>`
           + `Omzet ${fC(a.omzet)} &middot; gross profit ${fC(a.profit)} `
+          + (a.returN ? `&middot; profit retur ${fC(a.retur)} ` : '')
           + `&middot; kirim ${fC(a.kirim)} &middot; iklan ${fC(a.spend)} `
           + `&middot; ${fN(a.order)} pesanan`;
       }
