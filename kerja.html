@@ -1149,13 +1149,20 @@
     const res = await fetch(url, { headers: h });
     if (res.status === 401) {
       try { localStorage.removeItem('kunci'); } catch (e) {}
-      const m = await mintaSandi('Nama pengguna atau sandi salah');
-      SANDI = m.sandi; PENGGUNA = m.pengguna;
-      simpanMasuk();
+      // Banyak permintaan jalan bersamaan: kalau semuanya ditolak, kotak sandi
+      // cukup muncul sekali dan semua permintaan menunggu jawaban yang sama.
+      if (!sedangMintaSandi) {
+        sedangMintaSandi = mintaSandi('Nama pengguna atau sandi salah').then(m => {
+          SANDI = m.sandi; PENGGUNA = m.pengguna;
+          simpanMasuk();
+        }).finally(() => { sedangMintaSandi = null; });
+      }
+      await sedangMintaSandi;
       return ambil(url);
     }
     return res;
   }
+  let sedangMintaSandi = null;
   function simpanMasuk() {
     try {
       localStorage.setItem('kunci', SANDI);
@@ -1178,11 +1185,35 @@
     }
     // Worker yang memutuskan peran, bukan peramban. Jadi tidak bisa dipalsukan
     // dengan mengubah localStorage.
-    try {
-      const r = await ambil(PROXY + '?aku=1');
-      const j = await r.json();
-      if (j && j.data) AKU = j.data;
-    } catch (e) { /* Worker versi lama: anggap admin */ }
+    // Peran terakhir yang dikonfirmasi Worker disimpan per pengguna. Kalau ada,
+    // dashboard langsung mulai menarik data tanpa menunggu ?aku=1 (hemat ~1 detik),
+    // sementara konfirmasinya jalan di belakang. Yang benar-benar menahan data
+    // tetap Worker (403), jadi peran di sini hanya menentukan tampilan dan
+    // permintaan mana yang dikirim. Kalau ternyata berbeda, halaman dimuat ulang.
+    const kunciAku = 'akuCache:' + PENGGUNA;
+    let akuCache = null;
+    try { akuCache = JSON.parse(localStorage.getItem(kunciAku) || 'null'); } catch (e) {}
+    const verifikasiAku = (async () => {
+      try {
+        const r = await ambil(PROXY + '?aku=1');
+        const j = await r.json();
+        return (j && j.data) ? j.data : null;
+      } catch (e) { return null; /* Worker versi lama: anggap admin */ }
+    })();
+    if (akuCache && akuCache.peran) {
+      AKU = akuCache;
+      verifikasiAku.then(baru => {
+        if (!baru) return;
+        try { localStorage.setItem(kunciAku, JSON.stringify(baru)); } catch (e) {}
+        if (JSON.stringify(baru) !== JSON.stringify(akuCache)) location.reload();
+      });
+    } else {
+      const baru = await verifikasiAku;
+      if (baru) {
+        AKU = baru;
+        try { localStorage.setItem(kunciAku, JSON.stringify(baru)); } catch (e) {}
+      }
+    }
     document.body.dataset.peran = AKU.peran;
     catatHariMasuk();
     tampilkanIdentitas();
@@ -1248,8 +1279,18 @@
         .then(rows=>({ status:'ok', rows, field:'revenue' })).catch(()=>({ status:'off', rows:[], field:null }));
     const tugasGm = tarikSales('globemerce&detail=1', pr.from, r.to)
       .then(rows=>({ ok:true, rows })).catch(()=>({ ok:false, rows:[] }));
-    // ringkasan seluruh tim, tanpa data pelanggan; boleh dibuka semua peran
-    const tugasTim = tarikSales('globemerce&cs=1', r.from, r.to).catch(()=>[]);
+    // ringkasan seluruh tim, tanpa data pelanggan; boleh dibuka semua peran.
+    // Untuk admin, daftar pesanan lengkap sudah ditarik di atas (tugasGm), jadi
+    // ringkasannya dihitung di sini — tidak perlu menarik seluruh pesanan lagi
+    // dari Globemerce hanya untuk dijumlahkan ulang di Worker.
+    const timDariPesanan = AKU.peran === 'admin';
+    const tugasTim = timDariPesanan ? Promise.resolve(null)
+      : tarikSales('globemerce&cs=1', r.from, r.to).catch(()=>[]);
+    // Stok retur dan semangat harian tidak bergantung pada data lain, jadi
+    // ditarik bersamaan sejak awal, bukan menunggu semua data inti selesai.
+    const tugasStok = ambil(PROXY + '?stok=data')
+      .then(x => x.status === 200 ? x.json() : null).catch(() => null);
+    muatSemangat();
     const tugasGmv = csAja ? kosong : tarikSales('globemerce&gmv=1', r.from, r.to).catch(()=>[]);
     // Everpro lewat API resmi di Worker; kalau gagal, pakai berkas hasil sinkronisasi lama
     const tugasKirim = tarikSales('everpro&detail=1', pr.from, r.to)
@@ -1267,9 +1308,9 @@
       : fetch('data/everpro-cashback.json' + (BUST?('?t='+BUST):''))
         .then(x=>x.ok?x.json():null).catch(()=>null);
 
-    const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile, tim] = await Promise.all([
+    const [hasilIklan, shop, gmHasil, gmv, kirimSemua, epRekap, cbFile, timServer, stokJ] = await Promise.all([
       Promise.all(tugasIklan), tugasShop, tugasGm, tugasGmv,
-      tugasKirim, tugasEp, tugasCb, tugasTim,
+      tugasKirim, tugasEp, tugasCb, tugasTim, tugasStok,
     ]);
 
     const iklan={}, prev={};
@@ -1324,8 +1365,24 @@
       x.cashback_telat  = telatCair(c);
     }
 
+    // sama persis dengan ringkasan ?cs=1 di Worker: per agen, urut GMV terbesar
+    let tim = timServer;
+    if (timDariPesanan) {
+      const m = new Map();
+      for (const o of pesanan) {
+        const k = String(o.agen || '').trim() || '(tanpa nama)';
+        if (!m.has(k)) m.set(k, { agen:k, order:0, gmv:0, omzet:0, baru:0, repeat:0 });
+        const a = m.get(k);
+        a.order += 1; a.gmv += Number(o.pv) || 0; a.omzet += Number(o.omzet) || 0;
+        if (o.jenis_pembeli === 'repeat') a.repeat += 1; else a.baru += 1;
+      }
+      tim = Array.from(m.values()).sort((x, y) => y.gmv - x.gmv);
+    }
+
     D = { iklan, prev, shop, extra:null, sales, prevSales, pesanan, gmv, kirim, cashback,
-          tim: tim || [], _rentang:{ r, pr } };
+          tim: tim || [], _rentang:{ r, pr },
+          stok: { masuk: (stokJ && stokJ.data && stokJ.data.masuk) || [],
+                  keluar: (stokJ && stokJ.data && stokJ.data.keluar) || [] } };
 
     const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
     const ok = IKLAN.filter(id=>(iklan[id]||{}).status==='ok').length;
@@ -1338,13 +1395,24 @@
     buildFilters(); buildNav(); render();
     if (butuhExtra()) muatExtra();   // data berat ditarik hanya bila halamannya dibuka
     if (page==='retur' && returMode!=='periode') muatRetur(returMode);
-    if (AKU.peran !== 'cs') muatGmvHarian();
+    if (AKU.peran !== 'cs') {
+      // GMV 30 hari terakhir: kalau daftar pesanan yang baru ditarik sudah
+      // mencakup jendelanya, dihitung dari situ — tanpa satu permintaan lagi.
+      const sampaiGmv = tglLokal();
+      const awalGmv = tglLokal(Date.now() - (JENDELA_GMV + 1) * 864e5);
+      if (gmHasil.ok && pr.from <= awalGmv && r.to >= sampaiGmv) {
+        const peta = new Map();
+        for (const o of gmOrders) {
+          if (!o.tanggal || o.tanggal < awalGmv || o.tanggal > sampaiGmv) continue;
+          peta.set(o.tanggal, (peta.get(o.tanggal) || 0) + (Number(o.pv) || 0));
+        }
+        gmvHarian = { peta, memuat: false };
+        render();
+      } else muatGmvHarian();
+    }
     // Data follow-up punya rentangnya sendiri, jadi ditarik terpisah dan
     // hanya sekali; ganti filter periode tidak membuatnya ditarik ulang.
     if (AKU.peran === 'cs') muatDataFollowUp();
-    // Stok retur cukup ditarik sekali; isinya berubah lewat formulir sendiri.
-    if (!D.stok) muatStok();
-    muatSemangat();
   }
 
   // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
@@ -1811,7 +1879,9 @@
       const j = await r.json();
       semangatAI = (j && j.data && j.data.teks) ? { teks: j.data.teks } : { gagal: true };
     } catch (e) { semangatAI = { gagal: true }; }
-    render();
+    // Kalau data utama belum selesai ditarik, render ditunda: muat() akan
+    // menggambar halaman sendiri begitu datanya siap.
+    if (document.getElementById('loading').style.display === 'none') render();
   }
 
   // Catatan kecil di kaki menu tidak dipakai lagi: semangat harian sudah
