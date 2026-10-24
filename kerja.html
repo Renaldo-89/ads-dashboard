@@ -1553,11 +1553,20 @@
     }
   }
 
+  // chip akun/kampanye hanya memuat platform halaman yang sedang dibuka
+  let platChip = null;
+  function platIni() {
+    const m = MENU.find(x=>x.id===page);
+    return (m && m.plat && IKLAN.includes(m.plat)) ? m.plat : null;
+  }
+
   function buildFilters() {
     buildPeriods();
 
     const akun = new Map();
-    for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
+    platChip = platIni();
+    const IKL = platChip ? IKLAN.filter(x=>x===platChip) : IKLAN;
+    for (const id of IKL) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const r of d.rows) if (r.account_id) {
         akun.set(String(r.account_id), id);
         if (r.account_name) NAMA_AKUN.set(String(r.account_id), String(r.account_name));
@@ -1572,7 +1581,7 @@
         + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(namaAkun(a))+'</button>').join(''); }
 
     const kmp = new Set();
-    for (const id of IKLAN) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
+    for (const id of IKL) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const r of d.rows) {
         if (!r.campaign) continue;
         if (fAkun!=='all' && String(r.account_id)!==fAkun) continue;
@@ -2067,7 +2076,8 @@
     if (fKmp!=='all') crumb += ' · ' + fKmp;
     if (fAkun==='all' && fKmp==='all') crumb += (m.g===2 ? ' · platform' : m.g===3 ? ' · analisis' : ' · semua platform');
     document.getElementById('pcrumb').textContent = crumb;
-    tampilFilter();
+    if (platIni() !== platChip) { buildFilters(); }
+    else tampilFilter();
     Object.values(charts).forEach(c=>c.destroy()); charts={};
     const el = document.getElementById('content');
     // Satu halaman yang bermasalah tidak boleh mengosongkan seluruh dashboard.
@@ -3944,22 +3954,25 @@
   async function tarikOmzetBulan(dariTgl, sampaiTgl) {
     const perSumber = {};
     const perHari = {}; // tgl -> { [sumberId]: number }
+    let diabaikan = 0;
     for (const s of SALES) {
       perSumber[s.id] = 0;
       try {
         const rows = await tarikSales(s.id, dariTgl, sampaiTgl);
         for (const r of rows) {
           const rev = Number(r.revenue) || 0;
+          // Baris bertanggal "0000-00-00" dari Globemerce adalah pesanan berstatus
+          // Cancelled (tidak punya tanggal selesai) — bukan penjualan, jadi tidak
+          // boleh ikut omzet kena pajak. Overview juga sudah mengecualikannya.
+          if (!r.date || r.date === '0000-00-00') { diabaikan += rev; continue; }
           perSumber[s.id] += rev;
-          const tgl = r.date;
-          if (!tgl) continue;
-          if (!perHari[tgl]) perHari[tgl] = {};
-          perHari[tgl][s.id] = (perHari[tgl][s.id] || 0) + rev;
+          if (!perHari[r.date]) perHari[r.date] = {};
+          perHari[r.date][s.id] = (perHari[r.date][s.id] || 0) + rev;
         }
       } catch (e) { /* sumber ini belum tersambung atau gagal ditarik, lewati */ }
     }
     const total = SALES.reduce((a, s) => a + (perSumber[s.id] || 0), 0);
-    return { perSumber, perHari, total };
+    return { perSumber, perHari, total, diabaikan };
   }
 
   function muatPajak() {
@@ -3978,6 +3991,7 @@
       .then(hasil => {
         const bulan = bulanList.map((x, i) => ({
           ...x, omzet: hasil[i].total || 0, perSumber: hasil[i].perSumber,
+          diabaikan: hasil[i].diabaikan || 0,
         }));
         // Globemerce kadang punya baris tanpa tanggal pasti (date:"0000-00-00")
         // untuk pesanan yang tidak tercatat harinya di sistem mereka — omzetnya
@@ -4159,9 +4173,9 @@
 
     const judulHarian = `<div class="sec" style="margin-top:22px"><h4>Rincian harian</h4>
       <span class="note">${fN(pajakData.hari.length)} baris &middot; untuk bukti ke petugas pajak kalau diminta</span></div>
-      <p class="note" style="margin:0 0 10px">Beberapa pesanan Globemerce tidak tercatat tanggal pastinya di sistem
-        mereka — omzetnya tetap nyata dan sudah ikut dihitung di total bulanan, tapi di sini dikumpulkan jadi satu
-        baris "Tanpa tanggal tercatat" per bulan supaya tidak disangka transaksi satu hari.</p>`;
+      <p class="note" style="margin:0 0 10px">Pesanan Globemerce berstatus Cancelled tidak punya tanggal selesai
+        (tercatat 0000-00-00), jadi tidak dihitung sebagai omzet. Total yang dikecualikan tahun ini:
+        ${fC(pajakData.bulan.reduce((a, b) => a + (b.diabaikan || 0), 0))}.</p>`;
 
     const tabelHarian = judulHarian + (!pajakData.hari.length
       ? `<div class="panel"><div class="empty">Belum ada data harian untuk tahun ini.</div></div>`
