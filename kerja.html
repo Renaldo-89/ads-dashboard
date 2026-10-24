@@ -498,6 +498,10 @@
   .chips select { flex-shrink:0; border:1px solid var(--line); background:var(--panel);
     color:var(--ink-2); padding:7px 12px; border-radius:9px; font-size:12.5px;
     font-weight:600; font-family:inherit; cursor:pointer; }
+  .chips.sub select { font-size:12px; font-weight:500; padding:6px 12px; max-width:320px; }
+  .chips.sub select.on { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600; }
+  .chips button.reset { background:transparent; border-style:dashed; color:var(--muted); font-weight:600; margin-left:auto; }
+  .chips button.reset:hover { color:var(--ink); border-color:var(--ink); }
   .chips select.on { background:linear-gradient(135deg,#06B6D4,#10B981);
     border-color:transparent; color:#fff; box-shadow:0 5px 14px rgba(6,182,212,.28); }
 
@@ -1577,8 +1581,7 @@
     ea.dataset.lbl = 'AKUN';
     if (daftarAkun.length < 2) { ea.dataset.punya='0'; fAkun='all'; }
     else { ea.dataset.punya='1';
-      ea.innerHTML = '<button data-akun="all" class="'+(fAkun==='all'?'on':'')+'">Semua</button>'
-        + daftarAkun.map(a=>'<button data-akun="'+esc(a)+'" class="'+(fAkun===a?'on':'')+'">'+esc(namaAkun(a))+'</button>').join(''); }
+      ea.innerHTML = rakitFilter('akun', daftarAkun, fAkun, namaAkun, 'Semua akun'); }
 
     const kmp = new Set();
     for (const id of IKL) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
@@ -1594,10 +1597,27 @@
     ek.dataset.lbl = 'KAMPANYE';
     if (daftarKmp.length < 2) { ek.dataset.punya='0'; fKmp='all'; }
     else { ek.dataset.punya='1';
-      ek.innerHTML = '<button data-kmp="all" class="'+(fKmp==='all'?'on':'')+'">Semua</button>'
-        + daftarKmp.map(k=>'<button data-kmp="'+esc(k)+'" class="'+(fKmp===k?'on':'')+'">'+esc(k)+'</button>').join(''); }
+      ek.innerHTML = rakitFilter('kmp', daftarKmp, fKmp, x=>x, 'Semua kampanye'); }
+
+    // tombol reset muncul di baris filter terakhir yang tampil, hanya saat ada filter aktif
+    if (fAkun!=='all' || fKmp!=='all') {
+      const baris = ek.dataset.punya==='1' ? ek : ea.dataset.punya==='1' ? ea : null;
+      if (baris) baris.insertAdjacentHTML('beforeend', '<button data-reset="1" class="reset" title="Kembali ke semua akun & kampanye">✕ Reset filter</button>');
+    }
 
     tampilFilter();
+  }
+
+  // Sedikit pilihan → chip. Banyak pilihan → dropdown, supaya baris tidak memanjang.
+  function rakitFilter(jenis, daftar, aktif, namaFn, semuaLbl) {
+    if (daftar.length <= 5) {
+      return '<button data-'+jenis+'="all" class="'+(aktif==='all'?'on':'')+'">Semua</button>'
+        + daftar.map(v=>'<button data-'+jenis+'="'+esc(v)+'" class="'+(aktif===v?'on':'')+'">'+esc(namaFn(v))+'</button>').join('');
+    }
+    return '<select data-pilih="'+jenis+'" class="'+(aktif!=='all'?'on':'')+'" aria-label="'+semuaLbl+'">'
+      + '<option value="all">'+semuaLbl+' ('+daftar.length+')</option>'
+      + daftar.map(v=>'<option value="'+esc(v)+'"'+(aktif===v?' selected':'')+'>'+esc(namaFn(v))+'</option>').join('')
+      + '</select>';
   }
 
   // filter akun & kampanye hanya relevan di halaman Platform dan Analisis
@@ -5517,15 +5537,20 @@
     period = baru;
     buildPeriods(); muat();
   }
-  document.getElementById('akun-chips').addEventListener('click', e=>{
-    const b = e.target.closest('button[data-akun]'); if(!b) return;
-    fAkun = b.dataset.akun; fKmp = 'all';
-    buildFilters(); render();
-  });
-  document.getElementById('kmp-chips').addEventListener('click', e=>{
-    const b = e.target.closest('button[data-kmp]'); if(!b) return;
-    fKmp = b.dataset.kmp;
-    buildFilters(); render();
+  ['akun-chips','kmp-chips'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('click', e=>{
+      if (e.target.closest('button[data-reset]')) { fAkun='all'; fKmp='all'; buildFilters(); render(); return; }
+      const a = e.target.closest('button[data-akun]');
+      if (a) { fAkun = a.dataset.akun; fKmp = 'all'; buildFilters(); render(); return; }
+      const k = e.target.closest('button[data-kmp]');
+      if (k) { fKmp = k.dataset.kmp; buildFilters(); render(); }
+    });
+    el.addEventListener('change', e=>{
+      const s = e.target.closest('select[data-pilih]'); if (!s) return;
+      if (s.dataset.pilih==='akun') { fAkun = s.value; fKmp = 'all'; } else fKmp = s.value;
+      buildFilters(); render();
+    });
   });
   document.getElementById('content').addEventListener('change', e=>{
     const sel = e.target.closest('select[data-retur]');
