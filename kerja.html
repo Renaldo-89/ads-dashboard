@@ -1585,6 +1585,7 @@
       for (const r of d.rows) {
         if (!r.campaign) continue;
         if (fAkun!=='all' && String(r.account_id)!==fAkun) continue;
+        if (!(Number(r.spend) > 0) && !(Number(r.clicks) > 0)) continue;  // tanpa biaya/klik di periode ini
         kmp.add(r.campaign);
       } }
     const daftarKmp = Array.from(kmp).sort();
@@ -5124,7 +5125,7 @@
   const AX = () => ({ ticks:{font:{size:10.5,weight:'600'},color:W('var(--faint)'),maxTicksLimit:6,maxRotation:0,autoSkip:true},
     grid:{display:false}, border:{display:false} });
   const AY = extra => ({ ticks:{font:{size:10},color:W('var(--faint)'),maxTicksLimit:4, ...(extra||{})},
-    grid:{color:W('var(--line)'),drawTicks:false}, border:{display:false} });
+    grid:{color:W('var(--line)'),drawTicks:false}, border:{display:false}, beginAtZero:true });
   const TIP = () => ({ backgroundColor:W('var(--ink)'), titleColor:W('var(--panel)'), bodyColor:W('var(--panel)'), padding:11, cornerRadius:12, usePointStyle:true, boxWidth:8, boxHeight:8,
     titleFont:{size:11.5,weight:'600'}, bodyFont:{size:12.5} });
   const mk = (id,cfg) => { const el=document.getElementById(id); if(!el) return;
@@ -5141,7 +5142,7 @@
   // warna bisa datang sebagai var(--x) dari PLAT/METRICS, jadi diterjemahkan di sini
   const garis = (label, data, warna, axis, isi) => {
     const c = W(warna);
-    return { label, data, borderColor:c, borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
+    return { label, data, borderColor:c, borderWidth:2.5, tension:.4, pointRadius:(data.length<2?6:0), pointHoverRadius:5,
       yAxisID:axis, fill:!!isi,
       backgroundColor: isi ? (k=>grad(k.chart.ctx, k.chart.chartArea, c)) : c };
   };
