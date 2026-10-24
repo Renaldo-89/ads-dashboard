@@ -3852,7 +3852,8 @@
   let laporanPesan = null;     // { jenis:'ok'|'galat', teks }
   let laporanFilter = '30';    // 'hari' | '7' | '30' | 'semua'
   let laporanPlatform = 'semua'; // 'semua' | 'google_ads' | 'facebook' | 'tiktok' | 'lainnya'
-  let laporanEdit = null;      // id catatan yang sedang disunting, null = mode tambah baru
+  let laporanAkun = 'semua';   // nama akun iklan, 'semua' = tanpa filter akun
+  let laporanEdit = null;     // id catatan yang sedang disunting, null = mode tambah baru
 
   async function tarikLaporan() {
     const q = new URLSearchParams({ laporan: 'data' });
@@ -4272,9 +4273,15 @@
     const n0 = new Date();
     const batasHari = { hari:1, '7':7, '30':30, semua:Infinity }[laporanFilter] || 30;
     const batasTgl = iso(new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() - batasHari + 1));
-    const rows = laporanData
+    const dasar = laporanData
       .filter(x => laporanFilter === 'semua' || x.tgl >= batasTgl)
-      .filter(x => laporanPlatform === 'semua' || x.platform === laporanPlatform)
+      .filter(x => laporanPlatform === 'semua' || x.platform === laporanPlatform);
+    // Daftar akun mengikuti periode + platform yang sedang dipilih.
+    const daftarAkunLap = Array.from(new Set(dasar.map(x => String(x.akun || '').trim()).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b));
+    if (laporanAkun !== 'semua' && !daftarAkunLap.includes(laporanAkun)) laporanAkun = 'semua';
+    const rows = dasar
+      .filter(x => laporanAkun === 'semua' || String(x.akun || '').trim() === laporanAkun)
       .sort((a, b) => b.tgl.localeCompare(a.tgl) || String(b.dibuat).localeCompare(String(a.dibuat)));
 
     const total = rows.reduce((a, c) => ({
@@ -4349,7 +4356,17 @@
     <div class="chips" style="margin:0 0 14px">
       ${[['semua','Semua platform'], ...IKLAN.map(id => [id, PLAT[id].nama]), ['lainnya','Lainnya']].map(([v,l]) =>
         `<button class="${laporanPlatform===v?'on':''}" data-laporan-platform-filter="${v}">${esc(l)}</button>`).join('')}
-    </div>`;
+    </div>
+    ${daftarAkunLap.length < 2 ? '' : `<div class="chips sub" data-lbl="AKUN" style="margin:0 0 14px;padding:0">
+      ${daftarAkunLap.length <= 5
+        ? `<button class="${laporanAkun==='semua'?'on':''}" data-laporan-akun="semua">Semua akun</button>`
+          + daftarAkunLap.map(a => `<button class="${laporanAkun===a?'on':''}" data-laporan-akun="${esc(a)}">${esc(a)}</button>`).join('')
+        : `<select data-laporan-akun-pilih class="${laporanAkun!=='semua'?'on':''}" aria-label="Akun iklan">
+            <option value="semua">Semua akun (${daftarAkunLap.length})</option>
+            ${daftarAkunLap.map(a => `<option value="${esc(a)}" ${laporanAkun===a?'selected':''}>${esc(a)}</option>`).join('')}
+          </select>`}
+      ${laporanAkun!=='semua' ? '<button class="reset" data-laporan-akun="semua">✕ Reset</button>' : ''}
+    </div>`}`;
 
     const kartu = `<div class="kpis">
       ${kpi(I.money,'var(--amber)','var(--amber-soft)','Total budget',fC(total.aktual),'')}
@@ -5575,6 +5592,10 @@
     period = baru;
     buildPeriods(); muat();
   }
+  document.getElementById('content').addEventListener('change', e=>{
+    const s = e.target.closest('select[data-laporan-akun-pilih]'); if (!s) return;
+    laporanAkun = s.value; render();
+  });
   document.getElementById('content').addEventListener('click', e=>{
     const b = e.target.closest('button[data-kosong]'); if (!b) return;
     if (b.dataset.kosong === 'reset') { fAkun='all'; fKmp='all'; buildFilters(); render(); return; }
@@ -5686,7 +5707,9 @@
     const lf = e.target.closest('button[data-laporan-filter]');
     if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
     const lpf = e.target.closest('button[data-laporan-platform-filter]');
-    if (lpf) { laporanPlatform = lpf.dataset.laporanPlatformFilter; render(); return; }
+    if (lpf) { laporanPlatform = lpf.dataset.laporanPlatformFilter; laporanAkun = 'semua'; render(); return; }
+    const lak = e.target.closest('button[data-laporan-akun]');
+    if (lak) { laporanAkun = lak.dataset.laporanAkun; render(); return; }
     const el = e.target.closest('button[data-edit-laporan]');
     if (el) {
       laporanEdit = el.dataset.editLaporan;
