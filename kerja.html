@@ -501,6 +501,9 @@
   .chips.sub select { font-size:12px; font-weight:500; padding:6px 12px; max-width:320px; }
   .chips.sub select.on { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600; }
   .chips.sub button.sepi:not(.on) { opacity:.5; }
+  .btn-kosong { border:1px solid var(--line); background:var(--panel); color:var(--ink-2); padding:7px 14px;
+    border-radius:9px; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; }
+  .btn-kosong:hover { border-color:var(--ink); color:var(--ink); }
   .chips button.reset { background:transparent; border-style:dashed; color:var(--muted); font-weight:600; margin-left:auto; }
   .chips button.reset:hover { color:var(--ink); border-color:var(--ink); }
   .chips select.on { background:linear-gradient(135deg,#06B6D4,#10B981);
@@ -2685,7 +2688,18 @@
     const d = D.iklan[id] || { status:'off', rows:[] };
     if (d.status!=='ok') return kosong(P, 'Setelah diotorisasi di Windsor, biaya, klik, konversi, dan kampanye '+P.nama+' otomatis muncul di sini dan ikut terhitung di Overview.');
     const baris = rowsOf(id);
-    if (!baris.length) return `<div class="panel"><div class="empty">Tidak ada data ${P.nama} untuk filter ini.<br>Coba ubah akun, kampanye, atau periodenya.</div></div>`;
+    if (!baris.length) {
+      const sebab = [];
+      if (fAkun!=='all') sebab.push('akun <b>'+esc(namaAkun(fAkun))+'</b>');
+      if (fKmp!=='all') sebab.push('kampanye <b>'+esc(fKmp)+'</b>');
+      const ada = sebab.length ? sebab.join(' & ') : 'filter ini';
+      return `<div class="panel"><div class="empty">Belum ada biaya atau klik untuk ${ada} di periode <b>${esc(rentang(period).label)}</b>.<br>
+        Bisa jadi iklannya memang tidak berjalan di periode ini, atau data jam ini belum masuk (diperbarui tiap jam).
+        <div class="aksi-kosong" style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          ${(fAkun!=='all'||fKmp!=='all') ? '<button class="btn-kosong" data-kosong="reset">✕ Reset filter</button>' : ''}
+          ${period!=='yesterday' ? '<button class="btn-kosong" data-kosong="p" data-p="yesterday">Lihat kemarin</button>' : ''}
+        </div></div></div>`;
+    }
     const a = agg(baris), pr = flt(D.prev[id]||[]);
     const cpa = a.conversions>0?a.spend/a.conversions:0, ctr = a.impressions>0?a.clicks/a.impressions*100:0;
     const cpc = a.clicks>0?a.spend/a.clicks:0, cvr = a.clicks>0?a.conversions/a.clicks*100:0;
@@ -5561,6 +5575,12 @@
     period = baru;
     buildPeriods(); muat();
   }
+  document.getElementById('content').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-kosong]'); if (!b) return;
+    if (b.dataset.kosong === 'reset') { fAkun='all'; fKmp='all'; buildFilters(); render(); return; }
+    const chip = document.querySelector('#periods button[data-p="'+b.dataset.p+'"]');
+    if (chip) chip.click();
+  });
   ['akun-chips','kmp-chips'].forEach(id=>{
     const el = document.getElementById(id);
     el.addEventListener('click', e=>{
