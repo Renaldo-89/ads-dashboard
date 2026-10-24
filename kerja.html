@@ -4277,8 +4277,17 @@
       .filter(x => laporanFilter === 'semua' || x.tgl >= batasTgl)
       .filter(x => laporanPlatform === 'semua' || x.platform === laporanPlatform);
     // Daftar akun mengikuti periode + platform yang sedang dipilih.
-    const daftarAkunLap = Array.from(new Set(dasar.map(x => String(x.akun || '').trim()).filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b));
+    // Selain akun yang sudah punya laporan, akun dari data platform (Windsor/Sheet) ikut
+    // ditampilkan supaya akun yang belum pernah dilaporkan tetap bisa dipilih.
+    const adaLap = new Set(dasar.map(x => String(x.akun || '').trim()).filter(Boolean));
+    const semuaAkun = new Set(adaLap);
+    const regF = regFilter();
+    for (const id of IKLAN) {
+      if (laporanPlatform !== 'semua' && laporanPlatform !== id) continue;
+      daftarAkunPlatform(id).forEach(n => semuaAkun.add(n));
+      const R = regF[id]; if (R) for (const a in R.a) if (typeof R.a[a] === 'string') semuaAkun.add(R.a[a]);
+    }
+    const daftarAkunLap = Array.from(semuaAkun).sort((a, b) => a.localeCompare(b));
     if (laporanAkun !== 'semua' && !daftarAkunLap.includes(laporanAkun)) laporanAkun = 'semua';
     const rows = dasar
       .filter(x => laporanAkun === 'semua' || String(x.akun || '').trim() === laporanAkun)
@@ -4360,10 +4369,10 @@
     ${daftarAkunLap.length < 2 ? '' : `<div class="chips sub" data-lbl="AKUN" style="margin:0 0 14px;padding:0">
       ${daftarAkunLap.length <= 5
         ? `<button class="${laporanAkun==='semua'?'on':''}" data-laporan-akun="semua">Semua akun</button>`
-          + daftarAkunLap.map(a => `<button class="${laporanAkun===a?'on':''}" data-laporan-akun="${esc(a)}">${esc(a)}</button>`).join('')
+          + daftarAkunLap.map(a => `<button class="${laporanAkun===a?'on':''}${adaLap.has(a)?'':' sepi'}" data-laporan-akun="${esc(a)}"${adaLap.has(a)?'':' title="Belum ada laporan untuk akun ini di periode ini"'}>${esc(a)}</button>`).join('')
         : `<select data-laporan-akun-pilih class="${laporanAkun!=='semua'?'on':''}" aria-label="Akun iklan">
             <option value="semua">Semua akun (${daftarAkunLap.length})</option>
-            ${daftarAkunLap.map(a => `<option value="${esc(a)}" ${laporanAkun===a?'selected':''}>${esc(a)}</option>`).join('')}
+            ${daftarAkunLap.map(a => `<option value="${esc(a)}" ${laporanAkun===a?'selected':''}>${esc(a)}${adaLap.has(a)?'':' (belum ada laporan)'}</option>`).join('')}
           </select>`}
       ${laporanAkun!=='semua' ? '<button class="reset" data-laporan-akun="semua">✕ Reset</button>' : ''}
     </div>`}`;
