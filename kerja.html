@@ -500,6 +500,7 @@
     font-weight:600; font-family:inherit; cursor:pointer; }
   .chips.sub select { font-size:12px; font-weight:500; padding:6px 12px; max-width:320px; }
   .chips.sub select.on { background:var(--ink); border-color:var(--ink); color:var(--panel); font-weight:600; }
+  .chips.sub button.sepi:not(.on) { opacity:.5; }
   .chips button.reset { background:transparent; border-style:dashed; color:var(--muted); font-weight:600; margin-left:auto; }
   .chips button.reset:hover { color:var(--ink); border-color:var(--ink); }
   .chips select.on { background:linear-gradient(135deg,#06B6D4,#10B981);
@@ -1583,21 +1584,21 @@
     else { ea.dataset.punya='1';
       ea.innerHTML = rakitFilter('akun', daftarAkun, fAkun, namaAkun, 'Semua akun'); }
 
-    const kmp = new Set();
+    const kmp = new Set(), kmpAktif = new Set();
     for (const id of IKL) { const d=D.iklan[id]; if(!d||d.status!=='ok') continue;
       for (const r of d.rows) {
         if (!r.campaign) continue;
         if (fAkun!=='all' && String(r.account_id)!==fAkun) continue;
-        if (!(Number(r.spend) > 0) && !(Number(r.clicks) > 0)) continue;  // tanpa biaya/klik di periode ini
         kmp.add(r.campaign);
+        if ((Number(r.spend) > 0) || (Number(r.clicks) > 0)) kmpAktif.add(r.campaign);
       } }
     const daftarKmp = Array.from(kmp).sort();
     if (!daftarKmp.includes(fKmp)) fKmp = 'all';
     const ek = document.getElementById('kmp-chips');
     ek.dataset.lbl = 'KAMPANYE';
-    if (daftarKmp.length < 2) { ek.dataset.punya='0'; fKmp='all'; }
+    if (daftarKmp.length < 1) { ek.dataset.punya='0'; fKmp='all'; }
     else { ek.dataset.punya='1';
-      ek.innerHTML = rakitFilter('kmp', daftarKmp, fKmp, x=>x, 'Semua kampanye'); }
+      ek.innerHTML = rakitFilter('kmp', daftarKmp, fKmp, x=>x, 'Semua kampanye', kmpAktif); }
 
     // tombol reset muncul di baris filter terakhir yang tampil, hanya saat ada filter aktif
     if (fAkun!=='all' || fKmp!=='all') {
@@ -1609,14 +1610,17 @@
   }
 
   // Sedikit pilihan → chip. Banyak pilihan → dropdown, supaya baris tidak memanjang.
-  function rakitFilter(jenis, daftar, aktif, namaFn, semuaLbl) {
+  // `hidup` (opsional): yang tidak ada di dalamnya diredupkan = tidak ada biaya/klik di periode ini.
+  function rakitFilter(jenis, daftar, aktif, namaFn, semuaLbl, hidup) {
+    const sepi = v => hidup && !hidup.has(v);
     if (daftar.length <= 5) {
       return '<button data-'+jenis+'="all" class="'+(aktif==='all'?'on':'')+'">Semua</button>'
-        + daftar.map(v=>'<button data-'+jenis+'="'+esc(v)+'" class="'+(aktif===v?'on':'')+'">'+esc(namaFn(v))+'</button>').join('');
+        + daftar.map(v=>'<button data-'+jenis+'="'+esc(v)+'" class="'+(aktif===v?'on':'')+(sepi(v)?' sepi':'')+'"'
+          +(sepi(v)?' title="Tidak ada biaya/klik di periode ini"':'')+'>'+esc(namaFn(v))+'</button>').join('');
     }
     return '<select data-pilih="'+jenis+'" class="'+(aktif!=='all'?'on':'')+'" aria-label="'+semuaLbl+'">'
       + '<option value="all">'+semuaLbl+' ('+daftar.length+')</option>'
-      + daftar.map(v=>'<option value="'+esc(v)+'"'+(aktif===v?' selected':'')+'>'+esc(namaFn(v))+'</option>').join('')
+      + daftar.map(v=>'<option value="'+esc(v)+'"'+(aktif===v?' selected':'')+'>'+esc(namaFn(v))+(sepi(v)?' (tanpa biaya)':'')+'</option>').join('')
       + '</select>';
   }
 
