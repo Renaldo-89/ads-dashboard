@@ -19,8 +19,8 @@ Pemilik: Renaldo Ilham Zamzam. Bahasa kerja: Indonesia.
 - **Data iklan**: Windsor.ai sudah **berhenti** (tidak dibayar). Penggantinya:
   Google Sheet "Hiro Ads Data" yang dibaca Worker lewat Google Service Account.
 - **Penjualan**: Globemerce (token sesi, kedaluwarsa berkala) dan Everpro
-  (API resmi lewat Worker; cadangan: `everpro-sync.py` dijalankan launchd di Mac,
-  hasilnya `data/everpro*.json`).
+  (API resmi lewat Worker). Jalur cadangan `everpro-sync.py` (launchd di Mac,
+  hasilnya `data/everpro*.json`) **dimatikan 30 Okt 2026** di Mac lama dan Mac baru.
 
 ## 2. Alur data iklan (tanpa Windsor)
 
@@ -97,9 +97,11 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.
 - Yang hanya ada di Mac lama (tidak di git): `worker.js`, `.env`
   (`EVERPRO_TOKEN`), jadwal launchd `com.renaldo.everpro-sync.plist`.
-- Mac baru: repo sudah di-clone, jadwal terpasang. **Token Everpro di `.env`
-  kedaluwarsa** — hanya memengaruhi jalur cadangan; Everpro di dashboard tetap jalan
-  lewat API resmi (client key/secret di Cloudflare).
+- Mac baru: repo sudah di-clone. Jadwal Everpro sempat terpasang lalu dimatikan
+  (30 Okt 2026), begitu juga di Mac lama. Token di `.env` sudah kedaluwarsa (13 Agu)
+  dan tidak diperbarui karena umurnya hanya 7 hari; Everpro di dashboard tetap jalan
+  lewat API resmi (client key/secret di Cloudflare). Untuk menghidupkan cadangan lagi:
+  isi token baru di `.env`, lalu `launchctl load -w` plist-nya.
 - Riwayat chat Cowork bersifat lokal per Mac (tidak ikut pindah). File ini
   pengganti konteksnya.
 
@@ -108,10 +110,7 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
 - **Cashback Everpro**: `data/everpro-cashback.json` terakhir diambil 7 Agustus 2026
   (usang >80 hari, dashboard menampilkan Rp0). Perbarui dengan menjalankan
   `ambil-cashback.js` di halaman My Balance Everpro.
-- **Token Everpro `.env`**: ambil dari DevTools > Network > header `authorization`
-  di customer.everpro.id; atau matikan jadwal launchd.
-- **Matikan jadwal Everpro di Mac lama** setelah Mac baru terbukti jalan; hapus
-  folder `bekal-pindah-hiro` (berisi token) di semua perangkat.
+- Hapus folder `bekal-pindah-hiro` (berisi token) di semua perangkat bila belum.
 - **MY ADS**: pastikan Frekuensi "Per jam" tersimpan (diatur lewat Opera).
 - **Peringatan Google**: Verifikasi 2 Langkah wajib mulai 2 Nov 2026 (akun melidya/DEA)
   dan 16 Nov 2026 (MY ADS). Jika akun script kehilangan akses, data berhenti.
@@ -120,8 +119,10 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
 - **TikTok Ads/Shop**: belum ada penggantinya.
 - Hapus berkas JSON Service Account dari folder Unduhan (isinya sudah di secret Cloudflare).
 - Sisa audit lama: batas percobaan login, banner kedaluwarsa token Globemerce,
-  matikan GitHub Action Windsor per jam (`.github/workflows/update-data.yml`),
   cadangkan `worker.js`.
+- GitHub Action Windsor (`update-data.yml`) **di-disable 30 Okt 2026** lewat
+  GitHub > Actions (berkasnya tetap ada; bisa Enable lagi). Sebelumnya action ini
+  menulis pesan "payment failed" Windsor sebagai baris data ke `data/*.json`.
 
 ## 6. Cara memakai file ini di percakapan baru
 
