@@ -92,10 +92,17 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
   formulir; otorisasi OAuth, ToS, dan konfirmasi passkey dilakukan manusia;
   periksa domain tautan email sebelum diklik.
 
+- **CS Meliglow (Sender `MELI`) digabung ke Lili** (2 Nov 2026): `NAMA_CS` di
+  `kerja.html` memetakan meli → Lili (peringkat), dan `AGEN_GABUNG` di
+  `worker.js` menambahkan MELI ke agen YARA saat login, supaya pesanan & jadwal
+  follow-up MELI muncul di dashboard Lili. Rahasia `PENGGUNA` tidak diubah.
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.
-- Yang hanya ada di Mac lama (tidak di git): `worker.js`, `.env`
+- Folder di Mac lama sudah dihapus (31 Okt); cadangan `worker.js` = versi deploy
+  di Cloudflare + salinan di Mac baru.
+- Yang dulu hanya ada di Mac lama (tidak di git): `worker.js`, `.env`
   (`EVERPRO_TOKEN`), jadwal launchd `com.renaldo.everpro-sync.plist`.
 - Mac baru: repo sudah di-clone. Jadwal Everpro sempat terpasang lalu dimatikan
   (30 Okt 2026), begitu juga di Mac lama. Token di `.env` sudah kedaluwarsa (13 Agu)
