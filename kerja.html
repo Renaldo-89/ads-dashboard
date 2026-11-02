@@ -468,6 +468,83 @@
   /* di layar lebar kalimatnya jangan menabrak tombol simpan */
   @media (min-width:621px) { .smg-kata { padding-right:170px; } }
 
+  /* ---------- target bonus bulanan CS ---------- */
+  .tgt-wadah { margin-bottom:18px; }
+  .tgt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:14px; }
+  .tgt { position:relative; overflow:hidden; border-radius:18px; isolation:isolate;
+    display:flex; align-items:center; gap:20px; padding:20px 22px; color:#fff;
+    background:linear-gradient(140deg,#2A1B12 0%,#1C1430 55%,#120E24 100%);
+    box-shadow:0 18px 40px -18px rgba(234,88,12,.55); }
+  .tgt::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:radial-gradient(circle at 12% 110%, rgba(249,115,22,.38), transparent 55%),
+      radial-gradient(circle at 92% -10%, rgba(250,204,21,.22), transparent 55%); }
+  .tgt-isi { flex:1; min-width:0; }
+  .tgt-kop { display:flex; align-items:center; gap:7px; font-size:9.5px; font-weight:800;
+    letter-spacing:1.3px; color:rgba(255,255,255,.75); margin-bottom:8px; }
+  .tgt-titik { width:6px; height:6px; border-radius:50%; background:#FDBA74;
+    box-shadow:0 0 0 3px rgba(253,186,116,.25); animation:tgt-kedip 1.6s ease-in-out infinite; }
+  .tgt-nama { font-size:13px; font-weight:800; color:#FED7AA; margin-bottom:2px; }
+  .tgt-angka { display:flex; align-items:baseline; gap:7px; margin-bottom:12px; }
+  .tgt-angka b { font-size:34px; line-height:1; font-weight:800; letter-spacing:-1px;
+    font-variant-numeric:tabular-nums; }
+  .tgt-angka span { font-size:13px; font-weight:600; color:rgba(255,255,255,.7); }
+  .tgt-angka em { margin-left:auto; font-style:normal; font-size:13px; font-weight:800; color:#FDBA74; }
+  .tgt-bar { position:relative; height:14px; border-radius:999px; background:rgba(255,255,255,.1);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.4); }
+  .tgt-api { position:relative; height:100%; border-radius:999px; min-width:14px;
+    background:linear-gradient(90deg,#F59E0B,#F97316,#EF4444,#F97316,#FACC15,#F59E0B);
+    background-size:220% 100%; animation:tgt-alir 2.4s linear infinite, tgt-nyala 1.4s ease-in-out infinite;
+    box-shadow:0 0 12px rgba(249,115,22,.75), 0 0 26px rgba(239,68,68,.4); }
+  /* lidah api di ujung bar */
+  .tgt-api::after { content:''; position:absolute; right:-9px; top:50%; width:26px; height:30px;
+    transform:translateY(-62%); border-radius:50% 50% 45% 45% / 62% 62% 38% 38%;
+    background:radial-gradient(circle at 50% 72%, #FFF7D6 0%, #FDE047 22%, #F97316 52%, rgba(239,68,68,0) 74%);
+    filter:blur(.4px); animation:tgt-lidah .5s ease-in-out infinite alternate; }
+  .tgt-api::before { content:''; position:absolute; right:2px; top:-10px; width:4px; height:4px;
+    border-radius:50%; background:#FDE68A; box-shadow:-9px 4px 0 -1px #FDBA74, 5px 7px 0 -1px #FCD34D;
+    animation:tgt-percik 1.3s ease-out infinite; }
+  .tgt-ket { margin-top:11px; font-size:11.5px; line-height:1.5; color:rgba(255,255,255,.72); }
+  .tgt-ket b { color:#fff; }
+  /* uang hadiah */
+  .tgt-uang { flex:none; width:170px; text-align:center; }
+  .tgt-uang svg { width:100%; height:auto; display:block; transition:filter .3s;
+    filter:saturate(.45) brightness(.82) drop-shadow(0 8px 14px rgba(0,0,0,.35)); }
+  .tgt-label { display:inline-flex; align-items:center; gap:5px; margin-top:8px; padding:3px 10px;
+    border-radius:999px; font-size:10.5px; font-weight:800; letter-spacing:.3px;
+    background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); white-space:nowrap; }
+  .tgt-ringkas .tgt-label { font-size:9.5px; padding:3px 8px; }
+  .tgt-uang .kilap { animation:tgt-kilap 3.2s ease-in-out infinite; }
+  /* tercapai: uang menyala dan melayang */
+  .tgt.capai { background:linear-gradient(140deg,#3A2A06 0%,#1F2A12 55%,#0F1E14 100%);
+    box-shadow:0 0 0 1.5px rgba(250,204,21,.55), 0 18px 44px -14px rgba(250,204,21,.55); }
+  .tgt.capai .tgt-uang svg { filter:drop-shadow(0 0 18px rgba(250,204,21,.65)) drop-shadow(0 8px 14px rgba(0,0,0,.35));
+    animation:tgt-layang 2.4s ease-in-out infinite; }
+  .tgt.capai .tgt-label { background:#FACC15; color:#3A2A06; }
+  .tgt.capai .tgt-api { background:linear-gradient(90deg,#FACC15,#FDE68A,#F59E0B,#FDE68A,#FACC15);
+    background-size:220% 100%; box-shadow:0 0 14px rgba(250,204,21,.85), 0 0 30px rgba(250,204,21,.45); }
+  .tgt-ringkas { padding:16px 18px; gap:14px; }
+  .tgt-ringkas .tgt-angka b { font-size:28px; }
+  .tgt-ringkas .tgt-uang { width:112px; }
+  .tgt-kosong { font-size:12px; color:rgba(255,255,255,.7); }
+  @keyframes tgt-alir { to { background-position:-220% 0; } }
+  @keyframes tgt-nyala { 50% { box-shadow:0 0 18px rgba(249,115,22,.95), 0 0 36px rgba(239,68,68,.55); } }
+  @keyframes tgt-lidah { from { transform:translateY(-62%) scale(.9,1); opacity:.85; }
+    to { transform:translateY(-70%) scale(1.06,1.14); opacity:1; } }
+  @keyframes tgt-percik { from { transform:translateY(0); opacity:1; } to { transform:translateY(-14px); opacity:0; } }
+  @keyframes tgt-kedip { 50% { opacity:.35; } }
+  @keyframes tgt-kilap { 0%,55% { transform:translateX(-160px); } 100% { transform:translateX(260px); } }
+  @keyframes tgt-layang { 50% { transform:translateY(-6px) rotate(-1.5deg); } }
+  @media (max-width:620px) {
+    .tgt { padding:16px; gap:12px; border-radius:16px; }
+    .tgt-uang { width:104px; }
+    .tgt-label { font-size:9.5px; padding:3px 8px; }
+    .tgt-angka b { font-size:28px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tgt-api, .tgt-api::after, .tgt-api::before, .tgt-titik, .tgt-uang .kilap,
+    .tgt.capai .tgt-uang svg { animation:none; }
+  }
+
   /* ---------- main ---------- */
   main { margin-left:var(--sb); min-height:100vh; }
   .topbar { position:sticky; top:0; z-index:40; background:var(--kaca-top);
@@ -1421,6 +1498,7 @@
     // Data follow-up punya rentangnya sendiri, jadi ditarik terpisah dan
     // hanya sekali; ganti filter periode tidak membuatnya ditarik ulang.
     if (AKU.peran === 'cs') muatDataFollowUp();
+    muatTarget();
   }
 
   // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
@@ -3123,6 +3201,133 @@
       + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   };
 
+  // ---------- target bonus bulanan CS ----------
+  // Target = jumlah order bulan lalu dinaikkan sekian persen. Order dihitung
+  // seperti peringkat CS: pesanan Globemerce (MELI ikut Lili, RIANA ikut Intan)
+  // ditambah kiriman ulang stok retur. Order retur/gagal kirim tetap dihitung.
+  // Selalu bulan berjalan vs bulan lalu, tidak mengikuti filter periode.
+  const TARGET_CS = {
+    ECHA:  { naik: 0.35, hadiah: 500000 },
+    Lili:  { naik: 0.40, hadiah: 500000 },
+    Intan: { naik: 0.40, hadiah: 500000 },
+  };
+  let targetData = null;   // { memuat, tanda, kini, lalu, timKini[], timLalu[], gagal }
+
+  function rentangBulan(geser) {
+    const n = new Date();
+    if (geser === 0) return { from: iso(new Date(n.getFullYear(), n.getMonth(), 1)), to: tglLokal() };
+    return { from: iso(new Date(n.getFullYear(), n.getMonth() + geser, 1)),
+             to: iso(new Date(n.getFullYear(), n.getMonth() + geser + 1, 0)) };
+  }
+
+  async function muatTarget() {
+    if (AKU.peran !== 'cs' && AKU.peran !== 'admin') return;
+    const kini = rentangBulan(0), lalu = rentangBulan(-1);
+    const tanda = kini.from + '|' + kini.to;
+    if (targetData && (targetData.memuat || targetData.tanda === tanda)) return;
+    targetData = { memuat: true, tanda };
+    const [a, b] = await Promise.all([
+      tarikSales('globemerce&cs=1', kini.from, kini.to).catch(() => null),
+      tarikSales('globemerce&cs=1', lalu.from, lalu.to).catch(() => null),
+    ]);
+    targetData = { memuat: false, tanda, kini, lalu, timKini: a || [], timLalu: b || [],
+      gagal: a === null || b === null };
+    render();
+  }
+
+  function orderPerCS(tim, r) {
+    const m = new Map();
+    const tambah = (agen, n) => {
+      const t = String(agen || '').trim();
+      if (!t || BUKAN_CS[t.toUpperCase()]) return;
+      const k = namaCS(t);
+      m.set(k, (m.get(k) || 0) + n);
+    };
+    for (const x of (tim || [])) tambah(x.agen, Number(x.order) || 0);
+    for (const x of barisRetur(r.from, r.to)) tambah(x.agen, 1);
+    return m;
+  }
+
+  const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus',
+    'September','Oktober','November','Desember'];
+
+  // Gambar uang Rp500.000 digambar sendiri (SVG), bukan foto uang asli.
+  let nomorUang = 0;
+  function gambarUang(hadiah) {
+    // id gradien harus unik per gambar; kalau kembar, gambar kedua dst. bisa hilang
+    const u = 'tgt' + (++nomorUang);
+    const angka = hadiah >= 1000 ? Math.round(hadiah / 1000) + 'K' : String(hadiah);
+    return `<svg viewBox="0 0 220 120" role="img" aria-label="Hadiah ${esc(fRp(hadiah))}">
+      <defs>
+        <linearGradient id="${u}U" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#34D399"/><stop offset=".55" stop-color="#059669"/><stop offset="1" stop-color="#065F46"/></linearGradient>
+        <linearGradient id="${u}K" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/>
+          <stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <clipPath id="${u}C"><rect x="14" y="10" width="196" height="100" rx="10"/></clipPath>
+      </defs>
+      <rect x="4" y="18" width="196" height="100" rx="10" fill="#047857" opacity=".55" transform="rotate(-4 100 68)"/>
+      <rect x="14" y="10" width="196" height="100" rx="10" fill="url(#${u}U)"/>
+      <rect x="22" y="18" width="180" height="84" rx="7" fill="none" stroke="#D1FAE5" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <circle cx="62" cy="60" r="26" fill="#ECFDF5" fill-opacity=".18" stroke="#D1FAE5" stroke-opacity=".6"/>
+      <text x="62" y="66" text-anchor="middle" font-size="17" font-weight="800" fill="#ECFDF5" font-family="inherit">Rp</text>
+      <text x="196" y="62" text-anchor="end" font-size="38" font-weight="900" fill="#fff" font-family="inherit" letter-spacing="-1">${esc(angka)}</text>
+      <text x="196" y="86" text-anchor="end" font-size="11" font-weight="700" fill="#D1FAE5" font-family="inherit" letter-spacing="2">BONUS CASH</text>
+      <g clip-path="url(#${u}C)"><rect class="kilap" x="0" y="0" width="60" height="120" fill="url(#${u}K)" transform="skewX(-20)"/></g>
+    </svg>`;
+  }
+  const fRp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
+
+  function kartuTarget(nama, ringkas) {
+    const aturan = TARGET_CS[nama];
+    if (!aturan || !targetData) return '';
+    const kop = (ringkas ? '' : '') + 'TARGET BONUS · ' + BULAN_ID[new Date().getMonth()].toUpperCase();
+    const pembuka = `<div class="tgt ${ringkas ? 'tgt-ringkas' : ''}`;
+    if (targetData.memuat) return `${pembuka}"><div class="tgt-isi"><div class="tgt-kop"><span class="tgt-titik"></span>${kop}</div>
+      ${ringkas ? `<div class="tgt-nama">${esc(nama)}</div>` : ''}<div class="tgt-kosong">Menghitung target…</div></div></div>`;
+    const lalu = orderPerCS(targetData.timLalu, targetData.lalu).get(nama) || 0;
+    const kini = orderPerCS(targetData.timKini, targetData.kini).get(nama) || 0;
+    const bulanLalu = BULAN_ID[(new Date().getMonth() + 11) % 12];
+    if (targetData.gagal || !lalu) return `${pembuka}"><div class="tgt-isi"><div class="tgt-kop"><span class="tgt-titik"></span>${kop}</div>
+      ${ringkas ? `<div class="tgt-nama">${esc(nama)}</div>` : ''}
+      <div class="tgt-kosong">${targetData.gagal ? 'Data Globemerce belum bisa ditarik, coba muat ulang.'
+        : 'Belum ada order di ' + bulanLalu + ', jadi target belum bisa dipatok.'}</div></div></div>`;
+    const target = Math.ceil(lalu * (1 + aturan.naik));
+    const capai = kini >= target;
+    const pct = Math.min(100, kini / target * 100);
+    const n = new Date();
+    const akhir = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+    const sisaHari = akhir - n.getDate() + 1;
+    const kurang = Math.max(0, target - kini);
+    const perHari = Math.ceil(kurang / Math.max(1, sisaHari));
+    const ket = capai
+      ? `<b>Target tercapai!</b> ${esc(fRp(aturan.hadiah))} sudah jadi milik${ringkas ? ' ' + esc(nama) : 'mu'}. ${bulanLalu} ${fN(lalu)} order → target ${fN(target)} (+${Math.round(aturan.naik * 100)}%).`
+      : `${bulanLalu} ${fN(lalu)} order → target <b>${fN(target)}</b> (+${Math.round(aturan.naik * 100)}%). Kurang <b>${fN(kurang)} order</b> · sekitar <b>${fN(perHari)}/hari</b> selama ${sisaHari} hari lagi.`;
+    return `${pembuka}${capai ? ' capai' : ''}">
+      <div class="tgt-isi">
+        <div class="tgt-kop"><span class="tgt-titik"></span>${kop}</div>
+        ${ringkas ? `<div class="tgt-nama">${esc(nama)}</div>` : ''}
+        <div class="tgt-angka"><b>${fN(kini)}</b><span>/ ${fN(target)} order</span><em>${Math.floor(pct)}%</em></div>
+        <div class="tgt-bar"><div class="tgt-api" style="width:${Math.max(pct, 3).toFixed(1)}%"></div></div>
+        <div class="tgt-ket">${ket}</div>
+      </div>
+      <div class="tgt-uang">${gambarUang(aturan.hadiah)}
+        <span class="tgt-label">${capai ? 'Milik' + (ringkas ? ' ' + esc(nama) : 'mu') + '!' : 'Hadiah ' + esc(fRp(aturan.hadiah))}</span></div>
+    </div>`;
+  }
+
+  // CS melihat targetnya sendiri; admin melihat ketiganya.
+  function blokTarget() {
+    if (AKU.peran === 'cs') {
+      const nama = namaCS(AKU.agen);
+      return TARGET_CS[nama] ? `<div class="tgt-wadah">${kartuTarget(nama, false)}</div>` : '';
+    }
+    if (AKU.peran === 'admin') {
+      return `<div class="tgt-wadah"><div class="tgt-grid">${Object.keys(TARGET_CS)
+        .map(n => kartuTarget(n, true)).join('')}</div></div>`;
+    }
+    return '';
+  }
+
   // ---------- data khusus follow-up ----------
   // Follow-up sengaja tidak mengikuti filter periode di atas. CS menghubungi
   // pelanggan dua bulan terakhir — bulan berjalan dan bulan sebelumnya — jadi
@@ -4596,7 +4801,7 @@
       ? (fuData && fuData.memuat ? blokFollowUpMemuat() : blokFollowUp((fuData && fuData.pesanan) || []))
       : '';
     const smg = AKU.peran === 'cs' ? kartuSemangat() : '';
-    return smg + fu + kartu + blokOngkir + peringkat + tabel;
+    return smg + blokTarget() + fu + kartu + blokOngkir + peringkat + tabel;
   }
 
   // ---------- data retur setahun ----------

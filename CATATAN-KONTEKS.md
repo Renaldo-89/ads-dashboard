@@ -97,6 +97,13 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
   `worker.js` menambahkan MELI ke agen YARA saat login, supaya pesanan & jadwal
   follow-up MELI muncul di dashboard Lili. Rahasia `PENGGUNA` tidak diubah.
 
+- **Target bonus bulanan CS** (2 Nov 2026): `TARGET_CS` di `kerja.html` —
+  ECHA +35%, Lili +40%, Intan +40% dari jumlah order bulan lalu, hadiah Rp500.000.
+  Order = pesanan Globemerce per CS (nama digabung lewat `NAMA_CS`) + kiriman
+  stok retur; order retur/gagal tetap dihitung. Selalu bulan berjalan vs bulan
+  lalu (tidak ikut filter). CS melihat kartunya sendiri di menu Customer Service,
+  admin melihat ketiganya. Ubah persen/hadiah cukup di `TARGET_CS`.
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.
