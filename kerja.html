@@ -3857,6 +3857,17 @@
   // Nama CS dibaca dari kolom Sender di Globemerce (medan "agen").
   // Status pengiriman diambil dari Everpro, dicocokkan lewat resi atau nomor order.
   let fCS = 'all';
+  // Filter status kirim di daftar pelanggan CS. Kelompok dari Everpro:
+  // terkirim = selesai; retur/gagal(ditolak)/hilang = bermasalah;
+  // bayar/pickup/proses = masih dikirim. Batal dan yang belum terlacak
+  // hanya muncul di "Semua status".
+  let fKirim = 'all';
+  const STATUS_KIRIM = [
+    { id: 'kirim',   label: 'Dikirim',        cocok: k => /^(bayar|pickup|proses)$/.test(k) },
+    { id: 'selesai', label: 'Selesai',        cocok: k => k === 'terkirim' },
+    { id: 'retur',   label: 'Retur/Ditolak',  cocok: k => /^(retur|gagal|hilang)$/.test(k) },
+  ];
+  const kelompokPesanan = o => String((o._kirim && o._kirim.kelompok) || '');
 
   // Nama tampilan berbeda dari nama di Globemerce.
   // Beberapa nama boleh menunjuk orang yang sama; barisnya nanti digabung.
@@ -4799,8 +4810,13 @@
           </tr>`; }).join('')}</tbody></table></div></div>`;
 
     const dipilih = fCS === 'all' ? R.flatMap(c => c.pesanan) : (R.find(c => c.nama === fCS) || {}).pesanan || [];
-    const urut = dipilih.slice().sort((a, b) =>
-      String(b.tanggal + (b.waktu||'')).localeCompare(String(a.tanggal + (a.waktu||''))));
+    const aturanKirim = STATUS_KIRIM.find(s => s.id === fKirim);
+    const urut = dipilih.filter(o => !aturanKirim || aturanKirim.cocok(kelompokPesanan(o)))
+      .sort((a, b) => String(b.tanggal + (b.waktu||'')).localeCompare(String(a.tanggal + (a.waktu||''))));
+    const chipsKirim = `<div class="chips" style="margin-bottom:14px">
+      <button class="${fKirim==='all'?'on':''}" data-kirim="all">Semua status <span class="tag">${fN(dipilih.length)}</span></button>
+      ${STATUS_KIRIM.map(s => `<button class="${fKirim===s.id?'on':''}" data-kirim="${s.id}">${s.label}
+        <span class="tag">${fN(dipilih.filter(o => s.cocok(kelompokPesanan(o))).length)}</span></button>`).join('')}</div>`;
 
     const baris = urut.map(o => {
       const k = o._kirim;
@@ -4825,12 +4841,12 @@
     const judul = fCS === 'all' ? 'Semua pelanggan' : 'Pelanggan ' + esc(fCS);
     const tabel = `<div class="sec"><h4>${judul}</h4>
         <span class="note">${fN(urut.length)} pesanan · status kirim dari Everpro</span></div>
-      ${chips}
+      ${chips}${chipsKirim}
       <div class="panel tight"><div class="scroll-y scroll-x"><table class="dt pesanan">
         <thead><tr><th>Tanggal</th><th>No order</th><th>Pembeli</th><th>Telepon</th>
           <th>Provinsi</th><th>Resi</th><th>Kurir</th><th class="ctr">Status kirim</th>
           ${adaOngkir?'<th class="num">Ongkir</th>':''}</tr></thead>
-        <tbody>${baris}</tbody></table></div></div>`;
+        <tbody>${baris || `<tr><td colspan="9" style="text-align:center;padding:22px;color:var(--muted)">Tidak ada pesanan dengan status ini.</td></tr>`}</tbody></table></div></div>`;
 
     // Follow-up memakai daftar dua bulan terakhir, bukan daftar periode di atas.
     const fu = AKU.peran === 'cs'
@@ -5944,6 +5960,8 @@
     if (fu) { fuBuka = fuBuka === fu.dataset.fu ? null : fu.dataset.fu; render(); return; }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
+    const ck = e.target.closest('button[data-kirim]');
+    if (ck) { fKirim = ck.dataset.kirim; render(); return; }
     const db = e.target.closest('button[data-dealer-bulan]');
     if (db) { dealerPeriode = db.dataset.dealerBulan; render(); return; }
     const pr = e.target.closest('button[data-pajak-refresh]');

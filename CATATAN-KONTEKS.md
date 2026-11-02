@@ -104,6 +104,10 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
   lalu (tidak ikut filter). CS melihat kartunya sendiri di menu Customer Service,
   admin melihat ketiganya. Ubah persen/hadiah cukup di `TARGET_CS`.
 
+- **Filter status kirim** di daftar pelanggan menu Customer Service (2 Nov 2026):
+  Semua status / Dikirim (bayar, pickup, proses) / Selesai (terkirim) /
+  Retur/Ditolak (retur, gagal, hilang). Batal & belum terlacak hanya di "Semua".
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.
