@@ -4102,7 +4102,6 @@
   let laporanData = null;      // array dari Worker, null = belum ditarik
   let laporanMemuat = false;
   let laporanPesan = null;     // { jenis:'ok'|'galat', teks }
-  let laporanFilter = '30';    // 'hari' | '7' | '30' | 'semua'
   let laporanPlatform = 'semua'; // 'semua' | 'google_ads' | 'facebook' | 'tiktok' | 'lainnya'
   let laporanAkun = 'semua';   // nama akun iklan, 'semua' = tanpa filter akun
   let laporanEdit = null;     // id catatan yang sedang disunting, null = mode tambah baru
@@ -4522,11 +4521,10 @@
         Menarik laporan iklan&hellip;</div></div>`;
     }
 
-    const n0 = new Date();
-    const batasHari = { hari:1, '7':7, '30':30, semua:Infinity }[laporanFilter] || 30;
-    const batasTgl = iso(new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() - batasHari + 1));
+    // Periode mengikuti filter periode di bagian atas halaman (satu filter saja).
+    const rk = rentangKini();
     const dasar = laporanData
-      .filter(x => laporanFilter === 'semua' || x.tgl >= batasTgl)
+      .filter(x => !rk || (x.tgl >= rk.from && x.tgl <= rk.to))
       .filter(x => laporanPlatform === 'semua' || x.platform === laporanPlatform);
     // Daftar akun mengikuti periode + platform yang sedang dipilih.
     // Selain akun yang sudah punya laporan, akun dari data platform (Windsor/Sheet) ikut
@@ -4610,11 +4608,7 @@
         seberapa jauh jumlah lead dari iklan meleset dari chat/DM yang benar-benar masuk.</p>
     </form>`;
 
-    const chipFilter = `<div class="chips" style="margin:14px 0 8px">
-      ${[['hari','Hari ini'],['7','7 hari'],['30','30 hari'],['semua','Semua']].map(([v,l]) =>
-        `<button class="${laporanFilter===v?'on':''}" data-laporan-filter="${v}">${esc(l)}</button>`).join('')}
-    </div>
-    <div class="chips" style="margin:0 0 14px">
+    const chipFilter = `<div class="chips" style="margin:14px 0 14px">
       ${[['semua','Semua platform'], ...IKLAN.map(id => [id, PLAT[id].nama]), ['lainnya','Lainnya']].map(([v,l]) =>
         `<button class="${laporanPlatform===v?'on':''}" data-laporan-platform-filter="${v}">${esc(l)}</button>`).join('')}
     </div>
@@ -5972,8 +5966,6 @@
     if (pch) { unduhPajakCsvHarian(); return; }
     const pp = e.target.closest('button[data-pajak-cetak]');
     if (pp) { window.print(); return; }
-    const lf = e.target.closest('button[data-laporan-filter]');
-    if (lf) { laporanFilter = lf.dataset.laporanFilter; render(); return; }
     const lpf = e.target.closest('button[data-laporan-platform-filter]');
     if (lpf) { laporanPlatform = lpf.dataset.laporanPlatformFilter; laporanAkun = 'semua'; render(); return; }
     const lak = e.target.closest('button[data-laporan-akun]');
