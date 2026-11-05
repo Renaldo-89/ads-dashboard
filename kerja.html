@@ -3354,6 +3354,9 @@
   // CS melihat targetnya sendiri; admin melihat ketiganya.
   function blokTarget() {
     if (AKU.peran === 'cs') {
+      // MELI digabung ke Lili di peringkat, tapi target bonus itu milik Lili;
+      // jadi saat Meli login sendiri, kartu target tidak ditampilkan.
+      if (String(AKU.agen || '').trim().toLowerCase() === 'meli') return '';
       const nama = namaCS(AKU.agen);
       return TARGET_CS[nama] ? `<div class="tgt-wadah">${kartuTarget(nama, false)}</div>` : '';
     }
