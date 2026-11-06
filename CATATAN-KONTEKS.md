@@ -108,6 +108,8 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
   Semua status / Dikirim (bayar, pickup, proses) / Selesai (terkirim) /
   Retur/Ditolak (retur, gagal, hilang). Batal & belum terlacak hanya di "Semua".
 
+- **Target GMV harian** (Overview) = angka tetap `TARGET_GMV` di `kerja.html`, sejak 6 Nov 2026 = **2500** (sebelumnya 1500).
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.
