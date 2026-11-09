@@ -3440,6 +3440,9 @@
     const tambah = (agen, nama, jumlah, selesai) => {
       const t = String(agen || '').trim();
       if (!t || BUKAN_CS[t.toUpperCase()] || tanpaPenjualan(t)) return;
+      // Barang hadiah (PWP), mis. "INID-COFFIY 10s(PWP)_AUG/24", bukan closingan:
+      // di Globemerce kadang tetap ditandai produk utama, jadi disaring di sini.
+      if (/\(\s*pwp\s*\)|\bpwp\b/i.test(String(nama || ''))) return;
       const p = produkBonus(nama); if (!p) return;
       if (p.isi) jumlah = jumlah * p.isi(nama);
       const cs = namaCS(t);
