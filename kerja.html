@@ -3494,6 +3494,7 @@
       const p = produkBonus(nama); if (!p) return;
       if (p.isi) jumlah = jumlah * p.isi(nama);
       const cs = namaCS(t);
+      if (!TARGET_CS[cs]) return;          // bonus hanya untuk ECHA, Lili, Intan
       if (!hasil.has(cs)) hasil.set(cs, { per: {}, total: 0 });
       const h = hasil.get(cs);
       const b = h.per[p.kode] || (h.per[p.kode] = { box: 0, tunggu: 0 });
@@ -4109,6 +4110,7 @@
   // Bukan Customer Service. Disembunyikan dari peringkat, tapi tetap dihitung di catatan
   // supaya total di halaman ini masih bisa dicocokkan dengan halaman Globemerce.
   const BUKAN_CS = { NANDA: 'order sendiri', DINDA: 'advertiser',
+    'RENALDO ILHAM ZAMZAM': 'pemilik', NANA: 'bukan CS',
     'KIRIM JOGJA': 'kirim internal' };
 
   // Tujuan pengiriman yang bukan penjualan. Stoknya tetap berkurang, tapi
