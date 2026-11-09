@@ -485,6 +485,14 @@
     box-shadow:0 0 0 2px rgba(254,243,199,.6), 0 3px 8px rgba(0,0,0,.2); }
   .bn-total { margin-top:6px; font-size:38px; line-height:1; font-weight:900; letter-spacing:-1.2px;
     text-shadow:0 3px 16px rgba(4,47,46,.35); font-variant-numeric:tabular-nums; }
+  .bn-final { display:inline-flex; align-items:center; vertical-align:middle; margin-left:12px; padding:4px 10px;
+    border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.2px; text-shadow:none;
+    background:rgba(255,255,255,.2); color:#fff; border:1px solid rgba(255,255,255,.4); }
+  .bn-final.ya { background:#FACC15; color:#422006; border-color:#FDE68A; box-shadow:0 0 14px rgba(250,204,21,.6); }
+  .bn-orang-kop .bn-final { display:flex; margin:4px 0 0; justify-content:flex-end; font-size:10px;
+    background:var(--amber-soft); color:var(--amber-ink, var(--amber)); border-color:transparent; }
+  .bn-orang-kop .bn-final.ya { background:var(--green-soft); color:var(--green-ink, var(--green)); box-shadow:none; }
+  .bn-orang-kop em { display:flex; flex-direction:column; align-items:flex-end; }
   .bn-sub { margin-top:8px; font-size:11.5px; color:rgba(255,255,255,.85); max-width:62ch; }
   .bn-pilih { display:flex; gap:4px; padding:4px; border-radius:999px; background:rgba(255,255,255,.18); }
   .bn-pilih button { border:0; background:none; color:#fff; font:inherit; font-size:11.5px; font-weight:700;
@@ -3553,6 +3561,20 @@
     </div>`;
   }
 
+  // Final = bulannya sudah lewat DAN tidak ada paket yang masih di perjalanan.
+  // Selama belum final, angka bonus masih bisa bertambah (paket sampai) atau
+  // tidak jadi (paket retur), jadi belum boleh dibayar.
+  function statusFinal(r, hs) {
+    const bulanLewat = r.to < tglLokal() && bonusBulan === 'lalu';
+    const tunggu = hs.reduce((a, h) => a + Object.values(h.per).reduce((x, b) => x + (b.tunggu || 0), 0), 0);
+    if (!bulanLewat) return { final: false, alasan: 'bulan masih berjalan' };
+    if (tunggu) return { final: false, alasan: fN(tunggu) + ' item masih di perjalanan' };
+    return { final: true, alasan: 'semua paket sudah sampai/selesai' };
+  }
+  const lencanaFinal = s => s.final
+    ? `<span class="bn-final ya" title="${esc(s.alasan)}">✓ Final</span>`
+    : `<span class="bn-final" title="${esc(s.alasan)}">Belum Final · ${esc(s.alasan)}</span>`;
+
   function blokBonus() {
     if (AKU.peran !== 'cs' && AKU.peran !== 'admin') return '';
     // bonus MELI ikut Lili; Meli login sendiri tidak diberi kartu bonus
@@ -3563,11 +3585,11 @@
     const pilih = `<div class="bn-pilih">
       <button class="${bonusBulan==='kini'?'on':''}" data-bonus-bulan="kini">Bulan ini</button>
       <button class="${bonusBulan==='lalu'?'on':''}" data-bonus-bulan="lalu">Bulan lalu</button></div>`;
-    const bungkus = (isi, total, sub) => `<div class="bn">
+    const bungkus = (isi, total, sub, lencana) => `<div class="bn">
       <div class="bn-hero">
         <div class="bn-hero-kiri">
           <div class="bn-cap"><span class="bn-koin">Rp</span>BONUS CLOSING · ${esc(bln.toUpperCase())}</div>
-          <div class="bn-total">${total}</div>
+          <div class="bn-total">${total}${lencana || ''}</div>
           <div class="bn-sub">${sub}</div>
         </div>${pilih}
       </div>${isi}</div>`;
@@ -3581,7 +3603,8 @@
       const tunggu = Object.values(h.per).some(b => b.tunggu);
       const isi = `<div class="bn-grid">${BONUS_PRODUK.map(p => selBonus(p, h.per[p.kode])).join('')}</div>`;
       return bungkus(isi, esc(fRp(h.total)),
-        (tunggu ? 'Sebagian paket masih di perjalanan, bonusnya masuk setelah terkirim · ' : '') + aturan);
+        (tunggu ? 'Sebagian paket masih di perjalanan, bonusnya masuk setelah terkirim · ' : '') + aturan,
+        lencanaFinal(statusFinal(r, [h])));
     }
 
     const baris = [...H.entries()].sort((a, b) => b[1].total - a[1].total);
@@ -3592,11 +3615,12 @@
         <div class="bn-orang-kop">
           <span class="bn-ava">${esc(inisial(nama))}</span>
           <div><b>${esc(nama)}</b><span>${i === 0 ? 'Bonus terbesar' : fN(aktif.length) + ' produk'}</span></div>
-          <em>${esc(fRp(h.total))}</em>
+          <em>${esc(fRp(h.total))}${lencanaFinal(statusFinal(r, [h]))}</em>
         </div>
         <div class="bn-grid kecil">${aktif.map(p => selBonus(p, h.per[p.kode])).join('') || '<div class="bn-kosong">Belum ada box terkirim.</div>'}</div>
       </div>`; }).join('')}</div>` : '<div class="bn-kosong">Belum ada box terkirim di bulan ini.</div>';
-    return bungkus(isi, esc(fRp(totalSemua)), `total bonus semua CS · ${aturan}`);
+    return bungkus(isi, esc(fRp(totalSemua)), `total bonus semua CS · ${aturan}`,
+      lencanaFinal(statusFinal(r, baris.map(([, h]) => h))));
   }
 
   // ---------- data khusus follow-up ----------
