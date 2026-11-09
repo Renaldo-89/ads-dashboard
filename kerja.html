@@ -468,24 +468,72 @@
   /* di layar lebar kalimatnya jangan menabrak tombol simpan */
   @media (min-width:621px) { .smg-kata { padding-right:170px; } }
 
-  /* ---------- bonus box CS ---------- */
-  .bonus-wadah { margin-bottom:18px; }
-  .bonus-chips { margin:0 0 12px; }
-  .bonus-kartu { background:var(--panel); border:1px solid var(--line); border-radius:16px;
-    padding:18px; box-shadow:var(--bayang); }
-  .bonus-total { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; margin-bottom:14px; }
-  .bonus-total span { font-size:12px; font-weight:700; color:var(--muted); }
-  .bonus-total b { font-size:28px; font-weight:800; letter-spacing:-.6px; color:var(--green-ink, var(--green)); }
-  .bonus-total em { flex-basis:100%; font-style:normal; font-size:11.5px; color:var(--amber-ink, var(--amber)); }
-  .bonus-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-  .bonus-sel { background:var(--lembut); border:1px solid var(--line); border-radius:12px; padding:11px 12px;
-    font-size:12.5px; line-height:1.45; }
-  .bonus-lbl { font-size:10.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--violet); margin-bottom:3px; }
-  .bonus-rinci { font-size:10.5px; color:var(--muted); }
-  .bonus-tunggu { font-size:10.5px; color:var(--amber-ink, var(--amber)); }
-  .bonus-naik { margin-top:5px; font-size:10.5px; font-weight:600; color:var(--toska); }
-  .bonus-nol { color:var(--faint); }
-  .bonus-tabel td { vertical-align:top; font-size:12px; line-height:1.45; }
+  /* ---------- bonus closing CS ---------- */
+  .bn { margin-bottom:20px; border-radius:20px; overflow:hidden; background:var(--panel);
+    border:1px solid var(--line); box-shadow:var(--bayang-2); }
+  .bn-hero { position:relative; display:flex; justify-content:space-between; align-items:flex-start; gap:14px;
+    flex-wrap:wrap; padding:20px 22px 18px; color:#fff; isolation:isolate;
+    background:linear-gradient(125deg,#059669 0%,#0D9488 45%,#0EA5E9 100%); }
+  .bn-hero::before { content:''; position:absolute; inset:0; z-index:-1;
+    background:radial-gradient(circle at 92% 0%, rgba(253,224,71,.45), transparent 45%),
+      radial-gradient(circle at 0% 120%, rgba(255,255,255,.25), transparent 50%); }
+  .bn-cap { display:flex; align-items:center; gap:8px; font-size:10px; font-weight:800; letter-spacing:1.3px;
+    color:rgba(255,255,255,.88); }
+  .bn-koin { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%;
+    font-size:9px; font-weight:900; color:#78350F; letter-spacing:0;
+    background:radial-gradient(circle at 35% 30%,#FEF9C3,#FACC15 55%,#D97706);
+    box-shadow:0 0 0 2px rgba(254,243,199,.6), 0 3px 8px rgba(0,0,0,.2); }
+  .bn-total { margin-top:6px; font-size:38px; line-height:1; font-weight:900; letter-spacing:-1.2px;
+    text-shadow:0 3px 16px rgba(4,47,46,.35); font-variant-numeric:tabular-nums; }
+  .bn-sub { margin-top:8px; font-size:11.5px; color:rgba(255,255,255,.85); max-width:62ch; }
+  .bn-pilih { display:flex; gap:4px; padding:4px; border-radius:999px; background:rgba(255,255,255,.18); }
+  .bn-pilih button { border:0; background:none; color:#fff; font:inherit; font-size:11.5px; font-weight:700;
+    padding:6px 13px; border-radius:999px; cursor:pointer; }
+  .bn-pilih button.on { background:#fff; color:#047857; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  .bn-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; padding:16px; }
+  .bn-grid.kecil { padding:0; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+  .bn-sel { position:relative; border-radius:14px; padding:13px 14px 12px; background:var(--lembut);
+    border:1px solid var(--line); overflow:hidden; }
+  .bn-sel::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--w); opacity:.35; }
+  .bn-sel.aktif::before { opacity:1; }
+  .bn-sel.aktif { background:linear-gradient(160deg, color-mix(in srgb, var(--w) 10%, var(--panel)), var(--panel)); }
+  .bn-kop { display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:800; letter-spacing:.7px;
+    text-transform:uppercase; color:var(--ink-2); }
+  .bn-titik { width:8px; height:8px; border-radius:50%; background:var(--w); }
+  .bn-angka { display:flex; align-items:baseline; gap:5px; margin:6px 0 10px; }
+  .bn-angka b { font-size:24px; font-weight:800; letter-spacing:-.6px; color:var(--ink); }
+  .bn-angka span { font-size:11px; color:var(--muted); font-weight:600; }
+  .bn-angka em { margin-left:auto; font-style:normal; font-size:13px; font-weight:800; color:var(--green-ink, var(--green)); }
+  .bn-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+  .bn-seg { position:relative; height:8px; border-radius:4px; background:var(--line); margin-bottom:15px; }
+  .bn-seg i { position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--w);
+    box-shadow:0 0 8px color-mix(in srgb, var(--w) 55%, transparent); }
+  .bn-seg span { position:absolute; top:11px; left:0; font-size:9px; font-weight:700; color:var(--faint); }
+  .bn-seg.isi span { color:var(--w); }
+  .bn-bar.datar { display:block; height:8px; border-radius:4px; background:var(--line); margin-bottom:6px; position:relative; }
+  .bn-bar.datar i { position:absolute; inset:0 auto 0 0; border-radius:4px; background:var(--w); }
+  .bn-ket { font-size:10.5px; color:var(--muted); }
+  .bn-ket b { color:var(--ink-2); }
+  .bn-tunggu { margin-top:4px; font-size:10.5px; font-weight:600; color:var(--amber-ink, var(--amber)); }
+  .bn-cs { display:grid; gap:12px; padding:16px; }
+  .bn-orang { border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--panel); }
+  .bn-orang-kop { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .bn-orang-kop div { display:flex; flex-direction:column; }
+  .bn-orang-kop b { font-size:14px; color:var(--ink); }
+  .bn-orang-kop div span { font-size:10.5px; color:var(--muted); }
+  .bn-orang-kop em { margin-left:auto; font-style:normal; font-size:18px; font-weight:900; letter-spacing:-.4px;
+    color:var(--green-ink, var(--green)); }
+  .bn-ava { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; font-size:12px; font-weight:800;
+    color:#fff; background:linear-gradient(135deg,#10B981,#0EA5E9); }
+  .bn-kosong { padding:22px; text-align:center; font-size:12.5px; color:var(--muted); display:flex; gap:8px;
+    justify-content:center; align-items:center; }
+  @media (max-width:620px) {
+    .bn-hero { padding:18px 16px 16px; }
+    .bn-total { font-size:32px; }
+    .bn-grid { grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px; gap:8px; }
+    .bn-grid.kecil { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .bn-cs { padding:12px; }
+  }
 
   /* ---------- target bonus bulanan CS ---------- */
   .tgt-wadah { margin-bottom:18px; }
@@ -3476,6 +3524,34 @@
     return hasil;
   }
 
+  const WARNA_BONUS = { DVN:'#EC4899', EROJAN:'#3B82F6', BLZ:'#8B5CF6', NOVIA:'#14B8A6', SGLOW:'#F59E0B', COFFIY:'#B45309' };
+  const rbu = n => fN(n / 1000) + 'rb';
+
+  // Satu produk: jumlah, bonus, dan bar 3 tingkat (1-50 / 51-100 / 101+).
+  function selBonus(p, b) {
+    const box = b ? b.box : 0, tunggu = b ? b.tunggu : 0, rp = b ? b.rp : 0;
+    const sat = p.satuan || 'box';
+    const warna = WARNA_BONUS[p.kode] || 'var(--violet)';
+    let bar, naik;
+    if (p.datar) {
+      bar = `<div class="bn-bar datar"><i style="width:${box ? 100 : 0}%"></i></div>`;
+      naik = `${esc(fRp(p.tarif[0]))} per ${sat}`;
+    } else {
+      const seg = [Math.min(box, 50) / 50, Math.min(Math.max(box - 50, 0), 50) / 50, Math.min(Math.max(box - 100, 0), 50) / 50];
+      bar = `<div class="bn-bar">${seg.map((f, i) => `<div class="bn-seg${f > 0 ? ' isi' : ''}"><i style="width:${(f * 100).toFixed(1)}%"></i>
+        <span>${rbu(p.tarif[i])}</span></div>`).join('')}</div>`;
+      const lagi = box < 50 ? 51 - box : box < 100 ? 101 - box : 0;
+      naik = lagi ? `<b>${fN(lagi)} ${sat}</b> lagi naik ke ${rbu(p.tarif[box < 50 ? 1 : 2])}/${sat}` : `Tarif tertinggi ${rbu(p.tarif[2])}/${sat} 🔥`;
+    }
+    return `<div class="bn-sel${box ? ' aktif' : ''}" style="--w:${warna}">
+      <div class="bn-kop"><span class="bn-titik"></span>${esc(p.label)}</div>
+      <div class="bn-angka"><b>${fN(box)}</b><span>${sat}</span><em>${esc(fRp(rp))}</em></div>
+      ${bar}
+      <div class="bn-ket">${naik}</div>
+      ${tunggu ? `<div class="bn-tunggu">+${fN(tunggu)} ${sat} di perjalanan</div>` : ''}
+    </div>`;
+  }
+
   function blokBonus() {
     if (AKU.peran !== 'cs' && AKU.peran !== 'admin') return '';
     // bonus MELI ikut Lili; Meli login sendiri tidak diberi kartu bonus
@@ -3483,49 +3559,43 @@
     const r = rentangBulan(bonusBulan === 'lalu' ? -1 : 0);
     const data = bonusData.get(r.from + '|' + r.to);
     const bln = BULAN_ID[Number(r.from.slice(5, 7)) - 1];
-    const pilih = `<div class="chips bonus-chips">
+    const pilih = `<div class="bn-pilih">
       <button class="${bonusBulan==='kini'?'on':''}" data-bonus-bulan="kini">Bulan ini</button>
       <button class="${bonusBulan==='lalu'?'on':''}" data-bonus-bulan="lalu">Bulan lalu</button></div>`;
-    const kepala = `<div class="sec"><h4>Bonus box · ${esc(bln)}</h4>
-      <span class="note">hanya paket yang sudah terkirim · tarif bertingkat per produk</span></div>${pilih}`;
-    if (!data || data.memuat) return `<div class="bonus-wadah">${kepala}<div class="panel"><div class="empty"><div class="spinner"></div>Menghitung bonus&hellip;</div></div></div>`;
-    if (data.gagal) return `<div class="bonus-wadah">${kepala}<div class="panel"><div class="empty">Data Globemerce/Everpro belum bisa ditarik. Coba muat ulang.</div></div></div>`;
+    const bungkus = (isi, total, sub) => `<div class="bn">
+      <div class="bn-hero">
+        <div class="bn-hero-kiri">
+          <div class="bn-cap"><span class="bn-koin">Rp</span>BONUS CLOSING · ${esc(bln.toUpperCase())}</div>
+          <div class="bn-total">${total}</div>
+          <div class="bn-sub">${sub}</div>
+        </div>${pilih}
+      </div>${isi}</div>`;
+    if (!data || data.memuat) return bungkus('<div class="bn-kosong"><div class="spinner"></div> Menghitung bonus&hellip;</div>', '&hellip;', 'menarik data pesanan &amp; pengiriman');
+    if (data.gagal) return bungkus('<div class="bn-kosong">Data Globemerce/Everpro belum bisa ditarik. Coba muat ulang.</div>', '—', '');
     const H = hitungBonus(r, data);
-    const sel = (b, p) => {
-      if (!b || (!b.box && !b.tunggu)) return '<span class="bonus-nol">&mdash;</span>';
-      const rinci = [b.t1 ? `${fN(b.t1)}×${fN(p.tarif[0]/1000)}rb` : '', b.t2 ? `${fN(b.t2)}×${fN(p.tarif[1]/1000)}rb` : '',
-        b.t3 ? `${fN(b.t3)}×${fN(p.tarif[2]/1000)}rb` : ''].filter(Boolean).join(' + ');
-      const sat = p.satuan || 'box';
-      return `<b>${fN(b.box)} ${sat}</b> · ${esc(fRp(b.rp))}
-        ${rinci && !p.datar ? `<div class="bonus-rinci">${rinci}</div>` : ''}
-        ${p.datar && b.box ? `<div class="bonus-rinci">${fN(b.box)}×${fRp(p.tarif[0])}</div>` : ''}
-        ${b.tunggu ? `<div class="bonus-tunggu">+${fN(b.tunggu)} ${sat} belum terkirim</div>` : ''}`;
-    };
+    const aturan = 'hanya paket yang sudah terkirim · tarif naik di box ke-51 &amp; ke-101';
+
     if (AKU.peran === 'cs') {
-      const nama = namaCS(AKU.agen);
-      const h = H.get(nama) || { per: {}, total: 0 };
-      const tunggu = Object.values(h.per).reduce((a, b) => a + (b.tunggu || 0), 0);
-      return `<div class="bonus-wadah">${kepala}<div class="bonus-kartu">
-        <div class="bonus-total"><span>Bonus kamu ${esc(bln)}</span><b>${esc(fRp(h.total))}</b>
-          ${tunggu ? `<em>Sebagian paket masih di perjalanan, bonusnya dihitung setelah terkirim</em>` : ''}</div>
-        <div class="bonus-grid">${BONUS_PRODUK.map(p => `<div class="bonus-sel">
-          <div class="bonus-lbl">${esc(p.label)}</div>${sel(h.per[p.kode], p)}
-          ${p.datar ? `<div class="bonus-naik">${esc(fRp(p.tarif[0]))}/${p.satuan || 'box'}</div>` : (() => { const b = h.per[p.kode]; const box = b ? b.box : 0;
-            const lagi = box < 50 ? 51 - box : box < 100 ? 101 - box : 0;
-            return lagi ? `<div class="bonus-naik">${fN(lagi)} box lagi → tarif ${fN(p.tarif[box < 50 ? 1 : 2]/1000)}rb/box</div>` : `<div class="bonus-naik">Tarif tertinggi ${fN(p.tarif[2]/1000)}rb/box</div>`; })()}
-        </div>`).join('')}</div></div></div>`;
+      const h = H.get(namaCS(AKU.agen)) || { per: {}, total: 0 };
+      const tunggu = Object.values(h.per).some(b => b.tunggu);
+      const isi = `<div class="bn-grid">${BONUS_PRODUK.map(p => selBonus(p, h.per[p.kode])).join('')}</div>`;
+      return bungkus(isi, esc(fRp(h.total)),
+        (tunggu ? 'Sebagian paket masih di perjalanan, bonusnya masuk setelah terkirim · ' : '') + aturan);
     }
+
     const baris = [...H.entries()].sort((a, b) => b[1].total - a[1].total);
     const totalSemua = baris.reduce((a, [, h]) => a + h.total, 0);
-    return `<div class="bonus-wadah">${kepala}
-      <div class="panel tight"><div class="scroll-x"><table class="dt bonus-tabel">
-        <thead><tr><th>CS</th>${BONUS_PRODUK.map(p => `<th>${esc(p.label)}</th>`).join('')}<th class="num">Total bonus</th></tr></thead>
-        <tbody>${baris.length ? baris.map(([nama, h]) => `<tr><td class="nama"><b>${esc(nama)}</b></td>
-          ${BONUS_PRODUK.map(p => `<td>${sel(h.per[p.kode], p)}</td>`).join('')}
-          <td class="num"><b>${esc(fRp(h.total))}</b></td></tr>`).join('')
-          : `<tr><td colspan="${BONUS_PRODUK.length + 2}" style="text-align:center;padding:22px;color:var(--muted)">Belum ada box terkirim di bulan ini.</td></tr>`}</tbody>
-        ${baris.length ? `<tfoot><tr><td><b>Total</b></td>${BONUS_PRODUK.map(() => '<td></td>').join('')}<td class="num"><b>${esc(fRp(totalSemua))}</b></td></tr></tfoot>` : ''}
-      </table></div></div></div>`;
+    const isi = baris.length ? `<div class="bn-cs">${baris.map(([nama, h], i) => {
+      const aktif = BONUS_PRODUK.filter(p => h.per[p.kode] && (h.per[p.kode].box || h.per[p.kode].tunggu));
+      return `<div class="bn-orang">
+        <div class="bn-orang-kop">
+          <span class="bn-ava">${esc(inisial(nama))}</span>
+          <div><b>${esc(nama)}</b><span>${i === 0 ? 'Bonus terbesar' : fN(aktif.length) + ' produk'}</span></div>
+          <em>${esc(fRp(h.total))}</em>
+        </div>
+        <div class="bn-grid kecil">${aktif.map(p => selBonus(p, h.per[p.kode])).join('') || '<div class="bn-kosong">Belum ada box terkirim.</div>'}</div>
+      </div>`; }).join('')}</div>` : '<div class="bn-kosong">Belum ada box terkirim di bulan ini.</div>';
+    return bungkus(isi, esc(fRp(totalSemua)), `total bonus semua CS · ${aturan}`);
   }
 
   // ---------- data khusus follow-up ----------
