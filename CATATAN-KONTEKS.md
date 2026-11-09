@@ -110,6 +110,13 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
 
 - **Target GMV harian** (Overview) = angka tetap `TARGET_GMV` di `kerja.html`, sejak 6 Nov 2026 = **2500** (sebelumnya 1500).
 
+- **Bonus box CS** (9 Nov 2026): `BONUS_PRODUK` di `kerja.html`, tarif per box
+  bertingkat per produk per CS per bulan (1-50 / 51-100 / 101+): DVN 10/12/15rb,
+  Erojan 12/14/16rb, BLZ Pro 7/10/12rb, Novia 12/14/16rb, S-Glow 12/14/16rb.
+  Coffiy: Rp1.000 per sachet (datar), 1 box = 10 sachet = Rp10.000; kalau nama menyebut isi lain ("COFFIY 5s") itu yang dipakai; Coffiy PWP tidak dihitung.
+  Hanya paket terkirim (Everpro) yang dihitung, + stok retur terkirim; MELI ikut
+  Lili. CS lihat kartunya sendiri (Bulan ini/Bulan lalu), admin lihat tabel semua CS.
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.

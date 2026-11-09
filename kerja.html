@@ -468,6 +468,25 @@
   /* di layar lebar kalimatnya jangan menabrak tombol simpan */
   @media (min-width:621px) { .smg-kata { padding-right:170px; } }
 
+  /* ---------- bonus box CS ---------- */
+  .bonus-wadah { margin-bottom:18px; }
+  .bonus-chips { margin:0 0 12px; }
+  .bonus-kartu { background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:18px; box-shadow:var(--bayang); }
+  .bonus-total { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; margin-bottom:14px; }
+  .bonus-total span { font-size:12px; font-weight:700; color:var(--muted); }
+  .bonus-total b { font-size:28px; font-weight:800; letter-spacing:-.6px; color:var(--green-ink, var(--green)); }
+  .bonus-total em { flex-basis:100%; font-style:normal; font-size:11.5px; color:var(--amber-ink, var(--amber)); }
+  .bonus-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .bonus-sel { background:var(--lembut); border:1px solid var(--line); border-radius:12px; padding:11px 12px;
+    font-size:12.5px; line-height:1.45; }
+  .bonus-lbl { font-size:10.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--violet); margin-bottom:3px; }
+  .bonus-rinci { font-size:10.5px; color:var(--muted); }
+  .bonus-tunggu { font-size:10.5px; color:var(--amber-ink, var(--amber)); }
+  .bonus-naik { margin-top:5px; font-size:10.5px; font-weight:600; color:var(--toska); }
+  .bonus-nol { color:var(--faint); }
+  .bonus-tabel td { vertical-align:top; font-size:12px; line-height:1.45; }
+
   /* ---------- target bonus bulanan CS ---------- */
   .tgt-wadah { margin-bottom:18px; }
   .tgt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:14px; }
@@ -1518,6 +1537,7 @@
     // hanya sekali; ganti filter periode tidak membuatnya ditarik ulang.
     if (AKU.peran === 'cs') muatDataFollowUp();
     muatTarget();
+    muatBonus();
   }
 
   // Catatan: pengambilan tanggal terima lewat pelacakan Everpro sempat dibuat
@@ -3367,6 +3387,144 @@
     return '';
   }
 
+  // ---------- bonus CS per box (tarif bertingkat) ----------
+  // Aturan dari pemilik (update 8 Juli 2025), dihitung PER PRODUK, PER CS,
+  // PER BULAN, bertingkat: box 1-50 pakai tarif 1, box 51-100 tarif 2,
+  // box ke-101 dst tarif 3. (Salah: 100 box langsung dikali tarif 1.)
+  // Yang dihitung hanya box dari paket yang SUDAH TERKIRIM (Everpro),
+  // termasuk kiriman ulang stok retur. MELI ikut Lili, RIANA ikut Intan.
+  // Jumlah box = quantity produk utama di pesanan Globemerce.
+  const BONUS_PRODUK = [
+    { kode:'DVN',    label:'DVN',     pola:/\bdvn\b/i,          tarif:[10000, 12000, 15000] },
+    { kode:'EROJAN', label:'Erojan',  pola:/erojan/i,           tarif:[12000, 14000, 16000] },
+    { kode:'BLZ',    label:'BLZ Pro', pola:/lingzhi|\bblz\b/i,  tarif:[7000, 10000, 12000] },
+    { kode:'NOVIA',  label:'Novia',   pola:/novia/i,            tarif:[12000, 14000, 16000] },
+    { kode:'SGLOW',  label:'S-Glow',  pola:/s[\s\-_]?glow/i,    tarif:[12000, 14000, 16000] },
+    // Coffiy dihitung per SACHET, tarif datar Rp1.000. 1 box = 10 sachet (Rp10.000).
+    // Kalau nama produk menyebut isi lain ("COFFIY 5s" = 5 sachet), itu yang dipakai.
+    // Coffiy bonus PWP (hadiah) tidak ikut, karena bukan produk utama.
+    { kode:'COFFIY', label:'Coffiy',  pola:/coffi?y/i,          tarif:[1000, 1000, 1000], datar:true, satuan:'sachet',
+      isi: nama => { const m = String(nama || '').match(/(\d+)\s*s(?![a-z])/i); return m ? Number(m[1]) : 10; } },
+  ];
+  const produkBonus = nama => BONUS_PRODUK.find(p => p.pola.test(String(nama || ''))) || null;
+  function bonusBertingkat(box, tarif) {
+    const t1 = Math.min(box, 50), t2 = Math.min(Math.max(box - 50, 0), 50), t3 = Math.max(box - 100, 0);
+    return { rp: t1 * tarif[0] + t2 * tarif[1] + t3 * tarif[2], t1, t2, t3 };
+  }
+
+  let bonusBulan = 'kini';            // 'kini' | 'lalu'
+  const bonusData = new Map();        // 'YYYY-MM-DD|YYYY-MM-DD' -> { memuat, gagal, pesanan, kirim }
+
+  async function muatBonus() {
+    if (AKU.peran !== 'cs' && AKU.peran !== 'admin') return;
+    const r = rentangBulan(bonusBulan === 'lalu' ? -1 : 0);
+    const k = r.from + '|' + r.to;
+    if (bonusData.has(k)) return;
+    bonusData.set(k, { memuat: true });
+    render();
+    const [pesanan, kirim] = await Promise.all([
+      tarikSales('globemerce&detail=1', r.from, r.to).catch(() => null),
+      // pengiriman ditarik sampai hari ini: paket bulan lalu bisa baru sampai bulan ini
+      tarikSales('everpro&detail=1', r.from, tglLokal()).catch(() => null),
+    ]);
+    bonusData.set(k, { memuat: false, gagal: pesanan === null || kirim === null,
+      pesanan: pesanan || [], kirim: kirim || [] });
+    render();
+  }
+
+  // Map nama CS -> { per: {kode: {box, tunggu}}, total }
+  function hitungBonus(r, data) {
+    const pk = new Map();
+    for (const x of data.kirim) for (const k of kunciKirim(x)) if (!pk.has(k)) pk.set(k, x);
+    const hasil = new Map();
+    const tambah = (agen, nama, jumlah, selesai) => {
+      const t = String(agen || '').trim();
+      if (!t || BUKAN_CS[t.toUpperCase()] || tanpaPenjualan(t)) return;
+      const p = produkBonus(nama); if (!p) return;
+      if (p.isi) jumlah = jumlah * p.isi(nama);
+      const cs = namaCS(t);
+      if (!hasil.has(cs)) hasil.set(cs, { per: {}, total: 0 });
+      const h = hasil.get(cs);
+      const b = h.per[p.kode] || (h.per[p.kode] = { box: 0, tunggu: 0 });
+      if (selesai) b.box += jumlah; else b.tunggu += jumlah;
+    };
+    for (const o of data.pesanan) {
+      if (o.tanggal < r.from || o.tanggal > r.to) continue;
+      const kir = cari(pk, kunciPesanan(o));
+      const kel = String((kir && kir.kelompok) || '');
+      if (/^(retur|gagal|hilang|batal)$/.test(kel)) continue;   // tidak laku, tidak dihitung
+      for (const p of (o.produk || [])) tambah(o.agen, p.nama, Number(p.jumlah) || 0, kel === 'terkirim');
+    }
+    for (const x of ((D.stok && D.stok.keluar) || [])) {
+      const t = String(x.tgl || '');
+      if (t < r.from || t > r.to) continue;
+      const kel = String(x.kelompok || '');
+      if (/^(retur|gagal|hilang|batal)$/.test(kel)) continue;
+      tambah(x.agen, x.produk, Number(x.jumlah) || 0, kel === 'terkirim');
+    }
+    for (const h of hasil.values()) {
+      h.total = 0;
+      for (const p of BONUS_PRODUK) {
+        const b = h.per[p.kode]; if (!b) continue;
+        Object.assign(b, bonusBertingkat(b.box, p.tarif));
+        h.total += b.rp;
+      }
+    }
+    return hasil;
+  }
+
+  function blokBonus() {
+    if (AKU.peran !== 'cs' && AKU.peran !== 'admin') return '';
+    // bonus MELI ikut Lili; Meli login sendiri tidak diberi kartu bonus
+    if (AKU.peran === 'cs' && String(AKU.agen || '').trim().toLowerCase() === 'meli') return '';
+    const r = rentangBulan(bonusBulan === 'lalu' ? -1 : 0);
+    const data = bonusData.get(r.from + '|' + r.to);
+    const bln = BULAN_ID[Number(r.from.slice(5, 7)) - 1];
+    const pilih = `<div class="chips bonus-chips">
+      <button class="${bonusBulan==='kini'?'on':''}" data-bonus-bulan="kini">Bulan ini</button>
+      <button class="${bonusBulan==='lalu'?'on':''}" data-bonus-bulan="lalu">Bulan lalu</button></div>`;
+    const kepala = `<div class="sec"><h4>Bonus box · ${esc(bln)}</h4>
+      <span class="note">hanya paket yang sudah terkirim · tarif bertingkat per produk</span></div>${pilih}`;
+    if (!data || data.memuat) return `<div class="bonus-wadah">${kepala}<div class="panel"><div class="empty"><div class="spinner"></div>Menghitung bonus&hellip;</div></div></div>`;
+    if (data.gagal) return `<div class="bonus-wadah">${kepala}<div class="panel"><div class="empty">Data Globemerce/Everpro belum bisa ditarik. Coba muat ulang.</div></div></div>`;
+    const H = hitungBonus(r, data);
+    const sel = (b, p) => {
+      if (!b || (!b.box && !b.tunggu)) return '<span class="bonus-nol">&mdash;</span>';
+      const rinci = [b.t1 ? `${fN(b.t1)}×${fN(p.tarif[0]/1000)}rb` : '', b.t2 ? `${fN(b.t2)}×${fN(p.tarif[1]/1000)}rb` : '',
+        b.t3 ? `${fN(b.t3)}×${fN(p.tarif[2]/1000)}rb` : ''].filter(Boolean).join(' + ');
+      const sat = p.satuan || 'box';
+      return `<b>${fN(b.box)} ${sat}</b> · ${esc(fRp(b.rp))}
+        ${rinci && !p.datar ? `<div class="bonus-rinci">${rinci}</div>` : ''}
+        ${p.datar && b.box ? `<div class="bonus-rinci">${fN(b.box)}×${fRp(p.tarif[0])}</div>` : ''}
+        ${b.tunggu ? `<div class="bonus-tunggu">+${fN(b.tunggu)} ${sat} belum terkirim</div>` : ''}`;
+    };
+    if (AKU.peran === 'cs') {
+      const nama = namaCS(AKU.agen);
+      const h = H.get(nama) || { per: {}, total: 0 };
+      const tunggu = Object.values(h.per).reduce((a, b) => a + (b.tunggu || 0), 0);
+      return `<div class="bonus-wadah">${kepala}<div class="bonus-kartu">
+        <div class="bonus-total"><span>Bonus kamu ${esc(bln)}</span><b>${esc(fRp(h.total))}</b>
+          ${tunggu ? `<em>Sebagian paket masih di perjalanan, bonusnya dihitung setelah terkirim</em>` : ''}</div>
+        <div class="bonus-grid">${BONUS_PRODUK.map(p => `<div class="bonus-sel">
+          <div class="bonus-lbl">${esc(p.label)}</div>${sel(h.per[p.kode], p)}
+          ${p.datar ? `<div class="bonus-naik">${esc(fRp(p.tarif[0]))}/${p.satuan || 'box'}</div>` : (() => { const b = h.per[p.kode]; const box = b ? b.box : 0;
+            const lagi = box < 50 ? 51 - box : box < 100 ? 101 - box : 0;
+            return lagi ? `<div class="bonus-naik">${fN(lagi)} box lagi → tarif ${fN(p.tarif[box < 50 ? 1 : 2]/1000)}rb/box</div>` : `<div class="bonus-naik">Tarif tertinggi ${fN(p.tarif[2]/1000)}rb/box</div>`; })()}
+        </div>`).join('')}</div></div></div>`;
+    }
+    const baris = [...H.entries()].sort((a, b) => b[1].total - a[1].total);
+    const totalSemua = baris.reduce((a, [, h]) => a + h.total, 0);
+    return `<div class="bonus-wadah">${kepala}
+      <div class="panel tight"><div class="scroll-x"><table class="dt bonus-tabel">
+        <thead><tr><th>CS</th>${BONUS_PRODUK.map(p => `<th>${esc(p.label)}</th>`).join('')}<th class="num">Total bonus</th></tr></thead>
+        <tbody>${baris.length ? baris.map(([nama, h]) => `<tr><td class="nama"><b>${esc(nama)}</b></td>
+          ${BONUS_PRODUK.map(p => `<td>${sel(h.per[p.kode], p)}</td>`).join('')}
+          <td class="num"><b>${esc(fRp(h.total))}</b></td></tr>`).join('')
+          : `<tr><td colspan="${BONUS_PRODUK.length + 2}" style="text-align:center;padding:22px;color:var(--muted)">Belum ada box terkirim di bulan ini.</td></tr>`}</tbody>
+        ${baris.length ? `<tfoot><tr><td><b>Total</b></td>${BONUS_PRODUK.map(() => '<td></td>').join('')}<td class="num"><b>${esc(fRp(totalSemua))}</b></td></tr></tfoot>` : ''}
+      </table></div></div></div>`;
+  }
+
   // ---------- data khusus follow-up ----------
   // Follow-up sengaja tidak mengikuti filter periode di atas. CS menghubungi
   // pelanggan dua bulan terakhir — bulan berjalan dan bulan sebelumnya — jadi
@@ -4850,7 +5008,7 @@
       ? (fuData && fuData.memuat ? blokFollowUpMemuat() : blokFollowUp((fuData && fuData.pesanan) || []))
       : '';
     const smg = AKU.peran === 'cs' ? kartuSemangat() : '';
-    return smg + blokTarget() + fu + kartu + blokOngkir + peringkat + tabel;
+    return smg + blokTarget() + blokBonus() + fu + kartu + blokOngkir + peringkat + tabel;
   }
 
   // ---------- data retur setahun ----------
@@ -5957,6 +6115,8 @@
     if (fu) { fuBuka = fuBuka === fu.dataset.fu ? null : fu.dataset.fu; render(); return; }
     const c = e.target.closest('button[data-cs]');
     if (c) { fCS = c.dataset.cs; render(); return; }
+    const bb = e.target.closest('button[data-bonus-bulan]');
+    if (bb) { bonusBulan = bb.dataset.bonusBulan; muatBonus(); render(); return; }
     const ck = e.target.closest('button[data-kirim]');
     if (ck) { fKirim = ck.dataset.kirim; render(); return; }
     const db = e.target.closest('button[data-dealer-bulan]');
