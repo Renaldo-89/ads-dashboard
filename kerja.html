@@ -4315,15 +4315,15 @@
 
     const kartu = `<div class="kpis tiga">
       ${kpi(I.cs,'var(--violet)','var(--violet-soft)','Jumlah dealer',fN(R.length),'')}
-      ${kpi(I.money,'var(--blue)','var(--blue-soft)','Total personal GMV',fN(Math.round(total.personal)),'')}
-      ${kpi(I.spark,'var(--amber)','var(--amber-soft)','Total group GMV',fN(Math.round(total.grup)),'')}
+      ${kpi(I.money,'var(--blue)','var(--blue-soft)','GMV dari dealer (masuk GMV group kamu)',fN(Math.round(total.personal)),'')}
+      ${kpi(I.spark,'var(--amber)','var(--amber-soft)','GMV jaringan di bawah dealer',fN(Math.round(total.grup)),'')}
     </div>`;
 
     // podium() dibuat untuk peringkat CS; dipakai ulang lewat pemetaan ringan
     const podiumR = R.map(c => ({ nama: c.nama, order: c.downline, repeat: 0, gmv: c.gmv }));
 
     return filterHtml + `<div class="sec"><h4>Race GMV dealer</h4>
-        <span class="note">diurutkan dari total GMV, personal + group</span></div>
+        <span class="note">diurutkan dari total GMV dealer · GMV group kamu = GMV personal kamu + GMV dari dealer</span></div>
       ${kartu}
       <div style="height:6px"></div>
       ${podium(podiumR)}
