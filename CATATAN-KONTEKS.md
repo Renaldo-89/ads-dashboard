@@ -117,6 +117,12 @@ Dashboard memanggil Worker             --> halaman Google Ads / Meta Ads
   Hanya paket terkirim (Everpro) yang dihitung, + stok retur terkirim; MELI ikut
   Lili. CS lihat kartunya sendiri (Bulan ini/Bulan lalu), admin lihat tabel semua CS.
 
+- **Link race dealer publik** (26 Nov 2026): `race.html?k=<kode>` untuk grup WhatsApp
+  dealer, tanpa login. Data dari Worker `?race_publik=1` (hanya username, posisi,
+  total GMV; cache 10 menit). Kode ada di konstanta `RACE_KODE` di `worker.js`
+  (tidak di git) — ganti kode itu untuk mematikan link lama. Tampilan race di
+  `race.html` disalin dari `pgDealer` di `kerja.html`; ubah keduanya bersamaan.
+
 ## 4. Pindah Mac (30 Okt 2026)
 
 - Skrip bantu: `pindah-1-di-mac-lama.sh`, `pindah-2-di-mac-baru.sh`.

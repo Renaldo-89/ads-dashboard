@@ -4448,8 +4448,8 @@
       <div class="rc-arena-kiri">
         <div class="rc-cap"><span class="rc-bendera"></span>RACE GMV DEALER · ${esc(namaBulan.toUpperCase())}</div>
         <div class="rc-judul">${pemimpin && pemimpin.gmv ? `<b>${esc(pemimpin.nama)}</b> memimpin balapan` : 'Balapan belum dimulai'}</div>
-        <div class="rc-sub">${fN(R.length)} dealer bertanding · total ${fN(Math.round(total.gmv))} GMV
-          · GMV group kamu = GMV personal kamu + GMV dari dealer</div>
+        <div class="rc-sub">${fN(R.length)} dealer bertanding · total ${fN(Math.round(total.gmv))} GMV${
+          typeof RACE_PUBLIK === 'undefined' ? ' · GMV group kamu = GMV personal kamu + GMV dari dealer' : ''}</div>
       </div>
       <div class="rc-waktu">${kini
         ? `<b>${fN(sisaHari)}</b><span>hari lagi<br>garis finis</span>`
@@ -4524,7 +4524,7 @@
         requestAnimationFrame(langkah);
       }, 0);
     }
-    return filterHtml + `<div class="rc">${arena + podiumHtml + lintasan}</div>` + rincian;
+    return filterHtml + `<div class="rc">${arena + podiumHtml + lintasan}</div>` + (typeof RACE_PUBLIK === 'undefined' ? rincian : '');
   }
 
   // ---------- halaman Laporan Iklan (khusus role advertiser + admin) ----------
