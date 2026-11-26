@@ -468,6 +468,93 @@
   /* di layar lebar kalimatnya jangan menabrak tombol simpan */
   @media (min-width:621px) { .smg-kata { padding-right:170px; } }
 
+  /* ---------- race dealer ---------- */
+  .rc-arena { position:relative; display:flex; justify-content:space-between; align-items:center; gap:16px;
+    flex-wrap:wrap; padding:22px 24px; border-radius:20px; color:#fff; isolation:isolate; overflow:hidden;
+    margin-bottom:16px; background:linear-gradient(120deg,#0F172A 0%,#312E81 55%,#9D174D 100%);
+    box-shadow:0 20px 44px -18px rgba(49,46,129,.7); }
+  .rc-arena::before { content:''; position:absolute; inset:0; z-index:-1; opacity:.18;
+    background:repeating-linear-gradient(115deg, transparent 0 38px, rgba(255,255,255,.5) 38px 40px); }
+  .rc-arena::after { content:''; position:absolute; right:-40px; top:-60px; width:260px; height:260px; z-index:-1;
+    border-radius:50%; background:radial-gradient(circle, rgba(250,204,21,.45), transparent 65%); }
+  .rc-cap { display:flex; align-items:center; gap:8px; font-size:10px; font-weight:800; letter-spacing:1.4px;
+    color:rgba(255,255,255,.8); }
+  .rc-bendera { width:18px; height:12px; border-radius:2px;
+    background:conic-gradient(#fff 25%, #111 0 50%, #fff 0 75%, #111 0) 0 0/6px 6px; }
+  .rc-judul { margin-top:8px; font-size:24px; font-weight:800; letter-spacing:-.5px; }
+  .rc-judul b { color:#FDE047; text-shadow:0 0 18px rgba(253,224,71,.55); }
+  .rc-sub { margin-top:6px; font-size:11.5px; color:rgba(255,255,255,.75); max-width:70ch; }
+  .rc-waktu { display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:16px;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(6px); }
+  .rc-waktu b { font-size:36px; font-weight:900; line-height:1; color:#FDE047; font-variant-numeric:tabular-nums; }
+  .rc-waktu span { font-size:10.5px; font-weight:700; line-height:1.25; color:rgba(255,255,255,.85); }
+
+  .rc-podium { display:grid; grid-template-columns:1fr 1.15fr 1fr; align-items:end; gap:12px; margin:6px 0 18px; }
+  .rc-pod { position:relative; text-align:center; }
+  .rc-mahkota { font-size:28px; line-height:1; margin-bottom:-4px; animation:rc-goyang 2.4s ease-in-out infinite; }
+  .rc-ava { margin:0 auto 6px; display:grid; place-items:center; width:58px; height:58px; border-radius:50%;
+    font-size:18px; font-weight:800; color:#fff; background:var(--m);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--m) 30%, transparent), 0 10px 22px -8px var(--m); }
+  .p1 .rc-ava { width:74px; height:74px; font-size:22px; animation:rc-denyut 2s ease-in-out infinite; }
+  .rc-pod-nama { font-size:14px; font-weight:800; color:var(--ink); }
+  .rc-pod-gmv { font-size:22px; font-weight:900; letter-spacing:-.5px; color:var(--ink); }
+  .p1 .rc-pod-gmv { font-size:28px; color:#D97706; }
+  .rc-pod-gmv small { font-size:10px; font-weight:700; color:var(--muted); }
+  .rc-pod-ket { font-size:11px; color:var(--muted); margin:2px 0 8px; }
+  .rc-pod-ket b { color:var(--ink-2); }
+  .rc-tiang { border-radius:14px 14px 4px 4px; display:grid; place-items:center; color:rgba(255,255,255,.9);
+    font-size:34px; font-weight:900; background:linear-gradient(180deg, var(--m), color-mix(in srgb, var(--m) 70%, #000));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+  .p1 .rc-tiang { height:120px; } .p2 .rc-tiang { height:84px; } .p3 .rc-tiang { height:62px; }
+
+  .rc-trek { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:14px 16px 8px;
+    box-shadow:var(--bayang); margin-bottom:14px; }
+  .rc-trek-kop { display:flex; justify-content:space-between; font-size:10.5px; font-weight:800; letter-spacing:1px;
+    text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .rc-finis-lbl { color:var(--faint); }
+  .rc-jalur { display:grid; grid-template-columns:34px 1fr auto; gap:12px; align-items:center; padding:10px 0;
+    border-top:1px dashed var(--line); }
+  .rc-jalur:first-of-type { border-top:0; }
+  .rc-no { display:grid; place-items:center; width:30px; height:30px; border-radius:9px; font-weight:900; font-size:13px;
+    color:#fff; background:var(--w); }
+  .rc-baris { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; color:var(--ink); margin-bottom:6px; }
+  .rc-kode { font-size:10.5px; color:var(--faint); }
+  .rc-tag { font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .rc-tag.panas { background:#FEF3C7; color:#B45309; }
+  .rc-tag.ketat { background:var(--pink-soft); color:var(--pink); }
+  .rc-tag.diam { background:var(--line-2); color:var(--faint); }
+  .rc-jalan { position:relative; height:14px; border-radius:999px;
+    background:repeating-linear-gradient(90deg, var(--line-2) 0 14px, var(--line) 14px 28px);
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.06); }
+  .rc-jalan::after { content:''; position:absolute; right:0; top:-4px; bottom:-4px; width:8px; border-radius:2px;
+    background:conic-gradient(#fff 25%, #1F2937 0 50%, #fff 0 75%, #1F2937 0) 0 0/4px 4px; opacity:.8; }
+  .rc-jalan i { position:absolute; inset:0 auto 0 0; border-radius:999px;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--w) 35%, transparent), var(--w));
+    animation:rc-lari 1.2s cubic-bezier(.2,.8,.2,1) both; }
+  .rc-pelari { position:absolute; top:50%; transform:translate(-50%,-50%); display:grid; place-items:center;
+    width:26px; height:26px; border-radius:50%; font-size:9.5px; font-weight:900; color:#fff; background:var(--w);
+    border:2px solid var(--panel); box-shadow:0 3px 10px -2px var(--w); animation:rc-masuk 1.2s cubic-bezier(.2,.8,.2,1) both; }
+  .juara .rc-pelari { box-shadow:0 0 0 4px color-mix(in srgb, var(--w) 30%, transparent), 0 0 18px var(--w); }
+  .rc-nilai { text-align:right; min-width:92px; }
+  .rc-nilai b { display:block; font-size:16px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .rc-nilai span { font-size:10.5px; color:var(--red-ink, var(--red)); font-weight:600; }
+  .juara .rc-nilai span { color:var(--muted); }
+  .rc-rinci summary { cursor:pointer; font-size:12px; font-weight:700; color:var(--violet); margin:4px 0 10px; }
+  @keyframes rc-lari { from { width:0; } }
+  @keyframes rc-masuk { from { left:2%; opacity:0; } }
+  @keyframes rc-goyang { 50% { transform:rotate(-8deg) translateY(-3px); } }
+  @keyframes rc-denyut { 50% { box-shadow:0 0 0 8px color-mix(in srgb, var(--m) 22%, transparent), 0 10px 26px -6px var(--m); } }
+  @media (max-width:620px) {
+    .rc-arena { padding:18px 16px; } .rc-judul { font-size:19px; }
+    .rc-podium { gap:6px; } .rc-ava { width:44px; height:44px; font-size:14px; } .p1 .rc-ava { width:56px; height:56px; }
+    .rc-pod-gmv { font-size:16px; } .p1 .rc-pod-gmv { font-size:20px; }
+    .p1 .rc-tiang { height:90px; } .p2 .rc-tiang { height:64px; } .p3 .rc-tiang { height:48px; }
+    .rc-jalur { grid-template-columns:28px 1fr auto; gap:8px; } .rc-nilai { min-width:70px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rc-jalan i, .rc-pelari, .rc-mahkota, .p1 .rc-ava { animation:none; }
+  }
+
   /* ---------- bonus closing CS ---------- */
   .bn { margin-bottom:20px; border-radius:20px; overflow:hidden; background:var(--panel);
     border:1px solid var(--line); box-shadow:var(--bayang-2); }
@@ -4312,38 +4399,81 @@
     const total = R.reduce((a, c) => ({ personal: a.personal + c.personal,
       grup: a.grup + c.grup, gmv: a.gmv + c.gmv }), { personal: 0, grup: 0, gmv: 0 });
     const maks = Math.max(...R.map(c => c.gmv), 1);
+    const th = Number(dealerPeriode.slice(0, 4)), bl = Number(dealerPeriode.slice(4, 6));
+    const kini = dealerPeriode === periodeSekarang();
+    const akhir = new Date(th, bl, 0).getDate();
+    const sisaHari = kini ? akhir - new Date().getDate() + 1 : 0;
+    const namaBulan = BULAN_ID[bl - 1] + ' ' + th;
+    const MEDALI = ['#F59E0B', '#94A3B8', '#C08457'];
 
-    const kartu = `<div class="kpis tiga">
-      ${kpi(I.cs,'var(--violet)','var(--violet-soft)','Jumlah dealer',fN(R.length),'')}
-      ${kpi(I.money,'var(--blue)','var(--blue-soft)','GMV dari dealer (masuk GMV group kamu)',fN(Math.round(total.personal)),'')}
-      ${kpi(I.spark,'var(--amber)','var(--amber-soft)','GMV jaringan di bawah dealer',fN(Math.round(total.grup)),'')}
+    // ---- arena: judul, hitung mundur, ringkasan ----
+    const pemimpin = R[0];
+    const arena = `<div class="rc-arena">
+      <div class="rc-arena-kiri">
+        <div class="rc-cap"><span class="rc-bendera"></span>RACE GMV DEALER · ${esc(namaBulan.toUpperCase())}</div>
+        <div class="rc-judul">${pemimpin && pemimpin.gmv ? `<b>${esc(pemimpin.nama)}</b> memimpin balapan` : 'Balapan belum dimulai'}</div>
+        <div class="rc-sub">${fN(R.length)} dealer bertanding · total ${fN(Math.round(total.gmv))} GMV
+          · GMV group kamu = GMV personal kamu + GMV dari dealer</div>
+      </div>
+      <div class="rc-waktu">${kini
+        ? `<b>${fN(sisaHari)}</b><span>hari lagi<br>garis finis</span>`
+        : `<b>🏁</b><span>balapan<br>selesai</span>`}</div>
     </div>`;
 
-    // podium() dibuat untuk peringkat CS; dipakai ulang lewat pemetaan ringan
-    const podiumR = R.map(c => ({ nama: c.nama, order: c.downline, repeat: 0, gmv: c.gmv }));
+    // ---- podium 3 besar ----
+    const urutPodium = [1, 0, 2].filter(i => R[i]);
+    const podiumHtml = `<div class="rc-podium">${urutPodium.map(i => {
+      const c = R[i];
+      const jarak = i > 0 ? Math.max(0, R[i - 1].gmv - c.gmv) : (R[1] ? c.gmv - R[1].gmv : 0);
+      return `<div class="rc-pod p${i + 1}" style="--m:${MEDALI[i]}">
+        ${i === 0 ? '<div class="rc-mahkota">👑</div>' : ''}
+        <div class="rc-ava">${esc(inisial(c.nama))}</div>
+        <div class="rc-pod-nama">${esc(c.nama)}</div>
+        <div class="rc-pod-gmv">${fN(Math.round(c.gmv))}<small> GMV</small></div>
+        <div class="rc-pod-ket">${i === 0
+          ? (R[1] ? `unggul <b>${fN(Math.round(jarak))}</b> dari #2` : 'tanpa lawan')
+          : (jarak ? `<b>${fN(Math.round(jarak))}</b> lagi salip #${i}` : `seri dengan #${i}`)}</div>
+        <div class="rc-tiang"><span>${i + 1}</span></div>
+      </div>`; }).join('')}</div>`;
 
-    return filterHtml + `<div class="sec"><h4>Race GMV dealer</h4>
-        <span class="note">diurutkan dari total GMV dealer · GMV group kamu = GMV personal kamu + GMV dari dealer</span></div>
-      ${kartu}
-      <div style="height:6px"></div>
-      ${podium(podiumR)}
+    // ---- lintasan: semua dealer ----
+    const lintasan = `<div class="rc-trek">
+      <div class="rc-trek-kop"><span>Lintasan</span><span class="rc-finis-lbl">finis = pemimpin</span></div>
+      ${R.map((c, i) => {
+        const pct = c.gmv / maks * 100;
+        const jarak = i > 0 ? Math.max(0, R[i - 1].gmv - c.gmv) : 0;
+        const warna = MEDALI[i] || 'var(--violet)';
+        const status = !c.gmv ? '<span class="rc-tag diam">belum start</span>'
+          : i === 0 ? '<span class="rc-tag panas">🔥 terdepan</span>'
+          : jarak && jarak <= maks * 0.1 ? `<span class="rc-tag ketat">⚡ tempel #${i}</span>` : '';
+        return `<div class="rc-jalur${i === 0 ? ' juara' : ''}" style="--w:${warna}">
+          <div class="rc-no">${i + 1}</div>
+          <div class="rc-isi">
+            <div class="rc-baris"><b>${esc(c.nama)}</b><span class="rc-kode">${esc(c.posisi)}</span>${status}</div>
+            <div class="rc-jalan"><i style="width:${Math.max(pct, 0.5).toFixed(1)}%"></i>
+              <span class="rc-pelari" style="left:${Math.min(Math.max(pct, 2), 97).toFixed(1)}%">${esc(inisial(c.nama))}</span></div>
+          </div>
+          <div class="rc-nilai"><b>${fN(Math.round(c.gmv))}</b>
+            <span>${i === 0 ? 'GMV' : jarak ? '−' + fN(Math.round(jarak)) + ' dari #' + i : 'seri'}</span></div>
+        </div>`; }).join('')}
+    </div>`;
+
+    // ---- rincian (tabel lama, dipadatkan) ----
+    const rincian = `<details class="rc-rinci"><summary>Lihat rincian angka per dealer</summary>
       <div class="panel tight"><div class="scroll-x"><table class="dt pesanan">
         <thead><tr><th>Dealer</th><th>Posisi</th><th class="num">Downline aktif</th>
-          <th class="num">Personal GMV</th><th class="num">Group GMV</th><th class="num">Total GMV</th></tr></thead>
-        <tbody>${R.map((c, i) => {
-          const medali = ['#F59E0B','#94A3B8','#C08457'][i] || null;
-          return `<tr>
-            <td class="nama"><b>${medali?'<span style="color:'+medali+'">#'+(i+1)+'</span> ':''}${esc(c.nama)}</b>
-              <span style="color:var(--faint);font-weight:500"> (${esc(c.kode)})</span>
-              <div class="track" style="margin-top:6px"><i style="width:${(c.gmv/maks*100).toFixed(1)}%;background:${medali||'var(--violet)'}"></i></div></td>
+          <th class="num">GMV personal dealer</th><th class="num">GMV jaringan dealer</th><th class="num">Total GMV</th></tr></thead>
+        <tbody>${R.map((c, i) => `<tr>
+            <td class="nama"><b>#${i + 1} ${esc(c.nama)}</b><span style="color:var(--faint);font-weight:500"> (${esc(c.kode)})</span></td>
             <td>${esc(c.posisi)}</td>
             <td class="num">${fN(c.downline)}</td>
-            <td class="num">${esc(c.mata)} ${fN(c.personal)}</td>
-            <td class="num">${esc(c.mata)} ${fN(c.grup)}</td>
-            <td class="num"><b>${esc(c.mata)} ${fN(c.gmv)}</b></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table></div></div>`;
+            <td class="num">${fN(c.personal)}</td>
+            <td class="num">${fN(c.grup)}</td>
+            <td class="num"><b>${fN(c.gmv)}</b></td>
+          </tr>`).join('')}</tbody>
+      </table></div></div></details>`;
+
+    return filterHtml + arena + podiumHtml + lintasan + rincian;
   }
 
   // ---------- halaman Laporan Iklan (khusus role advertiser + admin) ----------
