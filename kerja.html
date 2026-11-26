@@ -535,6 +535,23 @@
   .juara { background:linear-gradient(90deg, rgba(245,158,11,.08), transparent 70%); border-radius:10px; }
   .juara .rc-nilai span { color:var(--muted); font-weight:400; }
   .rc-rinci summary { cursor:pointer; font-size:12px; font-weight:700; color:var(--violet); margin:4px 0 10px; }
+  .rc .rc-arena { animation:rc-turun .5s ease-out both; }
+  .rc .rc-waktu b { animation:rc-detak 1.6s ease-in-out infinite; }
+  .rc .rc-pod { animation:rc-naik .6s cubic-bezier(.2,.8,.2,1) both; }
+  .rc .rc-pod.p1 { animation-delay:.25s; } .rc .rc-pod.p2 { animation-delay:.1s; } .rc .rc-pod.p3 { animation-delay:.4s; }
+  .rc .rc-tiang { transform-origin:bottom; animation:rc-tumbuh .7s cubic-bezier(.2,.8,.2,1) both; animation-delay:inherit; }
+  .rc .rc-mahkota { animation:rc-loncat 2.4s ease-in-out 1s infinite; }
+  .rc .rc-jalur { animation:rc-geser .5s ease-out both; animation-delay:var(--d); }
+  .rc .rc-jalan i { animation-delay:calc(var(--d) + .2s); }
+  .rc .rc-pelari { animation-delay:calc(var(--d) + .2s); }
+  .rc .juara .rc-pelari { animation:rc-masuk .9s ease-out both, rc-nadi 1.8s ease-in-out 1.4s infinite; }
+  @keyframes rc-turun { from { opacity:0; transform:translateY(-10px); } }
+  @keyframes rc-naik { from { opacity:0; transform:translateY(24px); } }
+  @keyframes rc-tumbuh { from { transform:scaleY(0); } }
+  @keyframes rc-loncat { 0%,70%,100% { transform:translateY(0); } 80% { transform:translateY(-6px); } 90% { transform:translateY(0); } }
+  @keyframes rc-geser { from { opacity:0; transform:translateX(-14px); } }
+  @keyframes rc-detak { 50% { transform:scale(1.08); } }
+  @keyframes rc-nadi { 50% { box-shadow:0 0 0 6px color-mix(in srgb, var(--w) 25%, transparent); } }
   @keyframes rc-lari { from { width:0; } }
   @keyframes rc-masuk { from { left:2%; opacity:0; } }
   @media (max-width:620px) {
@@ -544,7 +561,7 @@
     .p1 .rc-tiang { height:72px; } .p2 .rc-tiang { height:54px; } .p3 .rc-tiang { height:40px; }
     .rc-jalur { grid-template-columns:26px 1fr auto; gap:8px; } .rc-nilai { min-width:66px; }
   }
-  @media (prefers-reduced-motion: reduce) { .rc-jalan i, .rc-pelari { animation:none; } }
+  @media (prefers-reduced-motion: reduce) { .rc *, .rc-jalan i, .rc-pelari { animation:none !important; } }
 
   /* ---------- bonus closing CS ---------- */
   .bn { margin-bottom:20px; border-radius:20px; overflow:hidden; background:var(--panel);
@@ -4356,6 +4373,7 @@
       .finally(() => { dealerMemuat.delete(periode); if (page === 'dealer') render(); });
   }
 
+  let dealerAnimasi = null;   // periode yang angkanya sudah dianimasikan
   function pgDealer() {
     if (!dealerPeriode) dealerPeriode = periodeSekarang();
     const opsi = Array.from({ length: 6 }, (_, i) => {
@@ -4422,7 +4440,7 @@
         ${i === 0 ? '<div class="rc-mahkota">👑</div>' : ''}
         <div class="rc-ava">${esc(inisial(c.nama))}</div>
         <div class="rc-pod-nama">${esc(c.nama)}</div>
-        <div class="rc-pod-gmv">${fN(Math.round(c.gmv))}<small> GMV</small></div>
+        <div class="rc-pod-gmv"><span data-hitung="${Math.round(c.gmv)}">${fN(Math.round(c.gmv))}</span><small> GMV</small></div>
         <div class="rc-pod-ket">${i === 0
           ? (R[1] ? `unggul <b>${fN(Math.round(jarak))}</b> dari #2` : 'tanpa lawan')
           : (jarak ? `<b>${fN(Math.round(jarak))}</b> lagi salip #${i}` : `seri dengan #${i}`)}</div>
@@ -4439,14 +4457,14 @@
         const status = !c.gmv ? '<span class="rc-tag diam">belum start</span>'
           : i === 0 ? '<span class="rc-tag panas">🔥 terdepan</span>'
           : jarak && jarak <= maks * 0.1 ? `<span class="rc-tag ketat">mengejar #${i}</span>` : '';
-        return `<div class="rc-jalur${i === 0 ? ' juara' : ''}" style="--w:${warna}">
+        return `<div class="rc-jalur${i === 0 ? ' juara' : ''}" style="--w:${warna};--d:${Math.min(i, 12) * 70}ms">
           <div class="rc-no">${i + 1}</div>
           <div class="rc-isi">
             <div class="rc-baris"><b>${esc(c.nama)}</b><span class="rc-kode">${esc(c.posisi)}</span>${status}</div>
             <div class="rc-jalan"><i style="width:${Math.max(pct, 0.5).toFixed(1)}%"></i>
               <span class="rc-pelari" style="left:${Math.min(Math.max(pct, 2), 97).toFixed(1)}%">${esc(inisial(c.nama))}</span></div>
           </div>
-          <div class="rc-nilai"><b>${fN(Math.round(c.gmv))}</b>
+          <div class="rc-nilai"><b data-hitung="${Math.round(c.gmv)}">${fN(Math.round(c.gmv))}</b>
             <span>${i === 0 ? 'GMV' : jarak ? '−' + fN(Math.round(jarak)) + ' dari #' + i : 'seri'}</span></div>
         </div>`; }).join('')}
     </div>`;
@@ -4466,7 +4484,22 @@
           </tr>`).join('')}</tbody>
       </table></div></div></details>`;
 
-    return filterHtml + arena + podiumHtml + lintasan + rincian;
+    // angka berlari dari 0 saat halaman dibuka (sekali per periode)
+    if (dealerAnimasi !== dealerPeriode) {
+      dealerAnimasi = dealerPeriode;
+      setTimeout(() => {
+        const el = [...document.querySelectorAll('.rc-podium [data-hitung], .rc-trek [data-hitung]')];
+        if (!el.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const mulai = performance.now(), lama = 1100;
+        const langkah = now => {
+          const f = Math.min(1, (now - mulai) / lama), e = 1 - Math.pow(1 - f, 3);
+          for (const x of el) x.textContent = fN(Math.round(Number(x.dataset.hitung) * e));
+          if (f < 1) requestAnimationFrame(langkah);
+        };
+        requestAnimationFrame(langkah);
+      }, 0);
+    }
+    return filterHtml + `<div class="rc">${arena + podiumHtml + lintasan}</div>` + rincian;
   }
 
   // ---------- halaman Laporan Iklan (khusus role advertiser + admin) ----------
